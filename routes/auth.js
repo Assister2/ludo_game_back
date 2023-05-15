@@ -11,7 +11,7 @@ const {
 const sendText = require("../helpers/sendSMS");
 const User = require("../models/user");
 const checkUserName = require("../services");
-const { _app } = require("../firebaseInit");
+// const { _app } = require("../firebaseInit");
 
 router.post("/signup", async (req, res) => {
   try {
@@ -143,19 +143,19 @@ router.post("/confirmOTP", async (req, res) => {
           user.otpConfirmed = true;
           await userController.updateUserByPhoneNumber(user);
           await userController.issueToken(user);
-          try {
-            await _app
-              .messaging()
-              .subscribeToTopic(token, topic)
-              .then((resp) => {
-                console.log(resp);
-              })
-              .catch((err) => {
-                console.log(err);
-              });
-          } catch (err) {
-            console.log("fcm", err);
-          }
+          // try {
+          //   await _app
+          //     .messaging()
+          //     .subscribeToTopic(token, topic)
+          //     .then((resp) => {
+          //       console.log(resp);
+          //     })
+          //     .catch((err) => {
+          //       console.log(err);
+          //     });
+          // } catch (err) {
+          //   console.log("fcm", err);
+          // }
           return responseHandler(res, 200, user, null);
         }
       }
