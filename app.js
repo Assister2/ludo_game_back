@@ -35,12 +35,12 @@ mongoose
   .connect(process.env.DB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    useFindAndModify: true,
+    useFindAndModify: false,
   })
   .then(() => console.log("db is connected"))
   .catch((error) => console.log(error.message));
 const server = app2.listen(4002, () => {
-  console.log("application is running on port 4001");
+  console.log("socket is running on port 4002");
 });
 app.use(logger("dev"));
 app.use(express.json({ limit: "50mb" }));
@@ -77,20 +77,19 @@ const io = require("socket.io")(server, {
     origin: "*",
   },
 });
-console.log("testt", io.server);
 
 io.on("connection", (socket) => {
   // io.emit("Sent a message 4seconds after connection!");
   socket.on("getUserWallet", async (message) => {
     try {
       const data = JSON.parse(message);
-      console.log("testdata22", data);
+
       let response = {
         status: 200,
         data: null,
         error: null,
       };
-      console.log(data.payload.userId);
+
       const connections = {};
       const userId = data.payload.userId;
       connections[userId] = socket;
@@ -116,7 +115,7 @@ io.on("connection", (socket) => {
               error: error.message,
               data: null,
             };
-            console.log("thiserr", response);
+
             return socket.emit("getUserWallet", JSON.stringify(response));
           }
         case "updatePlayersWallet":
@@ -222,11 +221,7 @@ io.on("connection", (socket) => {
           data: null,
           error: null,
         };
-        let challenges = await challengesController.getAllChallenges();
-        // console.log("challengess", challenges);
 
-        // aWss.clients.forEach(function (client) {
-        socket.send(JSON.stringify(challenges));
         if (data.type) {
           switch (data.type) {
             case "create":
@@ -297,6 +292,15 @@ io.on("connection", (socket) => {
               };
 
               challenge = await challengesController.createChallenge(challenge);
+              if (!!challenge) {
+                let challenges = await challengesController.getAllChallenges();
+
+                // console.log("challengess", challenges);
+
+                // aWss.clients.forEach(function (client) {
+
+                socket.send(JSON.stringify(challenges));
+              }
 
               if (!challenge) {
                 response = {
@@ -425,7 +429,11 @@ io.on("connection", (socket) => {
               };
               let deletedChallenge =
                 await challengesController.updateChallengeById(challengeObj);
-              if (!deletedChallenge) {
+              if (deletedChallenge) {
+                let challenges = await challengesController.getAllChallenges();
+
+                socket.send(JSON.stringify(challenges));
+              } else {
                 response = {
                   ...response,
                   status: 400,
@@ -434,6 +442,7 @@ io.on("connection", (socket) => {
                 };
                 return socket.send(JSON.stringify(response));
               }
+
               await userController.updateUserByUserId({
                 _id: data.payload.userId,
                 hasActiveChallenge: false,
@@ -518,6 +527,12 @@ io.on("connection", (socket) => {
         //   socket.send(JSON.stringify(data))
 
         // });
+        let challenges = await challengesController.getAllChallenges();
+
+        // console.log("challengess", challenges);
+
+        // aWss.clients.forEach(function (client) {
+        socket.send(JSON.stringify(challenges));
       } catch (error) {
         console.log("errorwa", error);
       }
