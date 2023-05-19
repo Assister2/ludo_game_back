@@ -99,6 +99,7 @@ io.on("connection", (socket) => {
             let wallet = await accountController.getAccountByUserId(
               data.payload.userId
             );
+
             socket.emit(
               "getUserWallet",
               JSON.stringify({
@@ -195,6 +196,83 @@ io.on("connection", (socket) => {
       let response = { status: 400, error: error, data: null };
       console.log("ssss", response);
       return socket.send(JSON.stringify(response));
+    }
+    // Parse the incoming message as JSON
+  });
+  //todo:game
+  socket.on("ludogame", async (message) => {
+    try {
+      const data = JSON.parse(message);
+      let userId = "";
+      let response = {
+        status: 200,
+        data: null,
+        error: null,
+      };
+      switch (data.type) {
+        case "getChallengeByChallengeId":
+          try {
+            let challenge = await challengesController.getChallengeById(
+              data.payload.challengeId
+            );
+            if (!challenge) {
+              response = {
+                ...response,
+                status: 400,
+                error: "Challenge not found",
+                data: null,
+              };
+              return socket.emit("ludogame", JSON.stringify(response));
+            }
+            if (challenge.state != "playing" && challenge.state != "hold") {
+              response = {
+                ...response,
+                status: 400,
+                error: "Challenge not found",
+                data: null,
+              };
+              return socket.emit("ludogame", JSON.stringify(response));
+            }
+            if (
+              challenge.creator._id == data.payload.userId ||
+              challenge.player._id == data.payload.userId
+            ) {
+              response = {
+                ...response,
+                status: 200,
+                error: null,
+                data: challenge,
+              };
+              if (challenge.player._id == data.payload.userId) {
+                await challengesController.updateChallengeById({
+                  _id: challenge._id,
+                  firstTime: false,
+                });
+              }
+              return socket.emit("ludogame", JSON.stringify(response));
+            }
+            response = {
+              ...response,
+              status: 400,
+              error: "Not Authorized",
+              data: null,
+            };
+            return socket.emit("ludogame", JSON.stringify(response));
+          } catch (error) {
+            console.log("error.message", error.message);
+            response = {
+              ...response,
+              status: 400,
+              error: error.message,
+              data: null,
+            };
+            return socket.emit("ludogame", JSON.stringify(response));
+          }
+      }
+    } catch (error) {
+      console.log("Errorwa", error.message);
+      response = { ...response, status: 400, error: error, data: null };
+      return socket.emit("ludogame", JSON.stringify(response));
     }
     // Parse the incoming message as JSON
   });
