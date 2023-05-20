@@ -192,7 +192,7 @@ io.on("connection", (socket) => {
           }
       }
     } catch (error) {
-      console.log("Errorwa", error.message);
+      console.log("Errorwa2", error.message);
       let response = { status: 400, error: error, data: null };
       console.log("ssss", response);
       return socket.send(JSON.stringify(response));
@@ -270,7 +270,7 @@ io.on("connection", (socket) => {
           }
       }
     } catch (error) {
-      console.log("Errorwa", error.message);
+      console.log("Errorwa3", error.message);
       response = { ...response, status: 400, error: error, data: null };
       return socket.emit("ludogame", JSON.stringify(response));
     }
@@ -350,7 +350,7 @@ io.on("connection", (socket) => {
                 response = {
                   ...response,
                   status: 400,
-                  error: "Update Your Result In Previous Match First",
+                  error: "Update Your Result In Previous Match First2",
                   data: null,
                 };
                 return socket.send(JSON.stringify(response));
@@ -612,7 +612,7 @@ io.on("connection", (socket) => {
         // aWss.clients.forEach(function (client) {
         socket.send(JSON.stringify(challenges));
       } catch (error) {
-        console.log("errorwa", error);
+        console.log("errorwa3", error);
       }
     });
     socket.on("close", (code, reason) => {
