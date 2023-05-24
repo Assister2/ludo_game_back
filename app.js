@@ -350,7 +350,7 @@ io.on("connection", (socket) => {
                 response = {
                   ...response,
                   status: 400,
-                  error: "Update Your Result In Previous Match First2",
+                  error: "Update Your Result In Previous Match First",
                   data: null,
                 };
                 return socket.send(JSON.stringify(response));
