@@ -48,6 +48,8 @@ router.post("/buy", verifyToken, async (req, res) => {
   }
 });
 
+const ONE_DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+
 router.post("/sell", verifyToken, async (req, res) => {
   try {
     if (
@@ -56,18 +58,16 @@ router.post("/sell", verifyToken, async (req, res) => {
     ) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
-    let { amount, upiId } = req.body;
-    // if (amount<=95 || amount>10000) {
-    //     return responseHandler(res, 400, account, "Sell limit is 95 to 10000");
-    // }
 
+    let { amount, upiId } = req.body;
     let user = req.user;
+    console.log("checkuser", user);
     let account = await accountController.getAccountByUserId(user.id);
 
     let transactionObject = {
       amount: amount,
       type: 1, //type 1 is for selling
-      status: 1,
+      status: 0, // withdrawal request pending 0=pending 1=success
       userId: user.id,
       upiId: upiId,
     };
@@ -84,12 +84,31 @@ router.post("/sell", verifyToken, async (req, res) => {
       );
     }
 
-    if (+amount > account.winningCash) {
+    let currentTime = new Date();
+    let previousRequest =
+      await transactionsController.existingTransactionsByUserId(user.id);
+    console.log("previous request: ", previousRequest);
+    if (previousRequest.length > 0) {
+      let lastRequest = previousRequest[previousRequest.length - 1];
+      let timeDifference = currentTime - lastRequest.createdAt;
+      if (timeDifference < ONE_DAY_IN_MILLISECONDS) {
+        let remainingTime = ONE_DAY_IN_MILLISECONDS - timeDifference;
+        return responseHandler(
+          res,
+          400,
+          account,
+          `You can only send one withdrawal request in 24 hours. Please wait for ${Math.floor(
+            remainingTime / (60 * 60 * 1000)
+          )} hours before sending another request.`
+        );
+      }
+    }
+    if (amount > account.winningCash) {
       return responseHandler(
         res,
         400,
         account,
-        "Amount is less then winning cash"
+        "Amount is less than winning cash"
       );
     } else {
       let accountObject = {
@@ -101,13 +120,14 @@ router.post("/sell", verifyToken, async (req, res) => {
       account = await accountController.updateAccountByUserId(accountObject);
       let history = new History();
       history.userId = user.id;
-      history.history$Text = "Withdrawal Chips Via UPI";
-      history.createdAt = req.body.createdAt;
+      history.historyText = "Withdrawal Chips Via UPI";
+      history.createdAt = currentTime;
       history.closingBalance = account.wallet;
       history.status = "pending";
       history.amount = Number(amount);
       history.type = "withdraw";
       await history.save();
+
       return responseHandler(res, 200, account, null);
     }
   } catch (error) {

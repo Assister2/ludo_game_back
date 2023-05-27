@@ -98,10 +98,14 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
 
-      console.log("------------------*1", challenge.results[looser], looser);
+      console.log("------------------*123", challenge.results[looser], looser);
+      console.log("------------------*12334", challenge.results[looser]);
+      console.log("------------------*123345", challenge.results[looser]);
+      console.log("------------------*1233456", challenge);
       if (challenge.results[looser] == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
+        console.log("checkamountt", amount);
 
         let history = new History();
         history.userId = challenge[looser]._id;
@@ -129,16 +133,16 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           winningCash: userWallet.winningCash + amount,
           totalWin: userWallet.totalWin + challenge.amount,
         });
-
+        console.log("checkreferuser", challenge[winner]._id);
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
         });
-        console.log(referUser.referer);
+        console.log("checkre", referUser);
         if (referUser.referer) {
           let referalAccount = await userController.existingUserByReferelId(
             referUser.referer
           );
-          console.log("----------------", challenge.amount);
+          console.log("----------------referalllll", challenge.amount);
           await accountController.increaseRefererAccount({
             userId: referalAccount._id,
             amount: challenge.amount,
@@ -150,6 +154,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
 
       challenge = await challengesController.updateChallengeById(challengeObj);
+      console.log("finalchallenges", challenge);
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
@@ -159,7 +164,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 });
 
 Router.post("/loose/:id", verifyToken, async (req, res) => {
-  console.log("test2");
+  console.log("losseconditinon");
   try {
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -190,6 +195,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       );
 
       amount = amount * 2 - (amount * 3) / 100;
+      console.log("checkamountt2", amount);
 
       let challengeObj = {
         ...challenge._doc,
@@ -203,11 +209,12 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       }
       if (challenge.results[winner] == "win") {
         console.log("amount", amount);
+        let deduction = challenge.amount * 0.03;
         let wall = {
           ...userWallet._doc,
           wallet: userWallet.wallet + amount,
           winningCash: userWallet.winningCash + amount,
-          totalWin: userWallet.totalWin + challenge.amount,
+          totalWin: userWallet.totalWin + challenge.amount - deduction,
         };
         console.log("wall", wall);
         console.log("user wallet", userWallet);
@@ -239,6 +246,22 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         console.log("looser", challenge[looser]);
 
         await accountController.updateAccountByUserId(wall);
+        console.log("checkreferuser", challenge[winner]._id);
+        let referUser = await userController.existingUserById({
+          id: challenge[winner]._id,
+        });
+        console.log("checkre", referUser);
+        if (referUser.referer) {
+          let referalAccount = await userController.existingUserByReferelId(
+            referUser.referer
+          );
+          console.log("----------------referalllll23", challenge.amount);
+          await accountController.increaseRefererAccount({
+            userId: referalAccount._id,
+            amount: challenge.amount,
+          });
+        }
+
         // let referUser = await userController.existingUserById({ id: challenge[winner]._id })
         // if (referUser.referer) {
         //     let referalAccount = await userController.existingUserByReferelId(referUser.referer)

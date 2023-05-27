@@ -349,7 +349,7 @@ io.on("connection", (socket) => {
                 await challengesController.checkPlayingOrHold(
                   data.payload.userId
                 );
-              if (checkPlayingOrHold.length > 0) {
+              if (!checkPlayingOrHold) {
                 response = {
                   ...response,
                   status: 400,
@@ -360,7 +360,7 @@ io.on("connection", (socket) => {
               }
               var config = {
                 method: "get",
-                url: "http://64.227.158.9:3000/ludoking/roomcode/",
+                url: "http://43.205.124.118/ludoking/roomcode/",
                 headers: {},
               };
 
@@ -449,11 +449,11 @@ io.on("connection", (socket) => {
                 await challengesController.checkPlayingOrHold(
                   data.payload.userId
                 );
-              if (checkPlayingOrHoldGame.length > 0) {
+              if (!checkPlayingOrHoldGame) {
                 response = {
                   ...response,
                   status: 400,
-                  error: "Update Your Result In Previous Match First",
+                  error: "Update Your Result In Previous Match First2",
                   data: null,
                 };
                 return socket.send(JSON.stringify(response));
@@ -626,6 +626,5 @@ io.on("connection", (socket) => {
     console.log("error", error);
   }
 });
-
 
 module.exports = app;
