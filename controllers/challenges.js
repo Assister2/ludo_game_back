@@ -223,11 +223,10 @@ const challengesController = {
         $or: [{ creator: userId }, { player: userId }],
         state: { $in: ["hold"] },
       });
-      console.log("checkchallengee", challenge2);
+     
       if (challenge2.length > 0) {
         if (challenge2[0].creator == userId) {
           // User is a creator
-          console.log("creatorchallen", challenge2);
           if (
             challenge2[0].results.creator &&
             challenge2[0].results.creator !== null &&
@@ -239,13 +238,13 @@ const challengesController = {
           }
         } else if (challenge2[0].player == userId) {
           // User is a player
-          console.log("playerchallen", challenge2);
+          
           if (
             challenge2[0].results.player &&
             challenge2[0].results.player !== null &&
             challenge2[0].results.player !== undefined
           ) {
-            console.log("playyy", challenge2[0].results.creator);
+           
             canCreate = true;
           } else {
             canCreate = false;
@@ -253,7 +252,7 @@ const challengesController = {
         }
       }
 
-      console.log("usercancreatechallenge", canCreate);
+      
       return canCreate;
     } catch (error) {
       throw error;

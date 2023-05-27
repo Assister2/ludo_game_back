@@ -39,7 +39,7 @@ Router.get(
 );
 
 Router.post("/win/:id", verifyToken, async (req, res) => {
-  console.log("test1");
+  
   try {
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -80,7 +80,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           "You have already submitted the result"
         );
       }
-      console.log("yes1111111");
+     
       let challengeObj = {
         ...challenge._doc,
         results: { [winner]: "win", [looser]: challenge.results[looser] },
@@ -89,7 +89,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           [looser]: challenge.winnerScreenShot[looser],
         },
       };
-      console.log("yes1111112");
+     
 
       if (
         challenge.results[looser] == "" ||
@@ -98,14 +98,11 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
 
-      console.log("------------------*123", challenge.results[looser], looser);
-      console.log("------------------*12334", challenge.results[looser]);
-      console.log("------------------*123345", challenge.results[looser]);
-      console.log("------------------*1233456", challenge);
+     
       if (challenge.results[looser] == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
-        console.log("checkamountt", amount);
+      
 
         let history = new History();
         history.userId = challenge[looser]._id;
@@ -133,16 +130,16 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           winningCash: userWallet.winningCash + amount,
           totalWin: userWallet.totalWin + challenge.amount,
         });
-        console.log("checkreferuser", challenge[winner]._id);
+        
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
         });
-        console.log("checkre", referUser);
+        
         if (referUser.referer) {
           let referalAccount = await userController.existingUserByReferelId(
             referUser.referer
           );
-          console.log("----------------referalllll", challenge.amount);
+         
           await accountController.increaseRefererAccount({
             userId: referalAccount._id,
             amount: challenge.amount,
@@ -154,7 +151,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
 
       challenge = await challengesController.updateChallengeById(challengeObj);
-      console.log("finalchallenges", challenge);
+      
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
@@ -164,7 +161,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 });
 
 Router.post("/loose/:id", verifyToken, async (req, res) => {
-  console.log("losseconditinon");
+
   try {
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -195,7 +192,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       );
 
       amount = amount * 2 - (amount * 3) / 100;
-      console.log("checkamountt2", amount);
+   
 
       let challengeObj = {
         ...challenge._doc,
@@ -208,7 +205,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
       if (challenge.results[winner] == "win") {
-        console.log("amount", amount);
+        
         let deduction = challenge.amount * 0.03;
         let wall = {
           ...userWallet._doc,
@@ -216,8 +213,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           winningCash: userWallet.winningCash + amount,
           totalWin: userWallet.totalWin + challenge.amount - deduction,
         };
-        console.log("wall", wall);
-        console.log("user wallet", userWallet);
+ 
         // challengeObj.state = "resolved"
         challengeObj.state = "resolved";
 
@@ -242,20 +238,19 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         );
         historyWinner.type = "won";
         await historyWinner.save();
-        console.log("winner", challenge[winner]);
-        console.log("looser", challenge[looser]);
+        
 
         await accountController.updateAccountByUserId(wall);
-        console.log("checkreferuser", challenge[winner]._id);
+      
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
         });
-        console.log("checkre", referUser);
+      
         if (referUser.referer) {
           let referalAccount = await userController.existingUserByReferelId(
             referUser.referer
           );
-          console.log("----------------referalllll23", challenge.amount);
+          
           await accountController.increaseRefererAccount({
             userId: referalAccount._id,
             amount: challenge.amount,

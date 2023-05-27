@@ -25,7 +25,6 @@ const userController = {
    */
   existingUserById: async (userData) => {
     try {
-      console.log("workingg", userData);
       let user = await User.findOne({
         _id: userData.id,
         isBlocked: false,

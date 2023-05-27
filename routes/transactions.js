@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post("/buy", verifyToken, async (req, res) => {
   try {
-    console.log("checkvalue", req.body);
+    
     if (!req.body.payload) {
       return responseHandler(res, 400, null, "Fields are missing232");
     }
@@ -61,7 +61,7 @@ router.post("/sell", verifyToken, async (req, res) => {
 
     let { amount, upiId } = req.body;
     let user = req.user;
-    console.log("checkuser", user);
+    
     let account = await accountController.getAccountByUserId(user.id);
 
     let transactionObject = {
@@ -74,7 +74,7 @@ router.post("/sell", verifyToken, async (req, res) => {
     let checkOpenOrRequested = await challengesController.checkOpenOrRequested(
       user.id
     );
-    console.log("check open", checkOpenOrRequested);
+    
     if (checkOpenOrRequested.length > 0) {
       return responseHandler(
         res,
@@ -87,7 +87,7 @@ router.post("/sell", verifyToken, async (req, res) => {
     let currentTime = new Date();
     let previousRequest =
       await transactionsController.existingTransactionsByUserId(user.id);
-    console.log("previous request: ", previousRequest);
+    
     if (previousRequest.length > 0) {
       let lastRequest = previousRequest[previousRequest.length - 1];
       let timeDifference = currentTime - lastRequest.createdAt;

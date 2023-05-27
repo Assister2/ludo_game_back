@@ -50,8 +50,7 @@ const accountController = {
     try {
       var referelAmount = object.amount * 0.02;
 
-      console.log("increaseRefererAccount", object);
-      console.log("increaseRefererAccount22", referelAmount);
+      
       let account = await Account.findOneAndUpdate(
         {
           userId: object.userId,
