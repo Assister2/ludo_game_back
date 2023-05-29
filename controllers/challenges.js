@@ -213,46 +213,49 @@ const challengesController = {
       let canCreate = true;
       let challenge = await ChallengeModel.find({
         $or: [{ creator: userId }, { player: userId }],
-        state: { $in: ["playing"] },
+        state: { $in: ["playing", "hold"] },
       });
+      // if (challenge.length > 0) {
+      //   canCreate = false;
+      // }
+
+      // let challenge = await ChallengeModel.find({
+      //   $or: [{ creator: userId }, { player: userId }],
+      //   state: { $in: ["hold"] },
+      // });
+      // console.log("checkkk2", challenge2);
+      console.log("checkkk", challenge);
+
       if (challenge.length > 0) {
-        canCreate = false;
-      }
+        challenge.map((item) => {
+          if (item.creator == userId) {
+            // User is a creator
+            if (
+              item.results.creator &&
+              item.results.creator !== null &&
+              item.results.creator !== undefined
+            ) {
+              canCreate = true;
+            } else {
+              canCreate = false;
+            }
+          } else if (item.player == userId) {
+            // User is a player
 
-      let challenge2 = await ChallengeModel.find({
-        $or: [{ creator: userId }, { player: userId }],
-        state: { $in: ["hold"] },
-      });
-     
-      if (challenge2.length > 0) {
-        if (challenge2[0].creator == userId) {
-          // User is a creator
-          if (
-            challenge2[0].results.creator &&
-            challenge2[0].results.creator !== null &&
-            challenge2[0].results.creator !== undefined
-          ) {
-            canCreate = true;
-          } else {
-            canCreate = false;
+            if (
+              item.results.player &&
+              item.results.player !== null &&
+              item.results.player !== undefined
+            ) {
+              canCreate = true;
+            } else {
+              canCreate = false;
+            }
           }
-        } else if (challenge2[0].player == userId) {
-          // User is a player
-          
-          if (
-            challenge2[0].results.player &&
-            challenge2[0].results.player !== null &&
-            challenge2[0].results.player !== undefined
-          ) {
-           
-            canCreate = true;
-          } else {
-            canCreate = false;
-          }
-        }
+        });
       }
+      console.log("cancreate", canCreate);
 
-      
       return canCreate;
     } catch (error) {
       throw error;

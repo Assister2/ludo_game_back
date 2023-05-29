@@ -184,7 +184,7 @@ io.on("connection", (socket) => {
                 connection.send(JSON.stringify(playerResponse));
               }
             }
-            // sendDataToUser(challenge.player._id, playerResponse)
+            // sendDataToUser(challenge.player?._id, playerResponse)
             // sendDataToUser(challenge.creator._id, creatorResponse)
             // return socket.send(JSON.stringify(response));
             return;
@@ -238,7 +238,7 @@ io.on("connection", (socket) => {
             }
             if (
               challenge.creator._id == data.payload.userId ||
-              challenge.player._id == data.payload.userId
+              challenge.player?._id == data.payload.userId
             ) {
               response = {
                 ...response,
@@ -349,6 +349,7 @@ io.on("connection", (socket) => {
                 await challengesController.checkPlayingOrHold(
                   data.payload.userId
                 );
+              
               if (!checkPlayingOrHold) {
                 response = {
                   ...response,
@@ -449,6 +450,7 @@ io.on("connection", (socket) => {
                 await challengesController.checkPlayingOrHold(
                   data.payload.userId
                 );
+             
               if (!checkPlayingOrHoldGame) {
                 response = {
                   ...response,
@@ -476,7 +478,6 @@ io.on("connection", (socket) => {
                 _id: data.payload.userId,
                 hasActiveChallenge: true,
               });
-              console.log("resp", reap);
 
               // Implement your read operation here
               break;

@@ -53,6 +53,7 @@ router.post("/signup", async (req, res) => {
 
       let textRes = await sendText(userData.otp.code, userData.phone);
       if (textRes.return === false) {
+        
         return responseHandler(res, 400, null, textRes.message);
       } else {
         dataStore = userData;
@@ -65,7 +66,7 @@ router.post("/signup", async (req, res) => {
       }
     }
   } catch (error) {
-    console.log("error", error);
+    console.log("error1212", error);
     responseHandler(res, 400, null, error.message);
   }
 });
@@ -167,7 +168,7 @@ router.post("/confirmOTP", async (req, res) => {
 });
 router.post("/OTP", async (req, res) => {
   try {
-    console.log("checkkvalue", dataStore);
+    
     const { body } = req;
     const { token } = body;
     const topic = "ludo";
