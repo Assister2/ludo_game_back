@@ -53,7 +53,6 @@ router.post("/signup", async (req, res) => {
 
       let textRes = await sendText(userData.otp.code, userData.phone);
       if (textRes.return === false) {
-        
         return responseHandler(res, 400, null, textRes.message);
       } else {
         dataStore = userData;
@@ -168,7 +167,6 @@ router.post("/confirmOTP", async (req, res) => {
 });
 router.post("/OTP", async (req, res) => {
   try {
-    
     const { body } = req;
     const { token } = body;
     const topic = "ludo";
@@ -177,6 +175,13 @@ router.post("/OTP", async (req, res) => {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
       let user = await userController.insertUser(dataStore);
+      
+      if (dataStore?.referer) {
+        
+         await userController.increasenoOfrefer(dataStore.referer);
+        
+      }
+
       let accountObject = {
         userId: user.id,
       };

@@ -35,6 +35,25 @@ const userController = {
       throw error;
     }
   },
+  /**
+   * existingUserByReferelId - get existing user by referel code.
+   * @param referelCode - referelCode that need to check
+   * @returns {Promise<void>}
+   */
+  increasenoOfrefer: async (referelCode) => {
+    try {
+      let user = await User.findOneAndUpdate(
+        {
+          referelCode: referelCode,
+        },
+        { $inc: { totalRefer: 1 } }, // Increment totalRefer field by 1
+        { new: true } // Return the updated document
+      );
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
 
   /**
    * existingUserByReferelId - get existing user by referel code.
@@ -128,6 +147,14 @@ const userController = {
         { $set: userObj },
         { new: true }
       );
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
+  findUserById: async (userId) => {
+    try {
+      const user = await User.findById(userId);
       return user;
     } catch (error) {
       throw error;

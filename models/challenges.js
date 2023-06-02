@@ -40,6 +40,30 @@ const challengeSchema = new mongoose.Schema({
       // win lose cancelled
     },
   },
+  creatorChips: {
+    depositCash: {
+      type: Number,
+      default: 0
+      // win lose cancelled
+    },
+    winningCash: {
+      type: Number,
+      default: 0
+      // win lose cancelled
+    },
+  },
+  playerChips: {
+    depositCash: {
+      type: Number,
+      default: 0
+      // win lose cancelled
+    },
+    winningCash: {
+      type: Number,
+      default: 0
+      // win lose cancelled
+    },
+  },
   winnerScreenShot: {
     creator: {
       type: String,

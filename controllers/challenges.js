@@ -210,7 +210,7 @@ const challengesController = {
    */
   checkPlayingOrHold: async (userId) => {
     try {
-      let canCreate = true;
+      let canCreate = false;
       let challenge = await ChallengeModel.find({
         $or: [{ creator: userId }, { player: userId }],
         state: { $in: ["playing", "hold"] },
@@ -224,8 +224,7 @@ const challengesController = {
       //   state: { $in: ["hold"] },
       // });
       // console.log("checkkk2", challenge2);
-      console.log("checkkk", challenge);
-
+      
       if (challenge.length > 0) {
         challenge.map((item) => {
           if (item.creator == userId) {
@@ -253,8 +252,10 @@ const challengesController = {
             }
           }
         });
+      } else if (challenge.length == 0) {
+        canCreate = true;
       }
-      console.log("cancreate", canCreate);
+      
 
       return canCreate;
     } catch (error) {

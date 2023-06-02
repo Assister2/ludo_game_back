@@ -1,5 +1,6 @@
 const Account = require("../models/accounts");
-
+const Challenge = require("../models/challenges");
+const challengesController = require("./challenges");
 const accountController = {
   getAccountById: async (accountId) => {
     try {
@@ -50,7 +51,6 @@ const accountController = {
     try {
       var referelAmount = object.amount * 0.02;
 
-      
       let account = await Account.findOneAndUpdate(
         {
           userId: object.userId,
@@ -69,6 +69,9 @@ const accountController = {
     }
   },
   decreasePlayersAccount: async (challenge) => {
+    let creatorChips = null;
+    let playerChips = null;
+
     try {
       let playerAccount = await Account.findOne({
         userId: challenge.player._id,
@@ -76,32 +79,44 @@ const accountController = {
       let creatorAccount = await Account.findOne({
         userId: challenge.creator._id,
       });
+
       if (playerAccount.depositCash >= challenge.amount) {
-        playerAccount._doc.depositCash =
-          playerAccount._doc.depositCash - challenge.amount;
-        playerAccount._doc.wallet =
-          playerAccount._doc.wallet - challenge.amount;
-      } else {
+        playerAccount.depositCash -= challenge.amount;
+        playerAccount.wallet -= challenge.amount;
+      } else if (playerAccount.depositCash < challenge.amount) {
         const remaining = challenge.amount - playerAccount.depositCash;
-        playerAccount._doc.depositCash = 0;
-        playerAccount._doc.winningCash =
-          playerAccount._doc.winningCash - remaining;
-        playerAccount._doc.wallet =
-          playerAccount._doc.wallet - challenge.amount;
+        if (playerAccount.winningCash < remaining) {
+          throw new Error("Insufficient balance for creator");
+        } else {
+          playerChips = {
+            depositCash: playerAccount.depositCash,
+            winningCash: remaining,
+          };
+          playerAccount.depositCash = 0;
+          playerAccount.winningCash -= remaining;
+          playerAccount.wallet -= challenge.amount;
+        }
       }
+
       if (creatorAccount.depositCash >= challenge.amount) {
-        creatorAccount._doc.depositCash =
-          creatorAccount._doc.depositCash - challenge.amount;
-        creatorAccount._doc.wallet =
-          creatorAccount._doc.wallet - challenge.amount;
-      } else {
+        creatorAccount.depositCash -= challenge.amount;
+        creatorAccount.wallet -= challenge.amount;
+      } else if (creatorAccount.depositCash < challenge.amount) {
         const remaining = challenge.amount - creatorAccount.depositCash;
-        creatorAccount._doc.depositCash = 0;
-        creatorAccount._doc.winningCash =
-          creatorAccount._doc.winningCash - remaining;
-        creatorAccount._doc.wallet =
-          creatorAccount._doc.wallet - challenge.amount;
+        
+        if (creatorAccount.winningCash < remaining) {
+          throw new Error("Insufficient balance for creator");
+        } else {
+          creatorChips = {
+            depositCash: creatorAccount.depositCash,
+            winningCash: remaining,
+          };
+          creatorAccount.depositCash = 0;
+          creatorAccount.winningCash -= remaining;
+          creatorAccount.wallet -= challenge.amount;
+        }
       }
+
       await Account.findOneAndUpdate(
         { userId: creatorAccount.userId },
         { $set: creatorAccount },
@@ -113,12 +128,20 @@ const accountController = {
         { $set: playerAccount },
         { new: true }
       );
+      if (playerChips !== null || creatorChips !== null) {
+        await challengesController.updateChallengeById({
+          _id: challenge._id,
+          creatorChips: creatorChips,
+          playerChips: playerChips,
+        });
+      }
 
       return [playerAccount, creatorAccount];
     } catch (error) {
       throw error;
     }
   },
+
   increasePlayersAccount: async (challenge) => {
     try {
       let account = await Account.updateMany(

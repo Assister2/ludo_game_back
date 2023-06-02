@@ -39,7 +39,6 @@ Router.get(
 );
 
 Router.post("/win/:id", verifyToken, async (req, res) => {
-  
   try {
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -80,7 +79,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           "You have already submitted the result"
         );
       }
-     
+
       let challengeObj = {
         ...challenge._doc,
         results: { [winner]: "win", [looser]: challenge.results[looser] },
@@ -89,7 +88,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           [looser]: challenge.winnerScreenShot[looser],
         },
       };
-     
 
       if (
         challenge.results[looser] == "" ||
@@ -98,11 +96,9 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
 
-     
       if (challenge.results[looser] == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
-      
 
         let history = new History();
         history.userId = challenge[looser]._id;
@@ -130,16 +126,16 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           winningCash: userWallet.winningCash + amount,
           totalWin: userWallet.totalWin + challenge.amount,
         });
-        
+
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
         });
-        
+
         if (referUser.referer) {
           let referalAccount = await userController.existingUserByReferelId(
             referUser.referer
           );
-         
+
           await accountController.increaseRefererAccount({
             userId: referalAccount._id,
             amount: challenge.amount,
@@ -151,7 +147,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
 
       challenge = await challengesController.updateChallengeById(challengeObj);
-      
+
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
@@ -161,7 +157,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 });
 
 Router.post("/loose/:id", verifyToken, async (req, res) => {
-
   try {
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -192,7 +187,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       );
 
       amount = amount * 2 - (amount * 3) / 100;
-   
 
       let challengeObj = {
         ...challenge._doc,
@@ -205,7 +199,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
       if (challenge.results[winner] == "win") {
-        
         let deduction = challenge.amount * 0.03;
         let wall = {
           ...userWallet._doc,
@@ -213,7 +206,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           winningCash: userWallet.winningCash + amount,
           totalWin: userWallet.totalWin + challenge.amount - deduction,
         };
- 
+
         // challengeObj.state = "resolved"
         challengeObj.state = "resolved";
 
@@ -238,19 +231,18 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         );
         historyWinner.type = "won";
         await historyWinner.save();
-        
 
         await accountController.updateAccountByUserId(wall);
-      
+
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
         });
-      
+
         if (referUser.referer) {
           let referalAccount = await userController.existingUserByReferelId(
             referUser.referer
           );
-          
+
           await accountController.increaseRefererAccount({
             userId: referalAccount._id,
             amount: challenge.amount,
@@ -288,8 +280,11 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       let challenge = await challengesController.getChallengeById(
         req.params.id
       );
+
       let canceller = user.id == challenge.creator._id ? "creator" : "player";
       let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
+      
+      
       // let winnerUserId = challenge[winner]._id
       // let looserUserId = challenge[looser]._id
       // let amount = Number(challenge.amount);
@@ -323,16 +318,69 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       }
       if (challenge.results[otherPlayer] == "cancelled") {
         challengeObj.state = "resolved";
-        cancellerWallet = await accountController.updateAccountByUserId({
-          ...cancellerWallet._doc,
-          wallet: cancellerWallet.wallet + challenge.amount,
-          depositCash: cancellerWallet.depositCash + challenge.amount,
-        });
-        await accountController.updateAccountByUserId({
-          ...otherPlayerWallet._doc,
-          wallet: otherPlayerWallet.wallet + challenge.amount,
-          depositCash: otherPlayerWallet.depositCash + challenge.amount,
-        });
+        if (canceller == "creator" && challenge.creatorChips != null) {
+          cancellerWallet = await accountController.updateAccountByUserId({
+            ...cancellerWallet._doc,
+            wallet: cancellerWallet.wallet + challenge.amount,
+            depositCash:
+              cancellerWallet.depositCash + challenge.creatorChips.depositCash,
+            winningCash:
+              cancellerWallet.winningCash + challenge.creatorChips.winningCash,
+          });
+        } else if (
+          canceller == "player" &&
+          challenge.playerChips != null &&
+          challenge.playerChips == !NaN
+        ) {
+          cancellerWallet = await accountController.updateAccountByUserId({
+            ...cancellerWallet._doc,
+            wallet: cancellerWallet.wallet + challenge.amount,
+            depositCash:
+              cancellerWallet.depositCash + challenge.playerChips.depositCash,
+            winningCash:
+              cancellerWallet.winningCash + challenge.playerChips.winningCash,
+          });
+        } else {
+          cancellerWallet = await accountController.updateAccountByUserId({
+            ...cancellerWallet._doc,
+            wallet: cancellerWallet.wallet + challenge.amount,
+            depositCash: cancellerWallet.depositCash + challenge.amount,
+          });
+        }
+
+        if (otherPlayer == "creator" && challenge?.creatorChips != null) {
+          otherPlayerWallet = await accountController.updateAccountByUserId({
+            ...otherPlayerWallet._doc,
+            wallet: otherPlayerWallet.wallet + challenge.amount,
+            depositCash:
+              otherPlayerWallet.depositCash +
+              challenge.creatorChips.depositCash,
+            winningCash:
+              otherPlayerWallet.winningCash +
+              challenge.creatorChips.winningCash,
+          });
+        } else if (otherPlayer == "player" && challenge?.playerChips != null) {
+          otherPlayerWallet = await accountController.updateAccountByUserId({
+            ...otherPlayerWallet._doc,
+            wallet: otherPlayerWallet.wallet + challenge.amount,
+            depositCash:
+              otherPlayerWallet.depositCash + challenge.playerChips.depositCash,
+            winningCash:
+              otherPlayerWallet.winningCash + challenge.playerChips.winningCash,
+          });
+        } else {
+          otherPlayerWallet = await accountController.updateAccountByUserId({
+            ...otherPlayerWallet._doc,
+            wallet: otherPlayerWallet.wallet + challenge.amount,
+            depositCash: otherPlayerWallet.depositCash + challenge.amount,
+          });
+        }
+
+        // await accountController.updateAccountByUserId({
+        //   ...otherPlayerWallet._doc,
+        //   wallet: otherPlayerWallet.wallet + challenge.amount,
+        //   depositCash: otherPlayerWallet.depositCash + challenge.amount,
+        // });
       }
 
       let historyWinner = new History();

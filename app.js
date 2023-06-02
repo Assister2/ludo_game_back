@@ -343,13 +343,14 @@ io.on("connection", (socket) => {
                   error: "Same Amount Challenge already exist",
                   data: null,
                 };
+                console.log("checkerror", response);
                 return socket.send(JSON.stringify(response));
               }
               let checkPlayingOrHold =
                 await challengesController.checkPlayingOrHold(
                   data.payload.userId
                 );
-              
+
               if (!checkPlayingOrHold) {
                 response = {
                   ...response,
@@ -450,7 +451,7 @@ io.on("connection", (socket) => {
                 await challengesController.checkPlayingOrHold(
                   data.payload.userId
                 );
-             
+
               if (!checkPlayingOrHoldGame) {
                 response = {
                   ...response,
@@ -460,11 +461,7 @@ io.on("connection", (socket) => {
                 };
                 return socket.send(JSON.stringify(response));
               }
-              currentChallenge._doc.state = "requested";
-              currentChallenge._doc.player = data.payload.userId;
-              currentChallenge = await challengesController.updateChallengeById(
-                currentChallenge
-              );
+
               if (!currentChallenge) {
                 response = {
                   ...response,
@@ -478,6 +475,12 @@ io.on("connection", (socket) => {
                 _id: data.payload.userId,
                 hasActiveChallenge: true,
               });
+
+              currentChallenge._doc.state = "requested";
+              currentChallenge._doc.player = data.payload.userId;
+              currentChallenge = await challengesController.updateChallengeById(
+                currentChallenge
+              );
 
               // Implement your read operation here
               break;
@@ -554,6 +557,15 @@ io.on("connection", (socket) => {
               let startChallenge = await challengesController.getChallengeById(
                 data.payload.challengeId
               );
+              if (startChallenge.state == "playing") {
+                response = {
+                  ...response,
+                  status: 400,
+                  error: "Challenge in playing state",
+                  data: null,
+                };
+                return socket.send(JSON.stringify(response));
+              }
               if (startChallenge) {
                 await challengesController.deleteOpenChallengesCreator(
                   startChallenge.creator._id
@@ -593,6 +605,7 @@ io.on("connection", (socket) => {
                 };
                 return socket.send(JSON.stringify(response));
               }
+              await userController.findUserById(data.payload.userId);
 
               response = {
                 ...response,
