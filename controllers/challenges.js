@@ -224,7 +224,7 @@ const challengesController = {
       //   state: { $in: ["hold"] },
       // });
       // console.log("checkkk2", challenge2);
-      
+
       if (challenge.length > 0) {
         challenge.map((item) => {
           if (item.creator == userId) {
@@ -255,7 +255,6 @@ const challengesController = {
       } else if (challenge.length == 0) {
         canCreate = true;
       }
-      
 
       return canCreate;
     } catch (error) {

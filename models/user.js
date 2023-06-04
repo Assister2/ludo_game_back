@@ -8,10 +8,10 @@ let userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  profileImage:{
-    type:String,
-    required:true,
-    default:"2.png"
+  profileImage: {
+    type: String,
+    required: true,
+    default: "2.png",
   },
   phone: {
     type: String,
@@ -22,6 +22,11 @@ let userSchema = new mongoose.Schema({
     type: Date,
     required: false,
     default: new Date(),
+  },
+  playing: {
+    type: Boolean,
+    required: false,
+    default: false,
   },
   otpConfirmed: {
     type: Boolean,
@@ -39,8 +44,8 @@ let userSchema = new mongoose.Schema({
     },
     count: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
   referer: {
     type: Number,
@@ -62,16 +67,16 @@ let userSchema = new mongoose.Schema({
     default: 0,
   },
   // winning cash
-  
-  // depositCash 
+
+  // depositCash
   depositCash: {
     type: Number,
-    default: 0
+    default: 0,
   },
 
   winningCash: {
     type: Number,
-    default: 0
+    default: 0,
   },
 
   playerInfo: {

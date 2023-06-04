@@ -126,6 +126,10 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           winningCash: userWallet.winningCash + amount,
           totalWin: userWallet.totalWin + challenge.amount,
         });
+        await userController.updateUserByUserId({
+          _id: user.id,
+          playing: false,
+        });
 
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
@@ -233,6 +237,10 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         await historyWinner.save();
 
         await accountController.updateAccountByUserId(wall);
+        await userController.updateUserByUserId({
+          _id: user.id,
+          playing: false,
+        });
 
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
@@ -283,8 +291,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
 
       let canceller = user.id == challenge.creator._id ? "creator" : "player";
       let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
-      
-      
+
       // let winnerUserId = challenge[winner]._id
       // let looserUserId = challenge[looser]._id
       // let amount = Number(challenge.amount);
@@ -348,7 +355,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
           });
         }
 
-        if (otherPlayer == "creator" && challenge?.creatorChips != null) {
+        if (otherPlayer == "creator" && challenge.creatorChips != null) {
           otherPlayerWallet = await accountController.updateAccountByUserId({
             ...otherPlayerWallet._doc,
             wallet: otherPlayerWallet.wallet + challenge.amount,
@@ -359,7 +366,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
               otherPlayerWallet.winningCash +
               challenge.creatorChips.winningCash,
           });
-        } else if (otherPlayer == "player" && challenge?.playerChips != null) {
+        } else if (otherPlayer == "player" && challenge.playerChips != null) {
           otherPlayerWallet = await accountController.updateAccountByUserId({
             ...otherPlayerWallet._doc,
             wallet: otherPlayerWallet.wallet + challenge.amount,
@@ -382,7 +389,10 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         //   depositCash: otherPlayerWallet.depositCash + challenge.amount,
         // });
       }
-
+      await userController.updateUserByUserId({
+        _id: user.id,
+        playing: false,
+      });
       let historyWinner = new History();
       historyWinner.userId = challenge[canceller]._id;
       historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
