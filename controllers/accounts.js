@@ -79,6 +79,9 @@ const accountController = {
       let creatorAccount = await Account.findOne({
         userId: challenge.creator._id,
       });
+      console.log("plaerrr", playerAccount);
+      console.log("challenge343", challenge);
+      console.log("plcreatorAccountaerrr", creatorAccount);
 
       if (playerAccount.depositCash >= challenge.amount) {
         playerAccount.depositCash -= challenge.amount;
@@ -103,7 +106,7 @@ const accountController = {
         creatorAccount.wallet -= challenge.amount;
       } else if (creatorAccount.depositCash < challenge.amount) {
         const remaining = challenge.amount - creatorAccount.depositCash;
-        
+
         if (creatorAccount.winningCash < remaining) {
           throw new Error("Insufficient balance for creator");
         } else {
