@@ -564,19 +564,20 @@ io.on("connection", (socket) => {
                   await challengesController.getChallengeById(
                     data.payload.challengeId
                   );
-                const otherplayerId = startChallenge.player._id;
+                var otherplayerId = startChallenge.player._id;
                 let otherPlyer = await userController.existingUserById({
                   id: otherplayerId,
                 });
                 let user2 = await userController.existingUserById({
                   id: data.payload.userId,
                 });
-               
+                console.log("ceateor", user2);
+                console.log("playyyer", otherPlyer);
 
                 if (
                   startChallenge.state == "playing" &&
-                  user2.playing === true &&
-                  otherPlyer.playing === true
+                  user2.playing == true &&
+                  otherPlyer.playing == true
                 ) {
                   response = {
                     ...response,
@@ -605,6 +606,7 @@ io.on("connection", (socket) => {
                       _id: data.payload.challengeId,
                       state: "playing",
                     });
+
                   if (startGameChallenge) {
                     await challengesController.deleteRequestedChallenges(
                       startChallenge.creator._id
@@ -629,11 +631,6 @@ io.on("connection", (socket) => {
                       };
                       return socket.send(JSON.stringify(response));
                     }
-                    await userController.updateUserByUserId({
-                      _id: data.payload.userId,
-                      playing: true,
-                      hasActiveChallenge: false,
-                    });
                   }
                   if (!startGameChallenge) {
                     response = {
@@ -644,8 +641,18 @@ io.on("connection", (socket) => {
                     };
                     return socket.send(JSON.stringify(response));
                   }
-                  await userController.findUserById(data.payload.userId);
 
+                  await userController.findUserById(data.payload.userId);
+                  await userController.updateUserByUserId({
+                    _id: data.payload.userId,
+                    playing: true,
+                    hasActiveChallenge: false,
+                  });
+                  await userController.updateUserByUserId({
+                    _id: otherplayerId,
+                    playing: true,
+                    hasActiveChallenge: false,
+                  });
                   response = {
                     ...response,
                     status: 200,
