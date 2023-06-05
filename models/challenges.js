@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const challengeSchema = new mongoose.Schema({
-
   creator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -21,72 +20,72 @@ const challengeSchema = new mongoose.Schema({
   },
   status: {
     type: Number,
-    default: 1
+    default: 1,
     //1 for exist and 0 for deleted
   },
   roomCode: {
     type: String,
-    default: 0
+    default: 0,
   },
   results: {
     creator: {
       type: String,
-      default: ""
+      default: "",
       // win lose cancelled
     },
     player: {
       type: String,
-      default: ""
+      default: "",
       // win lose cancelled
     },
   },
   creatorChips: {
     depositCash: {
       type: Number,
-      default: 0
+      default: 0,
       // win lose cancelled
     },
     winningCash: {
       type: Number,
-      default: 0
+      default: 0,
       // win lose cancelled
     },
   },
   playerChips: {
     depositCash: {
       type: Number,
-      default: 0
+      default: 0,
       // win lose cancelled
     },
     winningCash: {
       type: Number,
-      default: 0
+      default: 0,
       // win lose cancelled
     },
   },
   winnerScreenShot: {
     creator: {
       type: String,
-      default: ""
+      default: "",
     },
     player: {
       type: String,
-      default: ""
+      default: "",
     },
   },
   cancellationReasons: {
     creator: {
       type: String,
-      default:""
+      default: "",
     },
     player: {
       type: String,
-      default:""
+      default: "",
     },
   },
-  firstTime:{
-    type:Boolean,
-    default:true
+  firstTime: {
+    type: Boolean,
+    default: true,
   },
   createdAt: {
     type: Date,

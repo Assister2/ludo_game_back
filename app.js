@@ -559,76 +559,106 @@ io.on("connection", (socket) => {
               break;
             case "startGame":
               console.log("checkdata", data.payload);
-              let startChallenge = await challengesController.getChallengeById(
-                data.payload.challengeId
-              );
-              let user2 = await userController.existingUserById({
-                id: data.payload.userId,
-              });
-              console.log("userrr", user2);
-              if (startChallenge.state == "playing" && user2.playing === true) {
-                response = {
-                  ...response,
-                  status: 400,
-                  error: "Challenge or user in playing state",
-                  data: null,
-                };
-                return socket.send(JSON.stringify(response));
-              } else if(startChallenge.state != "playing" && user2.playing === false) {
-                if (startChallenge) {
-                  await challengesController.deleteOpenChallengesCreator(
-                    startChallenge.creator._id
+              try {
+                let startChallenge =
+                  await challengesController.getChallengeById(
+                    data.payload.challengeId
                   );
-                  await challengesController.deleteOpenChallengesCreator(
-                    startChallenge.player._id
-                  );
-                }
-
-                let startGameChallenge =
-                  await challengesController.updateChallengeById({
-                    _id: data.payload.challengeId,
-                    state: "playing",
-                  });
-                if (startGameChallenge) {
-                  await challengesController.deleteRequestedChallenges(
-                    startChallenge.creator._id
-                  );
-                  await challengesController.cancelRequestedChallenges(
-                    startChallenge.creator._id
-                  );
-                  await challengesController.deleteRequestedChallenges(
-                    startChallenge.player._id
-                  );
-                  await accountController.decreasePlayersAccount(
-                    startChallenge
-                  );
-                  await userController.updateUserByUserId({
-                    _id: data.payload.userId,
-                    playing: true,
-                    hasActiveChallenge: false,
-                  });
-                }
-                if (!startGameChallenge) {
+                let user2 = await userController.existingUserById({
+                  id: data.payload.userId,
+                });
+                console.log("userrr", user2);
+                if (
+                  startChallenge.state == "playing" &&
+                  user2.playing === true
+                ) {
                   response = {
                     ...response,
                     status: 400,
-                    error: "Challenge not found",
+                    error: "Challenge or user in playing state",
                     data: null,
                   };
                   return socket.send(JSON.stringify(response));
-                }
-                await userController.findUserById(data.payload.userId);
+                } else if (
+                  startChallenge.state != "playing" &&
+                  user2.playing === false
+                ) {
+                  if (startChallenge) {
+                    await challengesController.deleteOpenChallengesCreator(
+                      startChallenge.creator._id
+                    );
+                    await challengesController.deleteOpenChallengesCreator(
+                      startChallenge.player._id
+                    );
+                  }
 
+                  let startGameChallenge =
+                    await challengesController.updateChallengeById({
+                      _id: data.payload.challengeId,
+                      state: "playing",
+                    });
+                  if (startGameChallenge) {
+                    await challengesController.deleteRequestedChallenges(
+                      startChallenge.creator._id
+                    );
+                    await challengesController.cancelRequestedChallenges(
+                      startChallenge.creator._id
+                    );
+                    await challengesController.deleteRequestedChallenges(
+                      startChallenge.player._id
+                    );
+                    try {
+                      await accountController.decreasePlayersAccount(
+                        startChallenge
+                      );
+                    } catch (error) {
+                      // Send the error to the frontend via socket
+                      response = {
+                        ...response,
+                        status: 500,
+                        error: "Error decreasing players account",
+                        data: null,
+                      };
+                      return socket.send(JSON.stringify(response));
+                    }
+                    await userController.updateUserByUserId({
+                      _id: data.payload.userId,
+                      playing: true,
+                      hasActiveChallenge: false,
+                    });
+                  }
+                  if (!startGameChallenge) {
+                    response = {
+                      ...response,
+                      status: 400,
+                      error: "Challenge not found",
+                      data: null,
+                    };
+                    return socket.send(JSON.stringify(response));
+                  }
+                  await userController.findUserById(data.payload.userId);
+
+                  response = {
+                    ...response,
+                    status: 200,
+                    error: null,
+                    data: null,
+                    challengeRedirect: true,
+                    challengeId: startGameChallenge._id,
+                  };
+                  socket.send(JSON.stringify(response));
+                }
+              } catch (error) {
+                // Send the error to the frontend via socket
                 response = {
                   ...response,
-                  status: 200,
-                  error: null,
+                  status: 500,
+                  error: "Error start  ing game",
                   data: null,
-                  challengeRedirect: true,
-                  challengeId: startGameChallenge._id,
                 };
                 socket.send(JSON.stringify(response));
               }
+              break;
           }
         }
 

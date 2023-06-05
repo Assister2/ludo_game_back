@@ -89,7 +89,7 @@ const accountController = {
       } else if (playerAccount.depositCash < challenge.amount) {
         const remaining = challenge.amount - playerAccount.depositCash;
         if (playerAccount.winningCash < remaining) {
-          throw new Error("Insufficient balance for creator");
+          throw new Error("Insufficient balance for Player");
         } else {
           playerChips = {
             depositCash: playerAccount.depositCash,
@@ -125,6 +125,7 @@ const accountController = {
         { $set: creatorAccount },
         { new: true }
       );
+      console.log("movingg");
 
       await Account.findOneAndUpdate(
         { userId: playerAccount.userId },
@@ -141,6 +142,7 @@ const accountController = {
 
       return [playerAccount, creatorAccount];
     } catch (error) {
+      console.log("decreaseplayeraccounterror", error);
       throw error;
     }
   },

@@ -292,10 +292,8 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       let challenge = await challengesController.getChallengeById(
         req.params.id
       );
-
       let canceller = user.id == challenge.creator._id ? "creator" : "player";
       let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
-
       // let winnerUserId = challenge[winner]._id
       // let looserUserId = challenge[looser]._id
       // let amount = Number(challenge.amount);
@@ -329,7 +327,13 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       }
       if (challenge.results[otherPlayer] == "cancelled") {
         challengeObj.state = "resolved";
-        if (canceller == "creator" && challenge.creatorChips != null) {
+
+        if (
+          (canceller == "creator" &&
+            challenge.creatorChips != null &&
+            challenge.creatorChips.depositCash > 0) ||
+          challenge.creatorChips.winningCash > 0
+        ) {
           cancellerWallet = await accountController.updateAccountByUserId({
             ...cancellerWallet._doc,
             wallet: cancellerWallet.wallet + challenge.amount,
@@ -339,9 +343,10 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
               cancellerWallet.winningCash + challenge.creatorChips.winningCash,
           });
         } else if (
-          canceller == "player" &&
-          challenge.playerChips != null &&
-          challenge.playerChips == !NaN
+          (canceller == "player" &&
+            challenge.playerChips != null &&
+            challenge.playerChips.depositCash > 0) ||
+          challenge.playerChips.winningCash > 0
         ) {
           cancellerWallet = await accountController.updateAccountByUserId({
             ...cancellerWallet._doc,
@@ -352,6 +357,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
               cancellerWallet.winningCash + challenge.playerChips.winningCash,
           });
         } else {
+          
           cancellerWallet = await accountController.updateAccountByUserId({
             ...cancellerWallet._doc,
             wallet: cancellerWallet.wallet + challenge.amount,
@@ -359,7 +365,12 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
           });
         }
 
-        if (otherPlayer == "creator" && challenge.creatorChips != null) {
+        if (
+          (otherPlayer == "creator" &&
+            challenge.creatorChips != null &&
+            challenge.creatorChips.depositCash > 0) ||
+          challenge.creatorChips.winningCash > 0
+        ) {
           otherPlayerWallet = await accountController.updateAccountByUserId({
             ...otherPlayerWallet._doc,
             wallet: otherPlayerWallet.wallet + challenge.amount,
@@ -370,7 +381,12 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
               otherPlayerWallet.winningCash +
               challenge.creatorChips.winningCash,
           });
-        } else if (otherPlayer == "player" && challenge.playerChips != null) {
+        } else if (
+          (otherPlayer == "player" &&
+            challenge.playerChips != null &&
+            challenge.playerChips.depositCash > 0) ||
+          challenge.playerChips.winningCash > 0
+        ) {
           otherPlayerWallet = await accountController.updateAccountByUserId({
             ...otherPlayerWallet._doc,
             wallet: otherPlayerWallet.wallet + challenge.amount,
