@@ -389,7 +389,7 @@ io.on("connection", (socket) => {
                 response = {
                   ...response,
                   status: 400,
-                  error: "challenge not created",
+                  error: "challenge not created2",
                   data: null,
                 };
                 return socket.send(JSON.stringify(response));
@@ -466,7 +466,7 @@ io.on("connection", (socket) => {
                 response = {
                   ...response,
                   status: 400,
-                  error: "challenge not created",
+                  error: "challenge not created3",
                   data: null,
                 };
                 return socket.send(JSON.stringify(response));
@@ -564,13 +564,19 @@ io.on("connection", (socket) => {
                   await challengesController.getChallengeById(
                     data.payload.challengeId
                   );
+                const otherplayerId = startChallenge.player._id;
+                let otherPlyer = await userController.existingUserById({
+                  id: otherplayerId,
+                });
                 let user2 = await userController.existingUserById({
                   id: data.payload.userId,
                 });
-                console.log("userrr", user2);
+               
+
                 if (
                   startChallenge.state == "playing" &&
-                  user2.playing === true
+                  user2.playing === true &&
+                  otherPlyer.playing === true
                 ) {
                   response = {
                     ...response,
@@ -579,9 +585,11 @@ io.on("connection", (socket) => {
                     data: null,
                   };
                   return socket.send(JSON.stringify(response));
-                } else if (
+                }
+                if (
                   startChallenge.state != "playing" &&
-                  user2.playing === false
+                  user2.playing === false &&
+                  otherPlyer.playing === false
                 ) {
                   if (startChallenge) {
                     await challengesController.deleteOpenChallengesCreator(
