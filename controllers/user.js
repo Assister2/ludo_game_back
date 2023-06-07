@@ -152,6 +152,21 @@ const userController = {
       throw error;
     }
   },
+  increamentNoOfChallengesUserByUserId: async (userObj) => {
+    try {
+      let user = await User.findOneAndUpdate(
+        { _id: userObj._id },
+        {
+          $set: userObj,
+          $inc: { noOfChallenges: 1 }, // Increment noOfChallenges by 1
+        },
+        { new: true }
+      );
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
   findUserById: async (userId) => {
     try {
       const user = await User.findById(userId);

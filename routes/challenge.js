@@ -50,6 +50,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       await userController.updateUserByUserId({
         _id: user.id,
         playing: false,
+        noOfChallenges: 0,
       });
       let challenge = await challengesController.getChallengeById(
         req.params.id
@@ -169,6 +170,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       await userController.updateUserByUserId({
         _id: user.id,
         playing: false,
+        noOfChallenges: 0,
       });
       let challenge = await challengesController.getChallengeById(
         req.params.id
@@ -288,6 +290,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       await userController.updateUserByUserId({
         _id: user.id,
         playing: false,
+        noOfChallenges: 0,
       });
       let challenge = await challengesController.getChallengeById(
         req.params.id

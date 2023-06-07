@@ -126,6 +126,15 @@ const challengesController = {
       throw error;
     }
   },
+  deleteChallengeById: async (challengeId) => {
+    try {
+      let challenge = await ChallengeModel.findOneAndDelete({ _id: challengeId });
+      return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
 
   /**
    * getChallengeByChallengeId - to get  challenge by challenge id

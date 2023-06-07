@@ -79,10 +79,6 @@ const accountController = {
       let creatorAccount = await Account.findOne({
         userId: challenge.creator._id,
       });
-      console.log("plaerrr", playerAccount);
-      console.log("challenge343", challenge);
-      console.log("plcreatorAccountaerrr", creatorAccount);
-
       if (playerAccount.depositCash >= challenge.amount) {
         playerAccount.depositCash -= challenge.amount;
         playerAccount.wallet -= challenge.amount;
