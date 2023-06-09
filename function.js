@@ -1,6 +1,7 @@
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
+const mongoose = require("mongoose");
 
 async function startGame(data, socket) {
   let response = {
@@ -50,8 +51,8 @@ async function startGame(data, socket) {
           hasActiveChallenge: false,
           // Increment noOfChallenges by 1 for otherPlayer
         });
-      console.log("creato33", creator33);
-      console.log("otherplayer2", otherplayer2);
+      // console.log("creato33", creator33);
+      // console.log("otherplayer2", otherplayer2);
       await challengesController.deleteRequestedChallenges(
         startChallenge.creator._id
       );
@@ -128,7 +129,36 @@ async function startGame(data, socket) {
     return socket.send(JSON.stringify(response));
   }
 }
+const saveImageToMongoDB = async (imageData) => {
+  try {
+    const mongoCollectionName = "photos";
+    const image = imageData;
+    const base64Data = image.replace(/^data:([A-Za-z-+\/]+);base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64"); // Convert base64 to buffer
+
+    // const client = new MongoClient(mongoURL, { useUnifiedTopology: true });
+    // await client.connect();
+    const db = mongoose.connection.db;
+    const collection = db.collection(mongoCollectionName);
+
+    // Save the image as a binary object in MongoDB
+    const result = await collection.insertOne({ image: buffer });
+    console.log("Image saved in MongoDB with ID:", result);
+    const savedImage = await collection.findOne({ _id: result.insertedId });
+    const imageURL = `https://apibackend.gotiking.com/api/challenges/images/${savedImage._id}`; // Replace with your image URL format
+
+    console.log("Image URL:", imageURL);
+
+    // client.close();
+
+    return imageURL;
+  } catch (error) {
+    console.log("Error saving image to MongoDB:", error);
+    throw error;
+  }
+};
 
 module.exports = {
   startGame,
+  saveImageToMongoDB,
 };

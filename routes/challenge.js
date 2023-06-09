@@ -1,12 +1,18 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const accountController = require("../controllers/accounts");
 const challengesController = require("../controllers/challenges");
 const { responseHandler, uploadFileImage } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 const UserAccount = require("../models/accounts");
 const Router = express.Router();
+
 const path = require("path");
+const { saveImageToMongoDB } = require("../function");
 const History = require("../models/history");
+const { ObjectId } = require("mongodb");
+const mongodb = require("mongodb");
+// const { MongoClient } = mongodb;
 const userController = require("../controllers/user");
 
 Router.get(
@@ -68,11 +74,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 
       // // await accountController.updateAccountByUserId({ ...userWallet._doc, wallet: userWallet.wallet + amount, winningCash: userWallet.winningCash + amount })
       const image = req.body.image;
-      console.log("winner1---------");
-      // Extract the base64 data from the data URL format
-      const base64Data = image.replace(/^data:([A-Za-z-+\/]+);base64,/, "");
-      let fileName = `public/uploads/challenges/${challenge._id}`;
-      let file = uploadFileImage(base64Data, fileName, req.body.fileType);
+      let file = await saveImageToMongoDB(image);
       let winner = user.id == challenge.creator._id ? "creator" : "player";
       let looser = user.id != challenge.creator._id ? "creator" : "player";
 
@@ -152,12 +154,46 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
 
       challenge = await challengesController.updateChallengeById(challengeObj);
+      console.log("checkkkk", challenge);
 
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
     console.log("error", error);
     return responseHandler(res, 400, null, error.message);
+  }
+});
+
+Router.get("/images/:id", async (req, res) => {
+  
+  const mongoCollectionName = "photos";
+  const imageId = req.params.id;
+  
+
+  try {
+    // const client = new MongoClient(mongoURL, { useUnifiedTopology: true });
+    // await client.connect();
+    // const db = client.db(mongoDBName);
+    // const collection = db.collection(mongoCollectionName);
+    const db = mongoose.connection.db;
+    const collection = db.collection(mongoCollectionName);
+
+    // Find the image by its unique identifier
+    const image = await collection.findOne({ _id: ObjectId(imageId) });
+
+    if (!image) {
+      res.status(404).send("Image not found");
+      return;
+    }
+
+    // Send the image data as the response
+    res.set("Content-Type", "image/jpeg");
+    res.send(image.image.buffer);
+
+    // client.close();
+  } catch (error) {
+    console.log("Error retrieving image:", error);
+    res.status(500).send("Internal server error");
   }
 });
 
@@ -360,7 +396,6 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
               cancellerWallet.winningCash + challenge.playerChips.winningCash,
           });
         } else {
-          
           cancellerWallet = await accountController.updateAccountByUserId({
             ...cancellerWallet._doc,
             wallet: cancellerWallet.wallet + challenge.amount,
