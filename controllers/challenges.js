@@ -1,4 +1,5 @@
 const ChallengeModel = require("../models/challenges");
+const User = require("../models/user");
 
 const challengesController = {
   /**
@@ -128,7 +129,9 @@ const challengesController = {
   },
   deleteChallengeById: async (challengeId) => {
     try {
-      let challenge = await ChallengeModel.findOneAndDelete({ _id: challengeId });
+      let challenge = await ChallengeModel.findOneAndDelete({
+        _id: challengeId,
+      });
       return challenge;
     } catch (error) {
       console.log("error", error);
@@ -219,53 +222,13 @@ const challengesController = {
    */
   checkPlayingOrHold: async (userId) => {
     try {
-      let canCreate = false;
-      let challenge = await ChallengeModel.find({
-        $or: [{ creator: userId }, { player: userId }],
-        state: { $in: ["playing", "hold"] },
-      });
-      // if (challenge.length > 0) {
-      //   canCreate = false;
-      // }
-
-      // let challenge = await ChallengeModel.find({
-      //   $or: [{ creator: userId }, { player: userId }],
-      //   state: { $in: ["hold"] },
-      // });
-      // console.log("checkkk2", challenge2);
-
-      if (challenge.length > 0) {
-        challenge.map((item) => {
-          if (item.creator == userId) {
-            // User is a creator
-            if (
-              item.results.creator &&
-              item.results.creator !== null &&
-              item.results.creator !== undefined
-            ) {
-              canCreate = true;
-            } else {
-              canCreate = false;
-            }
-          } else if (item.player == userId) {
-            // User is a player
-
-            if (
-              item.results.player &&
-              item.results.player !== null &&
-              item.results.player !== undefined
-            ) {
-              canCreate = true;
-            } else {
-              canCreate = false;
-            }
-          }
-        });
-      } else if (challenge.length == 0) {
-        canCreate = true;
+      const { noOfChallenges } = await User.findById(userId);
+      console.log("nooffchallenges", noOfChallenges);
+      if (noOfChallenges > 0) {
+        return false;
+      } else {
+        return true;
       }
-
-      return canCreate;
     } catch (error) {
       throw error;
     }

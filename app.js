@@ -50,7 +50,7 @@ mongoose
       console.log("application and socket is running on port 4001");
     }); /* create your HTTP server */
     const socketServer = io(server2, {
-      pingTimeout: 1000,
+      pingTimeout: 500,
       cors: {
         origin: "*",
       },

@@ -6,9 +6,12 @@ const { responseHandler, uploadFileImage } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 const UserAccount = require("../models/accounts");
 const Router = express.Router();
-
+const Image = require("../models/image");
 const path = require("path");
-const { saveImageToMongoDB } = require("../function");
+const {
+  saveImageToMongoDB,
+  handleChallengeCancellation,
+} = require("../function");
 const History = require("../models/history");
 const { ObjectId } = require("mongodb");
 const mongodb = require("mongodb");
@@ -74,7 +77,8 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 
       // // await accountController.updateAccountByUserId({ ...userWallet._doc, wallet: userWallet.wallet + amount, winningCash: userWallet.winningCash + amount })
       const image = req.body.image;
-      let file = await saveImageToMongoDB(image);
+
+      let file = await saveImageToMongoDB(image, req.body.fileType);
       let winner = user.id == challenge.creator._id ? "creator" : "player";
       let looser = user.id != challenge.creator._id ? "creator" : "player";
 
@@ -165,21 +169,17 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 });
 
 Router.get("/images/:id", async (req, res) => {
-  
   const mongoCollectionName = "photos";
   const imageId = req.params.id;
-  
 
   try {
     // const client = new MongoClient(mongoURL, { useUnifiedTopology: true });
     // await client.connect();
     // const db = client.db(mongoDBName);
     // const collection = db.collection(mongoCollectionName);
-    const db = mongoose.connection.db;
-    const collection = db.collection(mongoCollectionName);
 
     // Find the image by its unique identifier
-    const image = await collection.findOne({ _id: ObjectId(imageId) });
+    const image = await Image.findOne({ _id: ObjectId(imageId) });
 
     if (!image) {
       res.status(404).send("Image not found");
@@ -188,7 +188,7 @@ Router.get("/images/:id", async (req, res) => {
 
     // Send the image data as the response
     res.set("Content-Type", "image/jpeg");
-    res.send(image.image.buffer);
+    res.send(image.imageData);
 
     // client.close();
   } catch (error) {
@@ -365,87 +365,14 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
       if (challenge.results[otherPlayer] == "cancelled") {
-        challengeObj.state = "resolved";
-
-        if (
-          (canceller == "creator" &&
-            challenge.creatorChips != null &&
-            challenge.creatorChips.depositCash > 0) ||
-          challenge.creatorChips.winningCash > 0
-        ) {
-          cancellerWallet = await accountController.updateAccountByUserId({
-            ...cancellerWallet._doc,
-            wallet: cancellerWallet.wallet + challenge.amount,
-            depositCash:
-              cancellerWallet.depositCash + challenge.creatorChips.depositCash,
-            winningCash:
-              cancellerWallet.winningCash + challenge.creatorChips.winningCash,
-          });
-        } else if (
-          (canceller == "player" &&
-            challenge.playerChips != null &&
-            challenge.playerChips.depositCash > 0) ||
-          challenge.playerChips.winningCash > 0
-        ) {
-          cancellerWallet = await accountController.updateAccountByUserId({
-            ...cancellerWallet._doc,
-            wallet: cancellerWallet.wallet + challenge.amount,
-            depositCash:
-              cancellerWallet.depositCash + challenge.playerChips.depositCash,
-            winningCash:
-              cancellerWallet.winningCash + challenge.playerChips.winningCash,
-          });
-        } else {
-          cancellerWallet = await accountController.updateAccountByUserId({
-            ...cancellerWallet._doc,
-            wallet: cancellerWallet.wallet + challenge.amount,
-            depositCash: cancellerWallet.depositCash + challenge.amount,
-          });
-        }
-
-        if (
-          (otherPlayer == "creator" &&
-            challenge.creatorChips != null &&
-            challenge.creatorChips.depositCash > 0) ||
-          challenge.creatorChips.winningCash > 0
-        ) {
-          otherPlayerWallet = await accountController.updateAccountByUserId({
-            ...otherPlayerWallet._doc,
-            wallet: otherPlayerWallet.wallet + challenge.amount,
-            depositCash:
-              otherPlayerWallet.depositCash +
-              challenge.creatorChips.depositCash,
-            winningCash:
-              otherPlayerWallet.winningCash +
-              challenge.creatorChips.winningCash,
-          });
-        } else if (
-          (otherPlayer == "player" &&
-            challenge.playerChips != null &&
-            challenge.playerChips.depositCash > 0) ||
-          challenge.playerChips.winningCash > 0
-        ) {
-          otherPlayerWallet = await accountController.updateAccountByUserId({
-            ...otherPlayerWallet._doc,
-            wallet: otherPlayerWallet.wallet + challenge.amount,
-            depositCash:
-              otherPlayerWallet.depositCash + challenge.playerChips.depositCash,
-            winningCash:
-              otherPlayerWallet.winningCash + challenge.playerChips.winningCash,
-          });
-        } else {
-          otherPlayerWallet = await accountController.updateAccountByUserId({
-            ...otherPlayerWallet._doc,
-            wallet: otherPlayerWallet.wallet + challenge.amount,
-            depositCash: otherPlayerWallet.depositCash + challenge.amount,
-          });
-        }
-
-        // await accountController.updateAccountByUserId({
-        //   ...otherPlayerWallet._doc,
-        //   wallet: otherPlayerWallet.wallet + challenge.amount,
-        //   depositCash: otherPlayerWallet.depositCash + challenge.amount,
-        // });
+        await handleChallengeCancellation(
+          challengeObj,
+          challenge,
+          canceller,
+          otherPlayer,
+          cancellerWallet,
+          otherPlayerWallet
+        );
       }
 
       let historyWinner = new History();

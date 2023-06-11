@@ -328,6 +328,7 @@ function handleConnection(socket) {
 
               challenge = await challengesController.createChallenge(challenge);
               if (!!challenge) {
+              
                 let challenges = await challengesController.getAllChallenges();
 
                 // console.log("challengess", challenges);
