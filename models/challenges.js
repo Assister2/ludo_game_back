@@ -29,14 +29,26 @@ const challengeSchema = new mongoose.Schema({
   },
   results: {
     creator: {
-      type: String,
-      default: "",
-      // win lose cancelled
+      result: {
+        type: String,
+        default: "",
+        // win lose cancelled
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
+      },
     },
     player: {
-      type: String,
-      default: "",
-      // win lose cancelled
+      result: {
+        type: String,
+        default: "",
+        // win lose cancelled
+      },
+      updatedAt: {
+        type: Date,
+        default: null,
+      },
     },
   },
   creatorChips: {

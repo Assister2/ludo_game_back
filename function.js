@@ -170,44 +170,12 @@ const handleChallengeCancellation = async (
   cancellerWallet,
   otherPlayerWallet
 ) => {
-  console.log("createor", canceller);
-  console.log("challenge3434", challenge);
-  console.log("otherPlayer", otherPlayer);
-  console.log("cancellerWallet", cancellerWallet);
-  console.log("otherPlayerWallet", otherPlayerWallet);
-  // challengeObj.state = "resolved";
-
-  if (
-    (otherPlayer == "player" && challenge.playerChips.depositCash > 0) ||
-    challenge.playerChips.winningCash > 0
-  ) {
-    console.log("1");
-  }
-  if (
-    (otherPlayer == "creator" && challenge.creatorChips.depositCash > 0) ||
-    challenge.creatorChips.winningCash > 0
-  ) {
-    console.log("2");
-  }
-  if (
-    (canceller == "creator" && challenge.creatorChips.depositCash > 0) ||
-    challenge.creatorChips.winningCash > 0
-  ) {
-    console.log("3");
-  }
-  if (
-    (canceller == "player" && challenge.playerChips.depositCash > 0) ||
-    challenge.playerChips.winningCash > 0
-  ) {
-    console.log("4");
-  }
+  challengeObj.state = "resolved";
 
   const updateWalletAndCash = async (challenge, player, playerWallet) => {
-    if (
-      (player === "creator" && challenge.creatorChips.depositCash > 0) ||
-      challenge.creatorChips.winningCash > 0
-    ) {
-      console.log("cccc2");
+    if (player === "creator") {
+      console.log("cccc2", playerWallet);
+      console.log("cccc21", challenge.creatorChips);
       playerWallet = await accountController.updateAccountByUserId({
         ...playerWallet._doc,
         wallet: playerWallet.wallet + challenge.amount,
@@ -218,11 +186,9 @@ const handleChallengeCancellation = async (
       });
       return;
     }
-    if (
-      (player === "player" && challenge.playerChips.depositCash > 0) ||
-      challenge.playerChips.winningCash > 0
-    ) {
-      console.log("cccc3");
+    if (player === "player") {
+      console.log("cccc3", playerWallet);
+      console.log("cccc31", challenge.playerChips);
       playerWallet = await accountController.updateAccountByUserId({
         ...playerWallet._doc,
         wallet: playerWallet.wallet + challenge.amount,

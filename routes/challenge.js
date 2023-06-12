@@ -8,6 +8,7 @@ const UserAccount = require("../models/accounts");
 const Router = express.Router();
 const Image = require("../models/image");
 const path = require("path");
+const currentDate = new Date();
 const {
   saveImageToMongoDB,
   handleChallengeCancellation,
@@ -64,18 +65,10 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       let challenge = await challengesController.getChallengeById(
         req.params.id
       );
+
       let amount = Number(challenge.amount);
       let userWallet = await accountController.getAccountByUserId(user.id);
       console.log("winner---------");
-      // deduction = (amount * 5) / 100;
-      // if (amount >= 500) {
-      //     deduction = (amount * 5) / 100;
-      // }
-      // //doubling the amount and substracting the deduction
-      // deductedAmount = amount - deduction;
-      // amount = amount * 2 - deduction;
-
-      // // await accountController.updateAccountByUserId({ ...userWallet._doc, wallet: userWallet.wallet + amount, winningCash: userWallet.winningCash + amount })
       const image = req.body.image;
 
       let file = await saveImageToMongoDB(image, req.body.fileType);
@@ -93,7 +86,13 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 
       let challengeObj = {
         ...challenge._doc,
-        results: { [winner]: "win", [looser]: challenge.results[looser] },
+        results: {
+          [winner]: { result: "win", updatedAt: currentDate },
+          [looser]: {
+            result: challenge.results[looser].result,
+            updatedAt: challenge.results[looser].updatedAt,
+          },
+        },
         winnerScreenShot: {
           [winner]: file,
           [looser]: challenge.winnerScreenShot[looser],
@@ -101,13 +100,13 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       };
 
       if (
-        challenge.results[looser] == "" ||
-        challenge.results[looser] == "win"
+        challenge.results[looser].result == "" ||
+        challenge.results[looser].result == "win"
       ) {
         challengeObj.state = "hold";
       }
 
-      if (challenge.results[looser] == "lost") {
+      if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
 
@@ -153,12 +152,12 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           });
         }
       }
-      if (challenge.results[looser] == "cancelled") {
+      if (challenge.results[looser].result == "cancelled") {
         challengeObj.state = "hold";
       }
 
       challenge = await challengesController.updateChallengeById(challengeObj);
-      console.log("checkkkk", challenge);
+
 
       return responseHandler(res, 200, challenge, null);
     }
@@ -169,16 +168,9 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
 });
 
 Router.get("/images/:id", async (req, res) => {
-  const mongoCollectionName = "photos";
   const imageId = req.params.id;
 
   try {
-    // const client = new MongoClient(mongoURL, { useUnifiedTopology: true });
-    // await client.connect();
-    // const db = client.db(mongoDBName);
-    // const collection = db.collection(mongoCollectionName);
-
-    // Find the image by its unique identifier
     const image = await Image.findOne({ _id: ObjectId(imageId) });
 
     if (!image) {
@@ -214,7 +206,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       let looser = user.id == challenge.creator._id ? "creator" : "player";
       let winner = user.id != challenge.creator._id ? "creator" : "player";
 
-      if (challenge.results[looser] !== "") {
+      if (challenge.results[looser].result !== "") {
         return responseHandler(
           res,
           400,
@@ -236,15 +228,31 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
 
       let challengeObj = {
         ...challenge._doc,
-        results: { [looser]: "lost", [winner]: challenge.results[winner] },
+        results: {
+          [looser]: { result: "lost", updatedAt: currentDate },
+
+          [winner]: {
+            result: challenge.results[winner].result,
+            updatedAt: challenge.results[winner].updatedAt,
+          },
+        },
       };
-      if (challenge.results[winner] == "") {
+      if (challenge.results[winner].result == "") {
         challengeObj.state = "hold";
       }
-      if (challenge.results[winner] == "lost") {
-        challengeObj.state = "hold";
+      if (challenge.results[winner].result == "lost") {
+ 
+        await handleChallengeCancellation(
+          challengeObj,
+          challenge,
+          looser,
+          winner,
+          looserWallet,
+          userWallet
+        );
       }
-      if (challenge.results[winner] == "win") {
+
+      if (challenge.results[winner].result == "win") {
         let deduction = challenge.amount * 0.03;
         let wall = {
           ...userWallet._doc,
@@ -301,7 +309,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         //     await accountController.increaseRefererAccount({ userId: referalAccount._id, amount: (challenge.amount * 2) / 100 })
         // }
       }
-      if (challenge.results[winner] == "cancelled") {
+      if (challenge.results[winner].result == "cancelled") {
         challengeObj.state = "hold";
       }
       challenge = await challengesController.updateChallengeById(challengeObj);
@@ -332,39 +340,46 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         req.params.id
       );
       let canceller = user.id == challenge.creator._id ? "creator" : "player";
+      let canceller1 =
+        user.id == challenge.creator._id ? "creatorChips" : "playerChips";
+
       let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
-      // let winnerUserId = challenge[winner]._id
-      // let looserUserId = challenge[looser]._id
-      // let amount = Number(challenge.amount);
-      // let deductedAmount = amount;
-      // let deduction = 0;
+      let otherPlayer2 =
+        user.id != challenge.creator._id ? "creatorChips" : "playerChips";
+
       let cancellerWallet = await accountController.getAccountByUserId(
         challenge[canceller]._id
       );
       let otherPlayerWallet = await accountController.getAccountByUserId(
         challenge[otherPlayer]._id
       );
-      // deduction = (amount * 5) / 100;
-      // if (amount >= 500) {
-      //     deduction = (amount * 5) / 100;
-      // }
-      // //doubling the amount and substracting the deduction
-      // deductedAmount = amount - deduction;
-      // amount = amount * 2 - deduction;
-      // await accountController.updateAccountByUserId({ ...userWallet._doc, wallet: userWallet.wallet + amount, winningCash: userWallet.winningCash + amount })
 
       let challengeObj = {
         ...challenge._doc,
         results: {
-          [canceller]: "cancelled",
-          [otherPlayer]: challenge.results[otherPlayer],
+          [canceller]: { result: "cancelled", updatedAt: currentDate },
+
+          [otherPlayer]: {
+            result: challenge.results[otherPlayer].result,
+            updatedAt: challenge.results[otherPlayer].updatedAt,
+          },
         },
         cancellationReasons: { [canceller]: req.body.cancellationReason },
       };
-      if (challenge.results[otherPlayer] == "") {
+
+      if (challenge.results[otherPlayer].result == "") {
         challengeObj.state = "hold";
       }
-      if (challenge.results[otherPlayer] == "cancelled") {
+      if (challenge.results[otherPlayer].result == "cancelled") {
+        // await accountController.updateAccountByUserId({
+        //   ...otherPlayer._doc,
+        //   wallet: otherPlayer.wallet + challenge.amount,
+        //   depositCash:
+        //     otherPlayer.depositCash + challenge.playerChips.depositCash,
+        //   winningCash:
+        //     otherPlayer.winningCash + challenge.playerChips.winningCash,
+        // });
+
         await handleChallengeCancellation(
           challengeObj,
           challenge,

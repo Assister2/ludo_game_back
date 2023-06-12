@@ -9,7 +9,6 @@ const router = express.Router();
 
 router.post("/buy", verifyToken, async (req, res) => {
   try {
-    
     if (!req.body.payload) {
       return responseHandler(res, 400, null, "Fields are missing232");
     }
@@ -30,6 +29,7 @@ router.post("/buy", verifyToken, async (req, res) => {
       userId: user.id,
       depositCash: Number(account.depositCash + amount),
       wallet: Number(account.wallet + amount),
+      withdrawRequest: false,
     };
 
     await transactionsController.insertNewTransaction(transactionObject);
@@ -61,7 +61,7 @@ router.post("/sell", verifyToken, async (req, res) => {
 
     let { amount, upiId } = req.body;
     let user = req.user;
-    
+
     let account = await accountController.getAccountByUserId(user.id);
 
     let transactionObject = {
@@ -70,11 +70,13 @@ router.post("/sell", verifyToken, async (req, res) => {
       status: 0, // withdrawal request pending 0=pending 1=success
       userId: user.id,
       upiId: upiId,
+      withdrawRequest: true,
+      withdraw: { lastWRequest: new Date() },
     };
     let checkOpenOrRequested = await challengesController.checkOpenOrRequested(
       user.id
     );
-    
+
     if (checkOpenOrRequested.length > 0) {
       return responseHandler(
         res,
@@ -86,11 +88,11 @@ router.post("/sell", verifyToken, async (req, res) => {
 
     let currentTime = new Date();
     let previousRequest =
-      await transactionsController.existingTransactionsByUserId(user.id);
-    
+      await transactionsController.existingTransactionsByUserId(user.id, true);
+
     if (previousRequest.length > 0) {
       let lastRequest = previousRequest[previousRequest.length - 1];
-      let timeDifference = currentTime - lastRequest.createdAt;
+      let timeDifference = currentTime - lastRequest.withdraw.lastWRequest;
       if (timeDifference < ONE_DAY_IN_MILLISECONDS) {
         let remainingTime = ONE_DAY_IN_MILLISECONDS - timeDifference;
         return responseHandler(
@@ -117,6 +119,7 @@ router.post("/sell", verifyToken, async (req, res) => {
         wallet: Number(account.wallet - amount),
       };
       await transactionsController.insertNewTransaction(transactionObject);
+
       account = await accountController.updateAccountByUserId(accountObject);
       let history = new History();
       history.userId = user.id;

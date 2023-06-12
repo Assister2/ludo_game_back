@@ -69,8 +69,8 @@ const accountController = {
     }
   },
   decreasePlayersAccount: async (challenge) => {
-    let creatorChips = null;
-    let playerChips = null;
+    let creatorChips = { winningCash: 0, depositCash: 0 };
+    let playerChips = { winningCash: 0, depositCash: 0 };
 
     try {
       let playerAccount = await Account.findOne({
@@ -82,6 +82,7 @@ const accountController = {
       if (playerAccount.depositCash >= challenge.amount) {
         playerAccount.depositCash -= challenge.amount;
         playerAccount.wallet -= challenge.amount;
+        playerChips.depositCash = challenge.amount;
       } else if (playerAccount.depositCash < challenge.amount) {
         const remaining = challenge.amount - playerAccount.depositCash;
         if (playerAccount.winningCash < remaining) {
@@ -100,6 +101,7 @@ const accountController = {
       if (creatorAccount.depositCash >= challenge.amount) {
         creatorAccount.depositCash -= challenge.amount;
         creatorAccount.wallet -= challenge.amount;
+        creatorAccount.depositCash = challenge.amount;
       } else if (creatorAccount.depositCash < challenge.amount) {
         const remaining = challenge.amount - creatorAccount.depositCash;
 
@@ -128,7 +130,7 @@ const accountController = {
         { $set: playerAccount },
         { new: true }
       );
-      if (playerChips !== null || creatorChips !== null) {
+      if (playerChips != null || creatorChips != null) {
         await challengesController.updateChallengeById({
           _id: challenge._id,
           creatorChips: creatorChips,
