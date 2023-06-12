@@ -1,6 +1,7 @@
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
+const History = require("./models/history");
 const Image = require("./models/image");
 const mongoose = require("mongoose");
 const { Binary } = require("mongodb");
@@ -169,89 +170,81 @@ const handleChallengeCancellation = async (
   cancellerWallet,
   otherPlayerWallet
 ) => {
-  if (
-    (canceller == "creator" &&
-      challenge.creatorChips != null &&
-      challenge.creatorChips.depositCash > 0) ||
-    challenge.creatorChips.winningCash > 0
-  ) {
-    console.log("cccc2");
-    cancellerWallet = await accountController.updateAccountByUserId({
-      ...cancellerWallet._doc,
-      wallet: cancellerWallet.wallet + challenge.amount,
-      depositCash:
-        cancellerWallet.depositCash + challenge.creatorChips.depositCash,
-      winningCash:
-        cancellerWallet.winningCash + challenge.creatorChips.winningCash,
-    });
-  } else if (
-    (canceller == "player" &&
-      challenge.playerChips != null &&
-      challenge.playerChips.depositCash > 0) ||
-    challenge.playerChips.winningCash > 0
-  ) {
-    console.log("cccc3");
-    otherPlayerWallet = await accountController.updateAccountByUserId({
-      ...otherPlayerWallet._doc,
-      wallet: otherPlayerWallet.wallet + challenge.amount,
-      depositCash:
-        otherPlayerWallet.depositCash + challenge.playerChips.depositCash,
-      winningCash:
-        otherPlayerWallet.winningCash + challenge.playerChips.winningCash,
-    });
-  } else {
-    console.log("cccc4");
-    cancellerWallet = await accountController.updateAccountByUserId({
-      ...cancellerWallet._doc,
-      wallet: cancellerWallet.wallet + challenge.amount,
-      depositCash: cancellerWallet.depositCash + challenge.amount,
-    });
-  }
+  console.log("createor", canceller);
+  console.log("challenge3434", challenge);
+  console.log("otherPlayer", otherPlayer);
+  console.log("cancellerWallet", cancellerWallet);
+  console.log("otherPlayerWallet", otherPlayerWallet);
+  // challengeObj.state = "resolved";
 
   if (
-    (otherPlayer == "creator" &&
-      challenge.creatorChips != null &&
-      challenge.creatorChips.depositCash > 0) ||
-    challenge.creatorChips.winningCash > 0
-  ) {
-    console.log("cccc5");
-    otherPlayerWallet = await accountController.updateAccountByUserId({
-      ...otherPlayerWallet._doc,
-      wallet: otherPlayerWallet.wallet + challenge.amount,
-      depositCash:
-        otherPlayerWallet.depositCash + challenge.creatorChips.depositCash,
-      winningCash:
-        otherPlayerWallet.winningCash + challenge.creatorChips.winningCash,
-    });
-  } else if (
-    (otherPlayer == "player" &&
-      challenge.playerChips != null &&
-      challenge.playerChips.depositCash > 0) ||
+    (otherPlayer == "player" && challenge.playerChips.depositCash > 0) ||
     challenge.playerChips.winningCash > 0
   ) {
-    console.log("cccc6");
-    otherPlayerWallet = await accountController.updateAccountByUserId({
-      ...otherPlayerWallet._doc,
-      wallet: otherPlayerWallet.wallet + challenge.amount,
-      depositCash:
-        otherPlayerWallet.depositCash + challenge.playerChips.depositCash,
-      winningCash:
-        otherPlayerWallet.winningCash + challenge.playerChips.winningCash,
-    });
-  } else {
-    console.log("cccc7");
-    otherPlayerWallet = await accountController.updateAccountByUserId({
-      ...otherPlayerWallet._doc,
-      wallet: otherPlayerWallet.wallet + challenge.amount,
-      depositCash: otherPlayerWallet.depositCash + challenge.amount,
-    });
+    console.log("1");
+  }
+  if (
+    (otherPlayer == "creator" && challenge.creatorChips.depositCash > 0) ||
+    challenge.creatorChips.winningCash > 0
+  ) {
+    console.log("2");
+  }
+  if (
+    (canceller == "creator" && challenge.creatorChips.depositCash > 0) ||
+    challenge.creatorChips.winningCash > 0
+  ) {
+    console.log("3");
+  }
+  if (
+    (canceller == "player" && challenge.playerChips.depositCash > 0) ||
+    challenge.playerChips.winningCash > 0
+  ) {
+    console.log("4");
   }
 
-  // await accountController.updateAccountByUserId({
-  //   ...otherPlayerWallet._doc,
-  //   wallet: otherPlayerWallet.wallet + challenge.amount,
-  //   depositCash: otherPlayerWallet.depositCash + challenge.amount,
-  // });
+  const updateWalletAndCash = async (challenge, player, playerWallet) => {
+    if (
+      (player === "creator" && challenge.creatorChips.depositCash > 0) ||
+      challenge.creatorChips.winningCash > 0
+    ) {
+      console.log("cccc2");
+      playerWallet = await accountController.updateAccountByUserId({
+        ...playerWallet._doc,
+        wallet: playerWallet.wallet + challenge.amount,
+        depositCash:
+          playerWallet.depositCash + challenge.creatorChips.depositCash,
+        winningCash:
+          playerWallet.winningCash + challenge.creatorChips.winningCash,
+      });
+      return;
+    }
+    if (
+      (player === "player" && challenge.playerChips.depositCash > 0) ||
+      challenge.playerChips.winningCash > 0
+    ) {
+      console.log("cccc3");
+      playerWallet = await accountController.updateAccountByUserId({
+        ...playerWallet._doc,
+        wallet: playerWallet.wallet + challenge.amount,
+        depositCash:
+          playerWallet.depositCash + challenge.playerChips.depositCash,
+        winningCash:
+          playerWallet.winningCash + challenge.playerChips.winningCash,
+      });
+      return;
+    }
+    console.log("cccc4", typeof playerWallet.depositCash);
+    playerWallet = await accountController.updateAccountByUserId({
+      ...playerWallet._doc,
+      wallet: playerWallet.wallet + challenge.amount,
+      depositCash: playerWallet.depositCash + challenge.amount,
+    });
+  };
+  console.log("forcanceller", typeof canceller, canceller);
+  await updateWalletAndCash(challenge, canceller, cancellerWallet);
+  console.log("forotherPlayer", typeof otherPlayer, otherPlayer);
+  await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet);
+
   console.log("otherPlayerWallet", otherPlayerWallet);
 };
 

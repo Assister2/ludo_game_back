@@ -39,11 +39,14 @@ const app = express();
 dotenv.config();
 const app2 = express();
 mongoose
-  .connect(process.env.DB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-  })
+  .connect(
+    `mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo9`,
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useFindAndModify: false,
+    }
+  )
   .then(() => {
     console.log("MongoDB connected");
     const server2 = app.listen(4001, () => {
