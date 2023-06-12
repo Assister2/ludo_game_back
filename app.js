@@ -40,7 +40,7 @@ dotenv.config();
 const app2 = express();
 mongoose
   .connect(
-    `mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo9`,
+    `mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo10`,
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,

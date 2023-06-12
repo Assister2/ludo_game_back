@@ -87,24 +87,24 @@ router.post("/sell", verifyToken, async (req, res) => {
     }
 
     let currentTime = new Date();
-    let previousRequest =
-      await transactionsController.existingTransactionsByUserId(user.id, true);
+    // let previousRequest =
+    //   await transactionsController.existingTransactionsByUserId(user.id, true);
 
-    if (previousRequest.length > 0) {
-      let lastRequest = previousRequest[previousRequest.length - 1];
-      let timeDifference = currentTime - lastRequest.withdraw.lastWRequest;
-      if (timeDifference < ONE_DAY_IN_MILLISECONDS) {
-        let remainingTime = ONE_DAY_IN_MILLISECONDS - timeDifference;
-        return responseHandler(
-          res,
-          400,
-          account,
-          `You can only send one withdrawal request in 24 hours. Please wait for ${Math.floor(
-            remainingTime / (60 * 60 * 1000)
-          )} hours before sending another request.`
-        );
-      }
-    }
+    // if (previousRequest.length > 0) {
+    //   let lastRequest = previousRequest[previousRequest.length - 1];
+    //   let timeDifference = currentTime - lastRequest.withdraw.lastWRequest;
+    //   if (timeDifference < ONE_DAY_IN_MILLISECONDS) {
+    //     let remainingTime = ONE_DAY_IN_MILLISECONDS - timeDifference;
+    //     return responseHandler(
+    //       res,
+    //       400,
+    //       account,
+    //       `You can only send one withdrawal request in 24 hours. Please wait for ${Math.floor(
+    //         remainingTime / (60 * 60 * 1000)
+    //       )} hours before sending another request.`
+    //     );
+    //   }
+    // }
     if (amount > account.winningCash) {
       return responseHandler(
         res,
@@ -115,8 +115,8 @@ router.post("/sell", verifyToken, async (req, res) => {
     } else {
       let accountObject = {
         userId: user.id,
-        winningCash: Number(account.winningCash - amount),
-        wallet: Number(account.wallet - amount),
+        winningCash: Math.max(0, Number(account.winningCash - amount)),
+        wallet: Math.max(0, Number(account.wallet - amount)),
       };
       await transactionsController.insertNewTransaction(transactionObject);
 

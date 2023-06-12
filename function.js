@@ -132,36 +132,6 @@ async function startGame(data, socket) {
   }
 }
 
-const saveImageToMongoDB = async (imageData, filetype) => {
-  try {
-    // Create a new Binary object with the image data
-    const imageBuffer = Buffer.from(imageData, "base64");
-    const image = new Image({
-      imageData: imageBuffer,
-      filetype: filetype,
-    });
-    const result = await image.save();
-
-    // Save the image as a binary object in MongoDB
-    // const result = await Image.insertOne({ image: imageBuffer })
-    //   .then()
-    //   .catch((err) => {
-    //     console.log("inserterror", err);
-    //   });
-    console.log("resssss", result.insertedId);
-    console.log("resssss22", result._id);
-    console.log("inserteddd", result.insertedId);
-    const savedImage = result._id;
-    const imageURL = `https://apibackend.gotiking.com/api/challenges/images/${savedImage}`; // Replace with your image URL format
-
-    console.log("Image URL:", imageURL);
-
-    return imageURL;
-  } catch (error) {
-    console.log("Error saving image to MongoDB:", error);
-    throw error;
-  }
-};
 const handleChallengeCancellation = async (
   challengeObj,
   challenge,
@@ -216,6 +186,6 @@ const handleChallengeCancellation = async (
 
 module.exports = {
   startGame,
-  saveImageToMongoDB,
+ 
   handleChallengeCancellation,
 };

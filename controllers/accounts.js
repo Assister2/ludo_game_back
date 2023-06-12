@@ -101,7 +101,7 @@ const accountController = {
       if (creatorAccount.depositCash >= challenge.amount) {
         creatorAccount.depositCash -= challenge.amount;
         creatorAccount.wallet -= challenge.amount;
-        creatorAccount.depositCash = challenge.amount;
+        creatorChips.depositCash = challenge.amount;
       } else if (creatorAccount.depositCash < challenge.amount) {
         const remaining = challenge.amount - creatorAccount.depositCash;
 

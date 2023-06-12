@@ -10,7 +10,7 @@ const Image = require("../models/image");
 const path = require("path");
 const currentDate = new Date();
 const {
-  saveImageToMongoDB,
+
   handleChallengeCancellation,
 } = require("../function");
 const History = require("../models/history");
@@ -71,7 +71,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       console.log("winner---------");
       const image = req.body.image;
 
-      let file = await saveImageToMongoDB(image, req.body.fileType);
+      let file = image;
       let winner = user.id == challenge.creator._id ? "creator" : "player";
       let looser = user.id != challenge.creator._id ? "creator" : "player";
 
@@ -105,7 +105,8 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       ) {
         challengeObj.state = "hold";
       }
-
+      console.log("ceeee", challenge.results[looser].result);
+      console.log("ceeee2", challenge.results[looser].result);
       if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
@@ -157,7 +158,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
 
       challenge = await challengesController.updateChallengeById(challengeObj);
-
 
       return responseHandler(res, 200, challenge, null);
     }
@@ -241,7 +241,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
       if (challenge.results[winner].result == "lost") {
- 
         await handleChallengeCancellation(
           challengeObj,
           challenge,
@@ -251,6 +250,8 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           userWallet
         );
       }
+      console.log("checkkk", challenge.results[winner].result);
+      console.log("checkkk22", challenge.results[winner].result);
 
       if (challenge.results[winner].result == "win") {
         let deduction = challenge.amount * 0.03;
