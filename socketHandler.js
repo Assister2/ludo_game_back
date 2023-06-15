@@ -328,6 +328,8 @@ function handleConnection(socket) {
 
               challenge = await challengesController.createChallenge(challenge);
               if (!!challenge) {
+                socket.send(JSON.stringify({ status: 2 }));
+
                 let challenges = await challengesController.getAllChallenges();
 
                 // console.log("challengess", challenges);
@@ -433,6 +435,9 @@ function handleConnection(socket) {
               currentChallenge = await challengesController.updateChallengeById(
                 currentChallenge
               );
+              let challenges2 = await challengesController.getAllChallenges();
+
+              socket.send(JSON.stringify(challenges2));
 
               // Implement your read operation here
               break;
@@ -503,7 +508,9 @@ function handleConnection(socket) {
               await challengesController.cancelRequestedChallenges(
                 data.payload.userId
               );
+              let challenges = await challengesController.getAllChallenges();
 
+              socket.send(JSON.stringify(challenges));
               await userController.updateUserByUserId({
                 _id: data.payload.userId,
                 hasActiveChallenge: false,

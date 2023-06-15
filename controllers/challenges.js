@@ -102,7 +102,7 @@ const challengesController = {
     try {
       let challenge = await ChallengeModel.find({
         status: 1,
-        state: { $ne: "resolved" },
+        state: { $nin: ["resolved", "hold"] },
       }).populate("creator player", "username profileImage");
       return challenge;
     } catch (error) {
@@ -170,6 +170,25 @@ const challengesController = {
     } catch (error) {
       console.log("error", error);
       throw error;
+    }
+  },
+  updateChallengeStateToHold: async (challengeId) => {
+    try {
+      // Find the challenge by ID
+      const challenge = await ChallengeModel.findById(challengeId);
+
+      if (!challenge) {
+        console.log("Challenge not found");
+        return;
+      }
+
+      // Update the challenge state to "hold"
+      challenge.state = "hold";
+      await challenge.save();
+
+      console.log("Challenge state updated to hold");
+    } catch (error) {
+      console.error("Error updating challenge state:", error);
     }
   },
 

@@ -9,13 +9,11 @@ const Router = express.Router();
 const Image = require("../models/image");
 const path = require("path");
 const currentDate = new Date();
-const {
-
-  handleChallengeCancellation,
-} = require("../function");
+const { handleChallengeCancellation } = require("../function");
 const History = require("../models/history");
 const { ObjectId } = require("mongodb");
 const mongodb = require("mongodb");
+const socket = require("../socket");
 // const { MongoClient } = mongodb;
 const userController = require("../controllers/user");
 
@@ -47,9 +45,22 @@ Router.get(
     } catch (error) {}
   }
 );
+Router.post("/hold/:id", verifyToken, async (req, res) => {
+  const challenge = await challengesController.updateChallengeStateToHold(
+    req.params.id
+  );
+  let user = req.user;
+  await userController.updateUserByUserId({
+    _id: user.id,
+    playing: false,
+    noOfChallenges: 0,
+  });
 
+  return responseHandler(res, 200, challenge, null);
+});
 Router.post("/win/:id", verifyToken, async (req, res) => {
   try {
+    const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
@@ -99,14 +110,14 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         },
       };
 
-      if (
-        challenge.results[looser].result == "" ||
-        challenge.results[looser].result == "win"
-      ) {
+      if (challenge.results[looser].result == "win") {
         challengeObj.state = "hold";
       }
-      console.log("ceeee", challenge.results[looser].result);
-      console.log("ceeee2", challenge.results[looser].result);
+      //win and no update
+      if (challenge.results[looser].result == "") {
+        io.emit("showTimer", { showTimer: true });
+      }
+      
       if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
@@ -167,30 +178,11 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
   }
 });
 
-Router.get("/images/:id", async (req, res) => {
-  const imageId = req.params.id;
 
-  try {
-    const image = await Image.findOne({ _id: ObjectId(imageId) });
-
-    if (!image) {
-      res.status(404).send("Image not found");
-      return;
-    }
-
-    // Send the image data as the response
-    res.set("Content-Type", "image/jpeg");
-    res.send(image.imageData);
-
-    // client.close();
-  } catch (error) {
-    console.log("Error retrieving image:", error);
-    res.status(500).send("Internal server error");
-  }
-});
 
 Router.post("/loose/:id", verifyToken, async (req, res) => {
   try {
+    const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
@@ -228,6 +220,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
 
       let challengeObj = {
         ...challenge._doc,
+        //first who sent i lost his result will be saved lost
         results: {
           [looser]: { result: "lost", updatedAt: currentDate },
 
@@ -237,8 +230,9 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           },
         },
       };
+      //if 2nd user result is empty
       if (challenge.results[winner].result == "") {
-        challengeObj.state = "hold";
+        io.emit("showTimer", { showTimer: true });
       }
       if (challenge.results[winner].result == "lost") {
         await handleChallengeCancellation(
@@ -250,8 +244,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           userWallet
         );
       }
-      console.log("checkkk", challenge.results[winner].result);
-      console.log("checkkk22", challenge.results[winner].result);
 
       if (challenge.results[winner].result == "win") {
         let deduction = challenge.amount * 0.03;
@@ -325,6 +317,8 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
 
 Router.post("/cancel/:id", verifyToken, async (req, res) => {
   try {
+    const io = socket.get();
+
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
@@ -369,7 +363,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       };
 
       if (challenge.results[otherPlayer].result == "") {
-        challengeObj.state = "hold";
+        io.emit("showTimer", { showTimer: true });
       }
       if (challenge.results[otherPlayer].result == "cancelled") {
         // await accountController.updateAccountByUserId({

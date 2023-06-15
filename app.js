@@ -34,7 +34,7 @@ const axios = require("axios");
 const bodyParser = require("body-parser");
 const app = express();
 // 30 seconds
-
+const socket = require("./socket");
 // const { sendFCM } = require("./routes/notification");
 dotenv.config();
 const app2 = express();
@@ -52,14 +52,15 @@ mongoose
     const server2 = app.listen(4001, () => {
       console.log("application and socket is running on port 4001");
     }); /* create your HTTP server */
-    const socketServer = io(server2, {
-      pingTimeout: 500,
-      cors: {
-        origin: "*",
-      },
-    });
+    // const socketServer = io(server2, {
+    //   pingTimeout: 500,
+    //   cors: {
+    //     origin: "*",
+    //   },
+    // });
+    const io = socket.init(server2);
 
-    socketServer.on("connection", (socket) => {
+    io.on("connection", (socket) => {
       handleConnection(socket);
     });
   })
