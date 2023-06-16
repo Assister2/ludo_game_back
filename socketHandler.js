@@ -508,13 +508,16 @@ function handleConnection(socket) {
               await challengesController.cancelRequestedChallenges(
                 data.payload.userId
               );
-              let challenges = await challengesController.getAllChallenges();
+              await challengesController.cancelRequestedChallenges2(
+                data.payload.userId
+              );
+              // let challenges = await challengesController.getAllChallenges();
 
-              socket.send(JSON.stringify(challenges));
-              await userController.updateUserByUserId({
-                _id: data.payload.userId,
-                hasActiveChallenge: false,
-              });
+              // socket.send(JSON.stringify(challenges));
+              // await userController.updateUserByUserId({
+              //   _id: data.payload.userId,
+              //   hasActiveChallenge: false,
+              // });
               break;
             case "startGame":
               console.log("checkdata", data.payload);

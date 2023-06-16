@@ -93,6 +93,19 @@ const challengesController = {
       throw error;
     }
   },
+  cancelRequestedChallenges2: async (creatorId) => {
+    try {
+      let challenge = await ChallengeModel.updateMany(
+        { creator: creatorId, state: "requested" },
+        { $set: { state: "open", player: null } },
+        { new: true }
+      );
+      return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
 
   /**
    * getAllChallenges - to get all challenges
