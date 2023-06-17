@@ -38,6 +38,9 @@ const challengeSchema = new mongoose.Schema({
         type: Date,
         default: null,
       },
+      timeover: {
+        type: Boolean,
+      },
     },
     player: {
       result: {
@@ -48,6 +51,9 @@ const challengeSchema = new mongoose.Schema({
       updatedAt: {
         type: Date,
         default: null,
+      },
+      timeover: {
+        type: Boolean,
       },
     },
   },

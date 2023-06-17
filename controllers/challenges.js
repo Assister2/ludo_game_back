@@ -115,7 +115,7 @@ const challengesController = {
     try {
       let challenge = await ChallengeModel.find({
         status: 1,
-        state: { $nin: ["resolved", "hold"] },
+        state: { $nin: ["resolved"] },
       }).populate("creator player", "username profileImage");
       return challenge;
     } catch (error) {
@@ -189,6 +189,7 @@ const challengesController = {
     try {
       // Find the challenge by ID
       const challenge = await ChallengeModel.findById(challengeId);
+      
 
       if (!challenge) {
         console.log("Challenge not found");

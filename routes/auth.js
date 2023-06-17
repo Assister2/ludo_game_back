@@ -173,8 +173,9 @@ router.post("/OTP", async (req, res) => {
     console.log("---------token", body);
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
-    } else {
+    } else if (dataStore.phone) {
       let user = await userController.insertUser(dataStore);
+
 
       if (dataStore.referer) {
         await userController.increasenoOfrefer(dataStore.referer);
@@ -231,38 +232,53 @@ router.post("/OTP", async (req, res) => {
 });
 
 router.post("/resendOTP", async (req, res) => {
+  console.log("cehckk", req.body);
   try {
     if (!req.body.hasOwnProperty("phone")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
+
+    // Check if the user already exists in the database
     let user = await userController.existingUser(req.body.phone);
-    let currentDate = new Date();
-    let lastUpdateDate = user.otp.updatedAt;
-    var seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
-    if (seconds <= 3600 && user.otp.count >= 5) {
-      return responseHandler(
-        res,
-        400,
-        null,
-        "Can Request For 5 OTP In One hour Maximum"
-      );
-    }
-    if (!user) {
-      return responseHandler(res, 400, null, "User not found");
-    } else {
+
+    if (user) {
+      // User already exists, proceed with resending the OTP
+      let currentDate = new Date();
+      let lastUpdateDate = user.otp.updatedAt;
+      var seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
+
+      if (seconds <= 3600 && user.otp.count >= 5) {
+        return responseHandler(
+          res,
+          400,
+          null,
+          "Can Request For 5 OTP In One hour Maximum"
+        );
+      }
+
+      // Generate a new OTP and update the user's OTP information
       user.otp = {
         code: generate(6),
         updatedAt: new Date(),
         count: user.otp.count + 1,
       };
+
       let textRes = await sendText(user.otp.code, user.phone);
       textRes.return = true;
+
       if (textRes.return === false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
         user = await userController.updateUserByPhoneNumber(user);
         return responseHandler(res, 200, "OTP Sent", null);
       }
+    } else {
+      const otp = {
+        code: generate(6),
+        updatedAt: new Date(),
+        count: 1,
+      };
+      return responseHandler(res, 200, "OTP Sent", null);
     }
   } catch (error) {
     responseHandler(res, 400, null, error.message);

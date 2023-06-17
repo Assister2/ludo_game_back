@@ -46,10 +46,27 @@ Router.get(
   }
 );
 Router.post("/hold/:id", verifyToken, async (req, res) => {
-  const challenge = await challengesController.updateChallengeStateToHold(
-    req.params.id
-  );
   let user = req.user;
+
+  let challenge = await challengesController.getChallengeById(req.params.id);
+  let winner = user.id == challenge.creator._id ? "creator" : "player";
+
+  let challengeObj = {
+    ...challenge._doc,
+    results: {
+      ...challenge.results,
+      [winner]: {
+        result: "",
+        timeover: true,
+        updatedAt: new Date(),
+      },
+    },
+    state: "hold",
+  };
+
+  await challenge.save();
+  challenge = await challengesController.updateChallengeById(challengeObj);
+
   await userController.updateUserByUserId({
     _id: user.id,
     playing: false,
@@ -117,7 +134,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       if (challenge.results[looser].result == "") {
         io.emit("showTimer", { showTimer: true });
       }
-      
+
       if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
@@ -177,8 +194,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
     return responseHandler(res, 400, null, error.message);
   }
 });
-
-
 
 Router.post("/loose/:id", verifyToken, async (req, res) => {
   try {
@@ -364,6 +379,12 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
 
       if (challenge.results[otherPlayer].result == "") {
         io.emit("showTimer", { showTimer: true });
+      }
+      if (challenge.results[otherPlayer].result == "lost") {
+        challengeObj.state = "hold";
+      }
+      if (challenge.results[otherPlayer].result == "win") {
+        challengeObj.state = "hold";
       }
       if (challenge.results[otherPlayer].result == "cancelled") {
         // await accountController.updateAccountByUserId({
