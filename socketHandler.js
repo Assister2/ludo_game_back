@@ -158,6 +158,7 @@ function handleConnection(socket) {
   socket.on("ludogame", async (message) => {
     try {
       const data = JSON.parse(message);
+
       let userId = "";
       let response = {
         status: 200,
@@ -170,6 +171,7 @@ function handleConnection(socket) {
             let challenge = await challengesController.getChallengeById(
               data.payload.challengeId
             );
+
             if (!challenge) {
               response = {
                 ...response,
@@ -192,18 +194,49 @@ function handleConnection(socket) {
               challenge.creator._id == data.payload.userId ||
               challenge.player._id == data.payload.userId
             ) {
-              response = {
-                ...response,
-                status: 200,
-                error: null,
-                data: challenge,
-              };
               if (challenge.player._id == data.payload.userId) {
                 await challengesController.updateChallengeById({
                   _id: challenge._id,
                   firstTime: false,
                 });
               }
+              if (challenge.state == "hold") {
+                response = {
+                  status: 400,
+                  error: "Challenge is on hold",
+                  data: null,
+                };
+                return socket.emit("ludogame", JSON.stringify(response));
+              }
+              if (
+                challenge.creator._id == data.payload.userId &&
+                challenge.results.creator.result !== ""
+              ) {
+                response = {
+                  status: 400,
+                  error: "Challenge is on hold",
+                  data: null,
+                };
+                return socket.emit("ludogame", JSON.stringify(response));
+              }
+              if (
+                challenge.player._id == data.payload.userId &&
+                challenge.results.player.result !== ""
+              ) {
+                response = {
+                  status: 400,
+                  error: "Challenge is on hold",
+                  data: null,
+                };
+                return socket.emit("ludogame", JSON.stringify(response));
+              }
+              response = {
+                ...response,
+                status: 200,
+                error: null,
+                data: challenge,
+              };
+
               return socket.emit("ludogame", JSON.stringify(response));
             }
             response = {
@@ -314,7 +347,8 @@ function handleConnection(socket) {
               }
               var config = {
                 method: "get",
-                url: "http://43.205.124.118/ludoking/roomcode/",
+                url: "http://128.199.28.12:3000/ludoking/roomcode",
+                // url: "http://43.205.124.118/ludoking/roomcode/",
                 headers: {},
               };
 
@@ -442,26 +476,42 @@ function handleConnection(socket) {
               // Implement your read operation here
               break;
             case "cancel":
-              let cancelChallenge = {
-                _id: data.payload.challengeId,
-                player: null,
-                state: "open",
-              };
-              let canecelledChallenge =
-                await challengesController.updateChallengeById(cancelChallenge);
-              if (!canecelledChallenge) {
+              let getChallenge = await challengesController.getChallengeById(
+                data.payload.challengeId
+              );
+              if (getChallenge.state === "requested") {
+                let cancelChallenge = {
+                  _id: data.payload.challengeId,
+                  player: null,
+                  state: "open",
+                };
+                
+                let canecelledChallenge =
+                  await challengesController.updateChallengeById(
+                    cancelChallenge
+                  );
+                if (!canecelledChallenge) {
+                  response = {
+                    ...response,
+                    status: 400,
+                    error: "challenge not created",
+                    data: null,
+                  };
+                  return socket.send(JSON.stringify(response));
+                }
+                await userController.updateUserByUserId({
+                  _id: data.payload.userId,
+                  hasActiveChallenge: false,
+                });
+              } else {
                 response = {
                   ...response,
                   status: 400,
-                  error: "challenge not created",
+                  error: "challenge not found",
                   data: null,
                 };
                 return socket.send(JSON.stringify(response));
               }
-              await userController.updateUserByUserId({
-                _id: data.payload.userId,
-                hasActiveChallenge: false,
-              });
               // Implement your update operation here
               break;
             case "delete":
@@ -521,6 +571,7 @@ function handleConnection(socket) {
               break;
             case "startGame":
               console.log("checkdata", data.payload);
+
               await startGame(data, socket);
 
               break;

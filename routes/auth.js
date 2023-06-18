@@ -176,8 +176,7 @@ router.post("/OTP", async (req, res) => {
     } else if (dataStore.phone) {
       let user = await userController.insertUser(dataStore);
 
-
-      if (dataStore.referer) {
+      if (user && dataStore.referer) {
         await userController.increasenoOfrefer(dataStore.referer);
       }
 
