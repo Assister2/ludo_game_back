@@ -276,7 +276,7 @@ function handleConnection(socket) {
         clearInterval(heartbeatInterval);
       }
     }, HEARTBEAT_INTERVAL);
-    // var aWss = expressWs.getWss("/playpage");
+    
     socket.on("message", async (message) => {
       try {
         const data = JSON.parse(message);
@@ -365,14 +365,8 @@ function handleConnection(socket) {
                 socket.send(JSON.stringify({ status: 2 }));
 
                 let challenges = await challengesController.getAllChallenges();
-
-                // console.log("challengess", challenges);
-
-                // aWss.clients.forEach(function (client) {
-
                 socket.send(JSON.stringify(challenges));
               }
-
               if (!challenge) {
                 response = {
                   ...response,
