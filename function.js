@@ -17,13 +17,12 @@ async function startGame(data, socket) {
       data.payload.challengeId
     );
     if (startChallenge.state == "requested") {
+      let startGameChallenge = await challengesController.updateChallengeById({
+        _id: data.payload.challengeId,
+        state: "playing",
+      });
+      console.log("starttt-challenge", startGameChallenge);
       var otherplayerId = startChallenge.player._id;
-      // let otherPlayer = await userController.existingUserById({
-      //   id: otherplayerId,
-      // });
-      // let creatorUser = await userController.existingUserById({
-      //   id: data.payload.userId,
-      // });
 
       if (startChallenge) {
         await challengesController.deleteOpenChallengesCreator(
@@ -33,11 +32,6 @@ async function startGame(data, socket) {
           startChallenge.player._id
         );
       }
-
-      let startGameChallenge = await challengesController.updateChallengeById({
-        _id: data.payload.challengeId,
-        state: "playing",
-      });
 
       if (startGameChallenge) {
         var creator33 =
@@ -96,7 +90,7 @@ async function startGame(data, socket) {
         response = {
           ...response,
           status: 400,
-          error: "Challenge not found",
+          error: "Challenge not found startgame",
           data: null,
         };
         return socket.send(JSON.stringify(response));
@@ -118,7 +112,7 @@ async function startGame(data, socket) {
     } else {
       response = {
         status: 400,
-        error: "Challenge not found",
+        error: "Challenge not found start",
         data: null,
       };
       return socket.send(JSON.stringify(response));
@@ -186,9 +180,59 @@ const handleChallengeCancellation = async (
 
   console.log("otherPlayerWallet", otherPlayerWallet);
 };
+async function cancelChallenge(challengeId, userId) {
+  try {
+    const getChallenge = await challengesController.getChallengeById(
+      challengeId
+    );
 
+    if (getChallenge.state === "requested") {
+      const cancelChallenge = {
+        _id: challengeId,
+        player: null,
+        state: "open",
+      };
+
+      const cancelledChallenge = await challengesController.updateChallengeById(
+        cancelChallenge
+      );
+      console.log("cancelled-challenge", cancelledChallenge);
+
+      if (!cancelledChallenge) {
+        const response = {
+          status: 400,
+          error: "Challenge not created",
+          data: null,
+        };
+
+        return socket.send(JSON.stringify(response));
+      }
+
+      await userController.updateUserByUserId({
+        _id: userId,
+        hasActiveChallenge: false,
+      });
+    } else {
+      const response = {
+        status: 400,
+        error: "Challenge not found, cancel game",
+        data: null,
+      };
+
+      return socket.send(JSON.stringify(response));
+    }
+  } catch (error) {
+    const response = {
+      status: 500,
+      error: "Error cancelling the challenge",
+      data: null,
+    };
+
+    return socket.send(JSON.stringify(response));
+  }
+}
 module.exports = {
   startGame,
-
+  cancelChallenge,
   handleChallengeCancellation,
 };

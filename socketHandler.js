@@ -2,7 +2,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const express = require("express");
 const path = require("path");
-const { startGame } = require("./function.js");
+const { startGame, cancelChallenge } = require("./function.js");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
@@ -476,43 +476,7 @@ function handleConnection(socket) {
               // Implement your read operation here
               break;
             case "cancel":
-              let getChallenge = await challengesController.getChallengeById(
-                data.payload.challengeId
-              );
-              if (getChallenge.state === "requested") {
-                let cancelChallenge = {
-                  _id: data.payload.challengeId,
-                  player: null,
-                  state: "open",
-                };
-                
-                let canecelledChallenge =
-                  await challengesController.updateChallengeById(
-                    cancelChallenge
-                  );
-                if (!canecelledChallenge) {
-                  response = {
-                    ...response,
-                    status: 400,
-                    error: "challenge not created",
-                    data: null,
-                  };
-                  return socket.send(JSON.stringify(response));
-                }
-                await userController.updateUserByUserId({
-                  _id: data.payload.userId,
-                  hasActiveChallenge: false,
-                });
-              } else {
-                response = {
-                  ...response,
-                  status: 400,
-                  error: "challenge not found",
-                  data: null,
-                };
-                return socket.send(JSON.stringify(response));
-              }
-              // Implement your update operation here
+              cancelChallenge(data.payload.challengeId, data.payload.userId);
               break;
             case "delete":
               let challengeObj = {
