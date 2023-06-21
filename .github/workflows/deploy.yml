@@ -13,8 +13,6 @@ jobs:
           host: ${{secrets.SSH_HOST}} # IP address of the server you wish to ssh
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{secrets.SSH_USERNAME}}
-          source: .env
-          target: backend_ludo/.env # User of the server 
 
           script: |
             git clone git@github.com:practice5610/backend_ludo.git
