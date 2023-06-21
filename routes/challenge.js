@@ -6,7 +6,6 @@ const { responseHandler, uploadFileImage } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 const UserAccount = require("../models/accounts");
 const Router = express.Router();
-
 const path = require("path");
 const currentDate = new Date();
 const { handleChallengeCancellation } = require("../function");
