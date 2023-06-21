@@ -101,7 +101,7 @@ const userController = {
           id: userData._id,
           phone: userData.phone,
         },
-        process.env.TOKEN_SECRET
+        "234124qweASd"
       );
 
       let tokenObject = {

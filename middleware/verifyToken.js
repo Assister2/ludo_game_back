@@ -4,7 +4,7 @@ module.exports = function (req,res,next){
       const Token = req.header('Authorization')
       if(!Token) return res.status(401).send('Access Denied')
 
-      const key = process.env.TOKEN_SECRET
+      const key = '234124qweASd'
       console.log("key",key)
       try {
           const verified = jwt.verify(Token,key)
