@@ -10,9 +10,9 @@ jobs:
       - name: Deploy NodeJS app
         uses: appleboy/ssh-action@v0.1.2
         with:
-          host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_KEY }}
-          username: ${{ secrets.SSH_USERNAME }}
+          host: ${{secrets.SSH_HOST}} # IP address of the server you wish to ssh
+          key: ${{secrets.SSH_KEY}} # Private or public key of the server
+          username: ${{secrets.SSH_USERNAME}}
           env:
             ENV_FILE: ${{ secrets.ENV_FILE }}
 
@@ -24,6 +24,4 @@ jobs:
             cd built
             npm install pm2 -g
             pm2 start index.js
-
-      - name: Echo Deployment successful
-        run: echo 'Deployment successful to DigitalOcean'
+            echo 'Deployment successful to DigitalOcean'
