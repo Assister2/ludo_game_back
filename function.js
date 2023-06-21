@@ -46,8 +46,7 @@ async function startGame(data, socket) {
             hasActiveChallenge: false,
             // Increment noOfChallenges by 1 for otherPlayer
           });
-        // console.log("creato33", creator33);
-        // console.log("otherplayer2", otherplayer2);
+
         await challengesController.deleteRequestedChallenges(
           startChallenge.creator._id
         );
@@ -190,7 +189,6 @@ async function cancelChallenge(challengeId, userId) {
       const cancelledChallenge = await challengesController.updateChallengeById(
         cancelChallenge
       );
-      console.log("cancelled-challenge", cancelledChallenge);
 
       if (!cancelledChallenge) {
         const response = {
