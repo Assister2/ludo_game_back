@@ -15,7 +15,10 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }} # User of the server you want to ssh into
      
           script: |
-            mkdir test 
-            cd test 
             git clone git@github.com:practice5610/backend_ludo.git 
+            cd backend_ludo
+            npm install
+            npm run build
+            cd built
+            pm2 start index.js
             echo 'Deployment successful to digital ocean' 
