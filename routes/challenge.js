@@ -6,7 +6,7 @@ const { responseHandler, uploadFileImage } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 const UserAccount = require("../models/accounts");
 const Router = express.Router();
-const Image = require("../models/image");
+
 const path = require("path");
 const currentDate = new Date();
 const { handleChallengeCancellation } = require("../function");
@@ -14,6 +14,8 @@ const History = require("../models/history");
 const { ObjectId } = require("mongodb");
 const mongodb = require("mongodb");
 const socket = require("../socket");
+const { handleChallengeUpdate } = require("../function");
+const axios = require("axios");
 // const { MongoClient } = mongodb;
 const userController = require("../controllers/user");
 
@@ -45,36 +47,36 @@ Router.get(
     } catch (error) {}
   }
 );
-Router.post("/hold/:id", verifyToken, async (req, res) => {
-  let user = req.user;
+// Router.post("/hold/:id", verifyToken, async (req, res) => {
+//   let user = req.user;
 
-  let challenge = await challengesController.getChallengeById(req.params.id);
-  let winner = user.id == challenge.creator._id ? "creator" : "player";
+//   let challenge = await challengesController.getChallengeById(req.params.id);
+//   let winner = user.id == challenge.creator._id ? "creator" : "player";
 
-  let challengeObj = {
-    ...challenge._doc,
-    results: {
-      ...challenge.results,
-      [winner]: {
-        result: "",
-        timeover: true,
-        updatedAt: new Date(),
-      },
-    },
-    state: "hold",
-  };
+//   let challengeObj = {
+//     ...challenge._doc,
+//     results: {
+//       ...challenge.results,
+//       [winner]: {
+//         result: "",
+//         timeover: true,
+//         updatedAt: new Date(),
+//       },
+//     },
+//     state: "hold",
+//   };
 
-  await challenge.save();
-  challenge = await challengesController.updateChallengeById(challengeObj);
+//   await challenge.save();
+//   challenge = await challengesController.updateChallengeById(challengeObj);
 
-  await userController.updateUserByUserId({
-    _id: user.id,
-    playing: false,
-    noOfChallenges: 0,
-  });
+//   await userController.updateUserByUserId({
+//     _id: user.id,
+//     playing: false,
+//     noOfChallenges: 0,
+//   });
 
-  return responseHandler(res, 200, challenge, null);
-});
+//   return responseHandler(res, 200, challenge, null);
+// });
 Router.post("/win/:id", verifyToken, async (req, res) => {
   try {
     const io = socket.get();
@@ -111,6 +113,21 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           "You have already submitted the result"
         );
       }
+      const { roomCode } = challenge;
+      let apiResult = null;
+      axios
+        .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
+        .then((response) => {
+          const data = response.data;
+          // Process the data received from the API
+          console.log("dddd", data);
+          apiResult = data;
+        })
+        .catch((error) => {
+          // Handle the error case
+          console.error(error);
+        });
+      // console.log("testtt", response);
 
       let challengeObj = {
         ...challenge._doc,
@@ -125,16 +142,29 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           [winner]: file,
           [looser]: challenge.winnerScreenShot[looser],
         },
+        apiResult: apiResult,
       };
 
       if (challenge.results[looser].result == "win") {
         challengeObj.state = "hold";
       }
       //win and no update
+      let data = {
+        challengeId: req.params.id,
+        userId: challenge[looser]._id,
+        otherPlayer: looser,
+      };
       if (challenge.results[looser].result == "") {
-        io.emit("showTimer", { showTimer: true });
+        handleChallengeUpdate(data);
+        io.emit(
+          "showTimer",
+          JSON.stringify({
+            showTimer: true,
+            challengeId: req.params.id,
+            userId: req.user,
+          })
+        );
       }
-
       if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
@@ -232,7 +262,20 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       );
 
       amount = amount * 2 - (amount * 3) / 100;
-
+      const { roomCode } = challenge;
+      let apiResult = null;
+      axios
+        .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
+        .then((response) => {
+          const data = response.data;
+          // Process the data received from the API
+          console.log("dddd", data);
+          apiResult = data;
+        })
+        .catch((error) => {
+          // Handle the error case
+          console.error(error);
+        });
       let challengeObj = {
         ...challenge._doc,
         //first who sent i lost his result will be saved lost
@@ -243,11 +286,25 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
             result: challenge.results[winner].result,
             updatedAt: challenge.results[winner].updatedAt,
           },
+          apiResult: apiResult,
         },
+      };
+      let data = {
+        challengeId: req.params.id,
+        userId: challenge[winner]._id,
+        otherPlayer: winner,
       };
       //if 2nd user result is empty
       if (challenge.results[winner].result == "") {
-        io.emit("showTimer", { showTimer: true });
+        handleChallengeUpdate(data);
+        io.emit(
+          "showTimer",
+          JSON.stringify({
+            showTimer: true,
+            challengeId: req.params.id,
+            userId: req.user,
+          })
+        );
       }
       if (challenge.results[winner].result == "lost") {
         await handleChallengeCancellation(
@@ -363,7 +420,20 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       let otherPlayerWallet = await accountController.getAccountByUserId(
         challenge[otherPlayer]._id
       );
+      const { roomCode } = challenge;
+      let apiResult = null;
+      axios
+        .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
+        .then((response) => {
+          const data = response.data;
+          // Process the data received from the API
 
+          apiResult = data;
+        })
+        .catch((error) => {
+          // Handle the error case
+          console.error(error);
+        });
       let challengeObj = {
         ...challenge._doc,
         results: {
@@ -374,11 +444,25 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
             updatedAt: challenge.results[otherPlayer].updatedAt,
           },
         },
+        apiResult: apiResult,
         cancellationReasons: { [canceller]: req.body.cancellationReason },
+      };
+      let data = {
+        challengeId: req.params.id,
+        userId: challenge[otherPlayer]._id,
+        otherPlayer: otherPlayer,
       };
 
       if (challenge.results[otherPlayer].result == "") {
-        io.emit("showTimer", { showTimer: true });
+        handleChallengeUpdate(data);
+        io.emit(
+          "showTimer",
+          JSON.stringify({
+            showTimer: true,
+            challengeId: req.params.id,
+            userId: req.user,
+          })
+        );
       }
       if (challenge.results[otherPlayer].result == "lost") {
         challengeObj.state = "hold";

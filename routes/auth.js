@@ -97,9 +97,10 @@ router.post("/login", async (req, res) => {
         count: user.otp.count + 1,
       };
 
-      let textRes = await sendText(user.otp.code, user.phone);
-      textRes.return = true;
-      if (textRes.return === false) {
+      // let textRes = await sendText(user.otp.code, user.phone);
+      let textRes;
+      textRes = true;
+      if (textRes === false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
         user = await userController.updateUserByPhoneNumber(user);
@@ -186,7 +187,7 @@ router.post("/OTP", async (req, res) => {
       user = await userController.existingUser(req.body.phone);
       await accountController.insertAccount(accountObject);
       if (!user) {
-        return responseHandler(res, 400, null, "This Number is Not Registered");
+        return responseHandler(res, 400, null, "This Number is Not valid");
       } else {
         let min = 2; // Days you want to subtract
         let date = new Date();

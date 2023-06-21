@@ -2,8 +2,7 @@ const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
 const History = require("./models/history");
-const Image = require("./models/image");
-const mongoose = require("mongoose");
+
 const { Binary } = require("mongodb");
 async function startGame(data, socket) {
   let response = {
@@ -21,7 +20,7 @@ async function startGame(data, socket) {
         _id: data.payload.challengeId,
         state: "playing",
       });
-      console.log("starttt-challenge", startGameChallenge);
+
       var otherplayerId = startChallenge.player._id;
 
       if (startChallenge) {
@@ -139,11 +138,9 @@ const handleChallengeCancellation = async (
   otherPlayerWallet
 ) => {
   challengeObj.state = "resolved";
-
+  // const session = (await startSession()).startTransaction();
   const updateWalletAndCash = async (challenge, player, playerWallet) => {
     if (player === "creator") {
-      console.log("cccc2", playerWallet);
-      console.log("cccc21", challenge.creatorChips);
       playerWallet = await accountController.updateAccountByUserId({
         ...playerWallet._doc,
         wallet: playerWallet.wallet + challenge.amount,
@@ -155,8 +152,6 @@ const handleChallengeCancellation = async (
       return;
     }
     if (player === "player") {
-      console.log("cccc3", playerWallet);
-      console.log("cccc31", challenge.playerChips);
       playerWallet = await accountController.updateAccountByUserId({
         ...playerWallet._doc,
         wallet: playerWallet.wallet + challenge.amount,
@@ -167,19 +162,17 @@ const handleChallengeCancellation = async (
       });
       return;
     }
-    console.log("cccc4", typeof playerWallet.depositCash);
+
     playerWallet = await accountController.updateAccountByUserId({
       ...playerWallet._doc,
       wallet: playerWallet.wallet + challenge.amount,
       depositCash: playerWallet.depositCash + challenge.amount,
     });
   };
-  console.log("forcanceller", typeof canceller, canceller);
-  await updateWalletAndCash(challenge, canceller, cancellerWallet);
-  console.log("forotherPlayer", typeof otherPlayer, otherPlayer);
-  await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet);
 
-  console.log("otherPlayerWallet", otherPlayerWallet);
+  await updateWalletAndCash(challenge, canceller, cancellerWallet);
+
+  await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet);
 };
 async function cancelChallenge(challengeId, userId) {
   try {
@@ -232,8 +225,42 @@ async function cancelChallenge(challengeId, userId) {
     return socket.send(JSON.stringify(response));
   }
 }
+const handleChallengeUpdate = async (data) => {
+  setTimeout(async () => {
+    const challenge = await challengesController.getChallengeById(
+      data.challengeId
+    );
+
+    console.log("starteee", challenge.results[data.otherPlayer].result);
+    if (challenge.results[data.otherPlayer].result === "") {
+      const challengeObj = {
+        ...challenge._doc,
+        results: {
+          ...challenge.results,
+          [userIs]: {
+            result: "",
+            timeover: true,
+            updatedAt: new Date(),
+          },
+        },
+        state: "hold",
+      };
+
+      await challenge.save();
+      await challengesController.updateChallengeById(challengeObj);
+
+      await userController.updateUserByUserId({
+        _id: data.userId,
+        playing: false,
+        noOfChallenges: 0,
+      });
+    }
+  }, 1 * 30 * 1000); // 10 minutes delay
+};
+
 module.exports = {
   startGame,
   cancelChallenge,
   handleChallengeCancellation,
+  handleChallengeUpdate,
 };

@@ -347,7 +347,7 @@ function handleConnection(socket) {
               }
               var config = {
                 method: "get",
-                url: "http://128.199.28.12:3000/ludoking/roomcode",
+                url: "  http://128.199.28.12:3000/ludoking/roomcode",
                 // url: "http://43.205.124.118/ludoking/roomcode/",
                 headers: {},
               };

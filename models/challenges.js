@@ -109,6 +109,10 @@ const challengeSchema = new mongoose.Schema({
     type: Date,
     default: new Date(),
   },
+  apiResult: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {},
+  },
 });
 
 const Challenge = mongoose.model("challenges", challengeSchema);
