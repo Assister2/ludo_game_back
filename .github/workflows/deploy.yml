@@ -22,4 +22,15 @@ jobs:
             cd built
             npm install pm2 -g
             pm2 start index.js
-            echo 'Deployment successful to DigitalOcean'
+
+      - name: Upload .env file
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{secrets.SSH_HOST}} # IP address of the server you wish to ssh
+          username: ${{secrets.SSH_USERNAME}} # User of the server
+          key: ${{secrets.SSH_KEY}} # Private or public key of the server
+          source: .env
+          target: backend_ludo/.env
+
+      - name: Echo Deployment successful
+        run: echo 'Deployment successful to DigitalOcean'
