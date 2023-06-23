@@ -141,7 +141,7 @@ function handleConnection(socket) {
             // return socket.send(JSON.stringify(response));
             return;
           } catch (error) {
-            console.log("error.message", error.message);
+            console.log("error.message2", error.message);
             response = { status: 400, error: error.message, data: null };
             return socket.send(JSON.stringify(response));
           }
@@ -247,7 +247,7 @@ function handleConnection(socket) {
             };
             return socket.emit("ludogame", JSON.stringify(response));
           } catch (error) {
-            console.log("error.message", error.message);
+            console.log("error.message3", error.message);
             response = {
               ...response,
               status: 400,
@@ -276,7 +276,7 @@ function handleConnection(socket) {
         clearInterval(heartbeatInterval);
       }
     }, HEARTBEAT_INTERVAL);
-    
+
     socket.on("message", async (message) => {
       try {
         const data = JSON.parse(message);

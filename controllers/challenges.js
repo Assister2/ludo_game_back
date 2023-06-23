@@ -140,6 +140,50 @@ const challengesController = {
       throw error;
     }
   },
+  updateChallengeById22: async (challengeId) => {
+    try {
+      let challenge = await ChallengeModel.findById(challengeId);
+
+      if (!challenge) {
+        throw new Error("Challenge not found");
+      }
+
+      if (challenge.state === "requested" && challenge.player) {
+        challenge.state = "playing";
+        await challenge.save();
+      } else {
+        throw new Error("Invalid state for updating challenge");
+      }
+
+      return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
+  updateChallengeById23: async (challengeId) => {
+    try {
+      let challenge = await ChallengeModel.findById(challengeId);
+
+      if (!challenge) {
+        throw new Error("Challenge not found");
+      }
+
+      if (challenge.state === "requested") {
+        challenge.player = null;
+        challenge.state = "open";
+        await challenge.save();
+      } else {
+        throw new Error("Invalid state for updating challenge");
+      }
+
+      return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
+
   deleteChallengeById: async (challengeId) => {
     try {
       let challenge = await ChallengeModel.findOneAndDelete({
@@ -189,7 +233,6 @@ const challengesController = {
     try {
       // Find the challenge by ID
       const challenge = await ChallengeModel.findById(challengeId);
-      
 
       if (!challenge) {
         console.log("Challenge not found");

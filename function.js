@@ -1,10 +1,10 @@
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
-const History = require("./models/history");
-
-const { Binary } = require("mongodb");
+const mongoose = require("mongoose");
 async function startGame(data, socket) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   let response = {
     status: 200,
     data: null,
@@ -16,10 +16,9 @@ async function startGame(data, socket) {
       data.payload.challengeId
     );
     if (startChallenge.state == "requested") {
-      let startGameChallenge = await challengesController.updateChallengeById({
-        _id: data.payload.challengeId,
-        state: "playing",
-      });
+      let startGameChallenge = await challengesController.updateChallengeById22(
+        data.payload.challengeId
+      );
 
       var otherplayerId = startChallenge.player._id;
 
@@ -93,6 +92,7 @@ async function startGame(data, socket) {
         };
         return socket.send(JSON.stringify(response));
       }
+
       if (creator33.noOfChallenges == 1 && otherplayer2.noOfChallenges == 1) {
         await accountController.decreasePlayersAccount(startChallenge);
 
@@ -105,6 +105,8 @@ async function startGame(data, socket) {
           challengeId: startGameChallenge._id,
         };
         socket.send(JSON.stringify({ status: 3 }));
+        await session.commitTransaction();
+        session.endSession();
 
         return socket.send(JSON.stringify(response));
       }
@@ -117,6 +119,8 @@ async function startGame(data, socket) {
       return socket.send(JSON.stringify(response));
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     response = {
       ...response,
       status: 500,
@@ -124,7 +128,7 @@ async function startGame(data, socket) {
       data: null,
     };
 
-    return socket.send(JSON.stringify(response));
+    // return socket.send(JSON.stringify(response));
   }
 }
 
@@ -174,6 +178,8 @@ const handleChallengeCancellation = async (
   await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet);
 };
 async function cancelChallenge(challengeId, userId) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const getChallenge = await challengesController.getChallengeById(
       challengeId
@@ -186,9 +192,8 @@ async function cancelChallenge(challengeId, userId) {
         state: "open",
       };
 
-      const cancelledChallenge = await challengesController.updateChallengeById(
-        cancelChallenge
-      );
+      const cancelledChallenge =
+        await challengesController.updateChallengeById23(challengeId);
 
       if (!cancelledChallenge) {
         const response = {
@@ -210,17 +215,20 @@ async function cancelChallenge(challengeId, userId) {
         error: "Challenge not found, cancel game",
         data: null,
       };
-
+      await session.commitTransaction();
+      session.endSession();
       return socket.send(JSON.stringify(response));
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     const response = {
       status: 500,
       error: "Error cancelling the challenge",
       data: null,
     };
 
-    return socket.send(JSON.stringify(response));
+    // return socket.send(JSON.stringify(response));
   }
 }
 const handleChallengeUpdate = async (data) => {
@@ -229,7 +237,7 @@ const handleChallengeUpdate = async (data) => {
       data.challengeId
     );
 
-    console.log("starteee", challenge.results[data.otherPlayer].result);
+   
     if (challenge.results[data.otherPlayer].result === "") {
       const challengeObj = {
         ...challenge._doc,
