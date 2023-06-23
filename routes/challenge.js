@@ -77,6 +77,8 @@ Router.get(
 //   return responseHandler(res, 200, challenge, null);
 // });
 Router.post("/win/:id", verifyToken, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
@@ -154,7 +156,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         otherPlayer: looser,
       };
       if (challenge.results[looser].result == "") {
-        handleChallengeUpdate(data);
+        await handleChallengeUpdate(data);
         io.emit(
           "showTimer",
           JSON.stringify({
@@ -215,16 +217,22 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
 
       challenge = await challengesController.updateChallengeById(challengeObj);
+      await session.commitTransaction();
+      session.endSession();
 
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.log("error", error);
     return responseHandler(res, 400, null, error.message);
   }
 });
 
 Router.post("/loose/:id", verifyToken, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
@@ -377,16 +385,22 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
       challenge = await challengesController.updateChallengeById(challengeObj);
+      await session.commitTransaction();
+      session.endSession();
 
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.log("error", error);
     return responseHandler(res, 400, null, error.message);
   }
 });
 
 Router.post("/cancel/:id", verifyToken, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const io = socket.get();
 
@@ -499,9 +513,13 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       historyWinner.type = "cancelled";
       await historyWinner.save();
       challenge = await challengesController.updateChallengeById(challengeObj);
+      await session.commitTransaction();
+      session.endSession();
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.log("error", error);
     return responseHandler(res, 400, null, error.message);
   }

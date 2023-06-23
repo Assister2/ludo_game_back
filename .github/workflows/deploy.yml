@@ -16,11 +16,13 @@ jobs:
           
 
           script: |
+            rm -rf backend_ludo
+            pm2 kill
             git clone git@github.com:practice5610/backend_ludo.git
             cd backend_ludo
-            npm install
-            npm run build
             cd built
             npm install pm2 -g
             pm2 start index.js
+            sudo service nginx restart
+            sudo systemctl reload nginx
             echo 'Deployment successful to DigitalOcean'
