@@ -235,7 +235,7 @@ const handleChallengeUpdate = async (data) => {
         ...challenge._doc,
         results: {
           ...challenge.results,
-          [userIs]: {
+          [data.otherPlayer]: {
             result: "",
             timeover: true,
             updatedAt: new Date(),
