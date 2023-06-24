@@ -218,7 +218,7 @@ const challengesController = {
         challenge.state = "open";
         await challenge.save();
       } else {
-        throw new Error("Invalid state for updating challenge23");
+        throw new Error("Invalid state for updating challenge234");
       }
 
       return challenge;
