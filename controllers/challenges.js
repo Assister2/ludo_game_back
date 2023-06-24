@@ -192,11 +192,11 @@ const challengesController = {
         throw new Error("Challenge not found");
       }
 
-      if (challenge.state === "requested" && challenge.player) {
+      if (challenge.state === "requested") {
         challenge.state = "playing";
         await challenge.save();
       } else {
-        throw new Error("Invalid state for updating challenge");
+        throw new Error("Invalid state for updating challenge22");
       }
 
       return challenge;
@@ -218,7 +218,7 @@ const challengesController = {
         challenge.state = "open";
         await challenge.save();
       } else {
-        throw new Error("Invalid state for updating challenge");
+        throw new Error("Invalid state for updating challenge23");
       }
 
       return challenge;
