@@ -19,6 +19,7 @@ const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
+
 const userController = require("./controllers/user");
 const { generate } = require("./helpers");
 const Challenge = require("./models/challenges");
@@ -51,13 +52,10 @@ mongoose
     console.log("MongoDB connected");
     const server2 = app.listen(4001, () => {
       console.log("application and socket is running on port 4001");
-    }); /* create your HTTP server */
-    // const socketServer = io(server2, {
-    //   pingTimeout: 500,
-    //   cors: {
-    //     origin: "*",
-    //   },
-    // });
+    });
+    setInterval(async () => {
+      await challengesController.UpdateOpenChallenges();
+    }, 1 * 60 * 1000);
     const io = socket.init(server2);
 
     io.on("connection", (socket) => {

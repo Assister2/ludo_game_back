@@ -1,4 +1,6 @@
 const accountController = require("./controllers/accounts");
+const ChallengeModel = require("./models/challenges");
+const moment = require("moment");
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
 const mongoose = require("mongoose");
@@ -237,7 +239,6 @@ const handleChallengeUpdate = async (data) => {
       data.challengeId
     );
 
-   
     if (challenge.results[data.otherPlayer].result === "") {
       const challengeObj = {
         ...challenge._doc,
@@ -264,9 +265,72 @@ const handleChallengeUpdate = async (data) => {
   }, 1 * 30 * 1000); // 10 minutes delay
 };
 
+const bothResultNotUpdated = async (challengeId) => {
+  
+  setTimeout(async () => {
+    try {
+      let challenge = await challengesController.getChallengeById(challengeId);
+      console.log("timerChallenge", challenge);
+      let creatorId = challenge.creator._id;
+      let playerId = challenge.player._id;
+
+      // Iterate through the challenges
+      if (
+        challenge.results.creator.result === "" &&
+        challenge.results.player.result === ""
+      ) {
+        const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
+
+        // Compare the createdAt time with the current time
+        const minutesPassed = moment().diff(createdAt, "minutes");
+        
+        if (minutesPassed > 1) {
+          // Challenge was created more than 3 minutes ago, perform update
+          const updated = await ChallengeModel.findByIdAndUpdate(
+            challenge._id,
+            {
+              results: {
+                ...challenge.results,
+                creator: {
+                  result: "",
+                  timeover: true,
+                  updatedAt: new Date(),
+                },
+                player: {
+                  result: "",
+                  timeover: true,
+                  updatedAt: new Date(),
+                },
+              },
+              state: "hold",
+            }
+          );
+          
+          if (updated) {
+            await userController.updateUserByUserId({
+              _id: creatorId,
+              playing: false,
+              noOfChallenges: 0,
+            });
+            await userController.updateUserByUserId({
+              _id: playerId,
+              playing: false,
+              noOfChallenges: 0,
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  }, 2 * 60 * 1000); // 10 minutes delay
+};
+
 module.exports = {
   startGame,
   cancelChallenge,
+  bothResultNotUpdated,
   handleChallengeCancellation,
   handleChallengeUpdate,
 };

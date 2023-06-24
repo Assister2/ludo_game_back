@@ -1,6 +1,6 @@
 const ChallengeModel = require("../models/challenges");
 const User = require("../models/user");
-
+const moment = require("moment");
 const challengesController = {
   /**
    * createChallenge - challengeObject that need to be insert.
@@ -123,6 +123,37 @@ const challengesController = {
       throw error;
     }
   },
+  UpdateOpenChallenges: async () => {
+    try {
+      const challenges = await ChallengeModel.find({
+        status: 1,
+        state: "open",
+      });
+      challenges;
+      let updatedCount = 0;
+      if (challenges.length > 0) {
+        // Iterate through the challenges
+        for (const challenge of challenges) {
+          const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
+
+          // Compare the createdAt time with the current time
+          const minutesPassed = moment().diff(createdAt, "minutes");
+          if (minutesPassed > 3) {
+            // Challenge was created more than 3 minutes ago, perform update
+            await ChallengeModel.findByIdAndUpdate(challenge._id, {
+              status: 0,
+            });
+            updatedCount++;
+          }
+        }
+        console.log(`Updated ${updatedCount} challenges.`);
+      }
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
+
   /**
    * updateChallengeById - updateChallengeById
    * @returns {Promise<void>}

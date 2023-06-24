@@ -2,7 +2,11 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const express = require("express");
 const path = require("path");
-const { startGame, cancelChallenge } = require("./function.js");
+const {
+  startGame,
+  cancelChallenge,
+  bothResultNotUpdated,
+} = require("./function.js");
 const cookieParser = require("cookie-parser");
 // const logger = require("morgan");
 // const cors = require("cors");
@@ -147,7 +151,7 @@ function handleConnection(socket) {
           }
       }
     } catch (error) {
-      console.log("Errorwa2", error.message);
+      console.log("Errorwa233", error.message);
       let response = { status: 400, error: error, data: null };
       console.log("ssss", response);
       return socket.send(JSON.stringify(response));
@@ -565,6 +569,7 @@ function handleConnection(socket) {
               console.log("checkdata", data.payload);
 
               await startGame(data, socket);
+              await bothResultNotUpdated(data.payload.challengeId);
 
               break;
           }
