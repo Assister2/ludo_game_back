@@ -41,7 +41,13 @@ router.post("/signup", async (req, res) => {
       userData.profileImage = `${randomIntFromInterval(1, 4)}.svg`;
       console.log("req.body", req.body);
       if (req.body.referelCode) {
-        userData.referer = Number(req.body.referelCode);
+        let user = await userController.existingReferCode(req.body.referelCode);
+        if (user) {
+          userData.referer = Number(req.body.referelCode);
+        } else {
+          userData = {};
+          return responseHandler(res, 400, null, "refer code not found");
+        }
       }
       userData.otp = {
         code: generate(6),

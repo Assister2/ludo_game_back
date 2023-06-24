@@ -140,6 +140,27 @@ const challengesController = {
       throw error;
     }
   },
+  updateChallengeById44: async (challengeId) => {
+    try {
+      let challenge = await ChallengeModel.findById(challengeId);
+
+      if (!challenge) {
+        throw new Error("Challenge not found");
+      }
+
+      if (challenge.state === "open" && challenge.status === 1) {
+        challenge.status = 0;
+        await challenge.save();
+      } else {
+        throw new Error("challenge in requested state");
+      }
+
+      return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
   updateChallengeById22: async (challengeId) => {
     try {
       let challenge = await ChallengeModel.findById(challengeId);

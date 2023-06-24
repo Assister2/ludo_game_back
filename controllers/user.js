@@ -17,6 +17,17 @@ const userController = {
       throw error;
     }
   },
+  existingReferCode: async (referCode) => {
+    try {
+      let user = await User.findOne({
+        referelCode: referCode,
+      });
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
 
   /**
    * existingUserById - Check existing user by user id.
