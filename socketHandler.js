@@ -482,7 +482,8 @@ function handleConnection(socket) {
                 currentChallenge._doc.player = data.payload.userId;
                 currentChallenge =
                   await challengesController.updateChallengeById44(
-                    currentChallenge
+                    currentChallenge._id,
+                    data.payload.userId
                   );
 
                 let challenges2 = await challengesController.getAllChallenges();
@@ -509,7 +510,9 @@ function handleConnection(socket) {
                 status: 0,
               };
               let deletedChallenge =
-                await challengesController.updateChallengeById(challengeObj);
+                await challengesController.updateDeleteChallengeById(
+                  data.payload.challengeId
+                );
               if (deletedChallenge) {
                 let challenges = await challengesController.getAllChallenges();
 
