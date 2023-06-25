@@ -130,6 +130,7 @@ const challengesController = {
         state: "open",
       });
       challenges;
+
       let updatedCount = 0;
       if (challenges.length > 0) {
         // Iterate through the challenges
@@ -138,7 +139,8 @@ const challengesController = {
 
           // Compare the createdAt time with the current time
           const minutesPassed = moment().diff(createdAt, "minutes");
-          if (minutesPassed > 3) {
+
+          if (minutesPassed > 1) {
             // Challenge was created more than 3 minutes ago, perform update
             await ChallengeModel.findByIdAndUpdate(challenge._id, {
               status: 0,
