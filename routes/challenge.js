@@ -116,7 +116,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
       const { roomCode } = challenge;
       let apiResult = null;
-      axios
+      await axios
         .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
         .then((response) => {
           const data = response.data;
@@ -271,7 +271,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       amount = amount * 2 - (amount * 3) / 100;
       const { roomCode } = challenge;
       let apiResult = null;
-      axios
+      await axios
         .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
         .then((response) => {
           const data = response.data;
@@ -293,9 +293,10 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
             result: challenge.results[winner].result,
             updatedAt: challenge.results[winner].updatedAt,
           },
-          apiResult: apiResult,
         },
+        apiResult: apiResult,
       };
+
       let data = {
         challengeId: req.params.id,
         userId: challenge[winner]._id,
@@ -435,7 +436,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       );
       const { roomCode } = challenge;
       let apiResult = null;
-      axios
+      await axios
         .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
         .then((response) => {
           const data = response.data;

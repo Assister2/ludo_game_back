@@ -266,7 +266,6 @@ const handleChallengeUpdate = async (data) => {
 };
 
 const bothResultNotUpdated = async (challengeId) => {
-  
   setTimeout(async () => {
     try {
       let challenge = await challengesController.getChallengeById(challengeId);
@@ -283,7 +282,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
         // Compare the createdAt time with the current time
         const minutesPassed = moment().diff(createdAt, "minutes");
-        
+
         if (minutesPassed > 1) {
           // Challenge was created more than 3 minutes ago, perform update
           const updated = await ChallengeModel.findByIdAndUpdate(
@@ -305,7 +304,7 @@ const bothResultNotUpdated = async (challengeId) => {
               state: "hold",
             }
           );
-          
+
           if (updated) {
             await userController.updateUserByUserId({
               _id: creatorId,
@@ -324,7 +323,7 @@ const bothResultNotUpdated = async (challengeId) => {
       console.log("error", error);
       throw error;
     }
-  }, 2 * 60 * 1000); // 10 minutes delay
+  }, 6 * 60 * 1000); // 10 minutes delay
 };
 
 module.exports = {
