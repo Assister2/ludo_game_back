@@ -55,7 +55,7 @@ mongoose
     });
     setInterval(async () => {
       await challengesController.UpdateOpenChallenges();
-    }, 1 * 60 * 1000);
+    }, 3 * 60 * 1000);
     const io = socket.init(server2);
 
     io.on("connection", (socket) => {

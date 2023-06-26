@@ -231,14 +231,11 @@ const challengesController = {
         challenge.state = "playing";
         challenge.startedAt = new Date();
         await challenge.save();
-      } else {
-        throw new Error("Invalid state for updating challenge22");
       }
 
       return challenge;
     } catch (error) {
-      console.log("error", error);
-      throw error;
+      console.log("error23", error);
     }
   },
   updateChallengeById23: async (challengeId) => {

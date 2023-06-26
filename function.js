@@ -18,6 +18,8 @@ async function startGame(data, socket) {
     let startChallenge = await challengesController.getChallengeById(
       data.payload.challengeId
     );
+    await userController.setUserLockTrue(startChallenge.player._id);
+    await userController.setUserLockTrue(startChallenge.creator._id);
     if (startChallenge.state == "requested") {
       let startGameChallenge = await challengesController.updateChallengeById22(
         data.payload.challengeId
@@ -70,6 +72,9 @@ async function startGame(data, socket) {
             noOfChallenges: 0,
             // Increment noOfChallenges by 1 for creatorUser
           });
+          await session.abortTransaction();
+          session.endSession();
+
           // await userController.updateUserByUserId({
           //   _id: otherplayerId,
           //   hasActiveChallenge: false,
@@ -134,6 +139,8 @@ async function startGame(data, socket) {
     // return socket.send(JSON.stringify(response));
   } finally {
     await challengesController.setLockFalse(data.payload.challengeId);
+    await userController.setUserLockFalse(startChallenge.player._id);
+    await userController.setUserLockFalse(startChallenge.creator._id);
   }
 }
 
@@ -216,14 +223,15 @@ async function cancelChallenge(challengeId, userId) {
         _id: userId,
         hasActiveChallenge: false,
       });
+      await session.commitTransaction();
+      session.endSession();
     } else {
       const response = {
         status: 400,
         error: "Challenge not found, cancel game",
         data: null,
       };
-      await session.commitTransaction();
-      session.endSession();
+
       return socket.send(JSON.stringify(response));
     }
   } catch (error) {
@@ -277,52 +285,54 @@ const bothResultNotUpdated = async (challengeId) => {
     try {
       let challenge = await challengesController.getChallengeById(challengeId);
       console.log("timerChallenge", challenge);
-      let creatorId = challenge.creator._id;
-      let playerId = challenge.player._id;
+      if (challenge.state === "playing" && challenge.player._id) {
+        let creatorId = challenge.creator._id;
+        let playerId = challenge.player._id;
 
-      // Iterate through the challenges
-      if (
-        challenge.results.creator.result === "" &&
-        challenge.results.player.result === ""
-      ) {
-        const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
+        // Iterate through the challenges
+        if (
+          challenge.results.creator.result === "" &&
+          challenge.results.player.result === ""
+        ) {
+          const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
 
-        // Compare the createdAt time with the current time
-        const minutesPassed = moment().diff(createdAt, "minutes");
+          // Compare the createdAt time with the current time
+          const minutesPassed = moment().diff(createdAt, "minutes");
 
-        if (minutesPassed > 1) {
-          // Challenge was created more than 3 minutes ago, perform update
-          const updated = await ChallengeModel.findByIdAndUpdate(
-            challenge._id,
-            {
-              results: {
-                ...challenge.results,
-                creator: {
-                  result: "",
-                  timeover: true,
-                  updatedAt: new Date(),
+          if (minutesPassed > 1) {
+            // Challenge was created more than 3 minutes ago, perform update
+            const updated = await ChallengeModel.findByIdAndUpdate(
+              challenge._id,
+              {
+                results: {
+                  ...challenge.results,
+                  creator: {
+                    result: "",
+                    timeover: true,
+                    updatedAt: new Date(),
+                  },
+                  player: {
+                    result: "",
+                    timeover: true,
+                    updatedAt: new Date(),
+                  },
                 },
-                player: {
-                  result: "",
-                  timeover: true,
-                  updatedAt: new Date(),
-                },
-              },
-              state: "hold",
+                state: "hold",
+              }
+            );
+
+            if (updated) {
+              await userController.updateUserByUserId({
+                _id: creatorId,
+                playing: false,
+                noOfChallenges: 0,
+              });
+              await userController.updateUserByUserId({
+                _id: playerId,
+                playing: false,
+                noOfChallenges: 0,
+              });
             }
-          );
-
-          if (updated) {
-            await userController.updateUserByUserId({
-              _id: creatorId,
-              playing: false,
-              noOfChallenges: 0,
-            });
-            await userController.updateUserByUserId({
-              _id: playerId,
-              playing: false,
-              noOfChallenges: 0,
-            });
           }
         }
       }

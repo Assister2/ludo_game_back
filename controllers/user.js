@@ -163,6 +163,22 @@ const userController = {
       throw error;
     }
   },
+  setUserLockTrue: async (userId) => {
+    try {
+      await User.findByIdAndUpdate(userId, { locked: true });
+    } catch (error) {
+      console.log("Error setting for user lock to true:", error);
+      throw error;
+    }
+  },
+  setUserLockFalse: async (userId) => {
+    try {
+      await User.findByIdAndUpdate(userId, { locked: false });
+    } catch (error) {
+      console.log("Error setting lock for user to false:", error);
+      throw error;
+    }
+  },
   increamentNoOfChallengesUserByUserId: async (userObj) => {
     try {
       let user = await User.findOneAndUpdate(
