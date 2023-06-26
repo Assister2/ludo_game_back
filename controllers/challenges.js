@@ -227,6 +227,7 @@ const challengesController = {
 
       if (challenge.state === "requested") {
         challenge.state = "playing";
+        challenge.startedAt = new Date();
         await challenge.save();
       } else {
         throw new Error("Invalid state for updating challenge22");

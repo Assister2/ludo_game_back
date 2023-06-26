@@ -421,13 +421,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         req.params.id
       );
       let canceller = user.id == challenge.creator._id ? "creator" : "player";
-      let canceller1 =
-        user.id == challenge.creator._id ? "creatorChips" : "playerChips";
-
       let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
-      let otherPlayer2 =
-        user.id != challenge.creator._id ? "creatorChips" : "playerChips";
-
       let cancellerWallet = await accountController.getAccountByUserId(
         challenge[canceller]._id
       );
@@ -440,8 +434,6 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
         .then((response) => {
           const data = response.data;
-          // Process the data received from the API
-
           apiResult = data;
         })
         .catch((error) => {

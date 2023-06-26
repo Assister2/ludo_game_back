@@ -12,7 +12,7 @@ router.post("/buy", verifyToken, async (req, res) => {
     if (!req.body.payload) {
       return responseHandler(res, 400, null, "Fields are missing232");
     }
-
+    
     let { amount } = req.body.payload;
     let user = req.user;
     let account = await accountController.getAccountByUserId(user.id);
@@ -48,7 +48,6 @@ router.post("/buy", verifyToken, async (req, res) => {
   }
 });
 
-const ONE_DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
 router.post("/sell", verifyToken, async (req, res) => {
   try {
