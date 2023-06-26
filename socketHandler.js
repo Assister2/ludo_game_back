@@ -397,6 +397,8 @@ function handleConnection(socket) {
             case "play":
               const session = await mongoose.startSession();
               session.startTransaction();
+              await challengesController.setLockTrue(data.payload.challengeId);
+              console.log("issit");
 
               try {
                 let currentChallenge =
@@ -501,6 +503,10 @@ function handleConnection(socket) {
                 console.log("PlayCatcherror", error);
                 throw error;
               } finally {
+                console.log("workingfinally");
+                await challengesController.setLockTrue(
+                  data.payload.challengeId
+                );
                 session.endSession();
               }
 
@@ -514,28 +520,40 @@ function handleConnection(socket) {
                 _id: data.payload.challengeId,
                 status: 0,
               };
-              let deletedChallenge =
-                await challengesController.updateDeleteChallengeById(
+              try {
+                await challengesController.setLockTrue(
                   data.payload.challengeId
                 );
-              if (deletedChallenge) {
-                let challenges = await challengesController.getAllChallenges();
+                let deletedChallenge =
+                  await challengesController.updateDeleteChallengeById(
+                    data.payload.challengeId
+                  );
+                if (deletedChallenge) {
+                  let challenges =
+                    await challengesController.getAllChallenges();
 
-                socket.send(JSON.stringify(challenges));
-              } else {
-                response = {
-                  ...response,
-                  status: 400,
-                  error: "Challenge not found",
-                  data: null,
-                };
-                return socket.send(JSON.stringify(response));
+                  socket.send(JSON.stringify(challenges));
+                } else {
+                  response = {
+                    ...response,
+                    status: 400,
+                    error: "Challenge not found",
+                    data: null,
+                  };
+                  return socket.send(JSON.stringify(response));
+                }
+
+                await userController.updateUserByUserId({
+                  _id: data.payload.userId,
+                  hasActiveChallenge: false,
+                });
+              } catch (error) {
+                console.log("thiserr", error);
+              } finally {
+                await challengesController.setLockFalse(
+                  data.payload.challengeId
+                );
               }
-
-              await userController.updateUserByUserId({
-                _id: data.payload.userId,
-                hasActiveChallenge: false,
-              });
               break;
             case "cancelRequestedOnPageChange":
               console.log("cancel working");

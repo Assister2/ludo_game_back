@@ -14,14 +14,13 @@ async function startGame(data, socket) {
   };
 
   try {
+    await challengesController.setLockTrue(data.payload.challengeId);
     let startChallenge = await challengesController.getChallengeById(
-      data.payload.challengeId,
-      { locked: true }
+      data.payload.challengeId
     );
     if (startChallenge.state == "requested") {
       let startGameChallenge = await challengesController.updateChallengeById22(
-        data.payload.challengeId,
-        { locked: false }
+        data.payload.challengeId
       );
 
       var otherplayerId = startChallenge.player._id;
@@ -133,6 +132,8 @@ async function startGame(data, socket) {
     };
 
     // return socket.send(JSON.stringify(response));
+  } finally {
+    await challengesController.setLockFalse(data.payload.challengeId);
   }
 }
 
@@ -185,6 +186,8 @@ async function cancelChallenge(challengeId, userId) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
+    await challengesController.setLockTrue(challengeId);
+
     const getChallenge = await challengesController.getChallengeById(
       challengeId
     );
@@ -233,6 +236,8 @@ async function cancelChallenge(challengeId, userId) {
     };
 
     // return socket.send(JSON.stringify(response));
+  } finally {
+    await challengesController.setLockFalse(challengeId);
   }
 }
 const handleChallengeUpdate = async (data) => {

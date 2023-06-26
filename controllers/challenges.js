@@ -211,8 +211,6 @@ const challengesController = {
         challenge.state = "requested";
         challenge.player = playerId;
         await challenge.save();
-      } else {
-        throw new Error("challenge in requested state");
       }
 
       return challenge;
@@ -250,14 +248,11 @@ const challengesController = {
       if (!challenge) {
         throw new Error("Challenge not found");
       }
-      challenge.locked = true;
 
       if (challenge.state === "requested") {
         challenge.player = null;
 
         challenge.state = "open";
-        await challenge.save();
-        challenge.locked = false;
         await challenge.save();
       }
 
@@ -293,6 +288,23 @@ const challengesController = {
       return challenge;
     } catch (error) {
       console.log("error", error);
+      throw error;
+    }
+  },
+  setLockTrue: async (challengeId) => {
+    try {
+      await ChallengeModel.findByIdAndUpdate(challengeId, { locked: true });
+    } catch (error) {
+      console.log("Error setting lock to true:", error);
+      throw error;
+    }
+  },
+
+  setLockFalse: async (challengeId) => {
+    try {
+      await ChallengeModel.findByIdAndUpdate(challengeId, { locked: false });
+    } catch (error) {
+      console.log("Error setting lock to false:", error);
       throw error;
     }
   },
