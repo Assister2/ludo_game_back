@@ -491,6 +491,7 @@ function handleConnection(socket) {
                   );
 
                 let challenges2 = await challengesController.getAllChallenges();
+                socket.send(JSON.stringify({ status: 4 }));
 
                 socket.send(JSON.stringify(challenges2));
 

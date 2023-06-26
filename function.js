@@ -15,11 +15,13 @@ async function startGame(data, socket) {
 
   try {
     let startChallenge = await challengesController.getChallengeById(
-      data.payload.challengeId
+      data.payload.challengeId,
+      { locked: true }
     );
     if (startChallenge.state == "requested") {
       let startGameChallenge = await challengesController.updateChallengeById22(
-        data.payload.challengeId
+        data.payload.challengeId,
+        { locked: false }
       );
 
       var otherplayerId = startChallenge.player._id;
