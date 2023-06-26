@@ -12,12 +12,13 @@ async function startGame(data, socket) {
     data: null,
     error: null,
   };
+  let startChallenge = await challengesController.getChallengeById(
+    data.payload.challengeId
+  );
 
   try {
     await challengesController.setLockTrue(data.payload.challengeId);
-    let startChallenge = await challengesController.getChallengeById(
-      data.payload.challengeId
-    );
+
     await userController.setUserLockTrue(startChallenge.player._id);
     await userController.setUserLockTrue(startChallenge.creator._id);
     if (startChallenge.state == "requested") {
