@@ -19,9 +19,9 @@ async function startGame(data, socket) {
   try {
     await challengesController.setLockTrue(data.payload.challengeId);
 
-    await userController.setUserLockTrue(startChallenge.player._id);
-    await userController.setUserLockTrue(startChallenge.creator._id);
-    if (startChallenge.state == "requested") {
+    if (startChallenge.state == "requested" && startChallenge.player._id) {
+      await userController.setUserLockTrue(startChallenge.player._id);
+      await userController.setUserLockTrue(startChallenge.creator._id);
       let startGameChallenge = await challengesController.updateChallengeById22(
         data.payload.challengeId
       );
@@ -140,8 +140,10 @@ async function startGame(data, socket) {
     // return socket.send(JSON.stringify(response));
   } finally {
     await challengesController.setLockFalse(data.payload.challengeId);
-    await userController.setUserLockFalse(startChallenge.player._id);
-    await userController.setUserLockFalse(startChallenge.creator._id);
+    if (startChallenge.player._id) {
+      await userController.setUserLockFalse(startChallenge.player._id);
+      await userController.setUserLockFalse(startChallenge.creator._id);
+    }
   }
 }
 
