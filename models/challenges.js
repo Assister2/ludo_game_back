@@ -117,6 +117,7 @@ const challengeSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  locked: { type: Boolean, default: false },
 });
 
 const Challenge = mongoose.model("challenges", challengeSchema);

@@ -175,6 +175,7 @@ function handleConnection(socket) {
             let challenge = await challengesController.getChallengeById(
               data.payload.challengeId
             );
+            console.log("here", challenge);
 
             if (!challenge) {
               response = {
@@ -397,114 +398,130 @@ function handleConnection(socket) {
             case "play":
               const session = await mongoose.startSession();
               session.startTransaction();
-              await challengesController.setLockTrue(data.payload.challengeId);
-              console.log("issit");
-
-              try {
-                let currentChallenge =
-                  await challengesController.getChallengeByChallengeId(
-                    data.payload.challengeId
-                  );
-                if (currentChallenge.status === 0) {
-                  response = {
-                    ...response,
-                    status: 400,
-                    error: "not found",
-                    data: null,
-                  };
-                  return socket.send(JSON.stringify(response));
-                }
-
-                if (currentChallenge.state === "requested") {
-                  response = {
-                    ...response,
-                    status: 400,
-                    error: "Request Cancelled",
-                    data: null,
-                  };
-                  return socket.send(JSON.stringify(response));
-                }
-
-                let playerWallet = await accountController.getAccountByUserId(
-                  data.payload.userId
+              let currentChallenge =
+                await challengesController.getChallengeByChallengeId(
+                  data.payload.challengeId
                 );
 
-                if (playerWallet.wallet - currentChallenge.amount < 0) {
-                  response = {
-                    ...response,
-                    status: 400,
-                    error: "You don't have enough chips",
-                    data: null,
-                  };
-                  return socket.send(JSON.stringify(response));
-                }
+              try {
+                if (!currentChallenge.locked) {
+                  console.log("issit");
+                  await challengesController.setLockTrue(
+                    data.payload.challengeId
+                  );
+                  if (currentChallenge.status === 0) {
+                    response = {
+                      ...response,
+                      status: 400,
+                      error: "not found",
+                      data: null,
+                    };
+                    return socket.send(JSON.stringify(response));
+                  }
 
-                let checkRequestedChallenges =
-                  await challengesController.checkAlreadyRequestedGame(
+                  if (currentChallenge.state === "requested") {
+                    response = {
+                      ...response,
+                      status: 400,
+                      error: "Request Cancelled",
+                      data: null,
+                    };
+                    return socket.send(JSON.stringify(response));
+                  }
+
+                  let playerWallet = await accountController.getAccountByUserId(
                     data.payload.userId
                   );
 
-                if (checkRequestedChallenges.length > 0) {
-                  response = {
-                    ...response,
-                    status: 400,
-                    error: "You have already requested a game",
-                    data: null,
-                  };
-                  return socket.send(JSON.stringify(response));
-                }
+                  if (playerWallet.wallet - currentChallenge.amount < 0) {
+                    response = {
+                      ...response,
+                      status: 400,
+                      error: "You don't have enough chips",
+                      data: null,
+                    };
+                    return socket.send(JSON.stringify(response));
+                  }
 
-                let checkPlayingOrHoldGame =
-                  await challengesController.checkPlayingOrHold(
-                    data.payload.userId
+                  let checkRequestedChallenges =
+                    await challengesController.checkAlreadyRequestedGame(
+                      data.payload.userId
+                    );
+
+                  if (checkRequestedChallenges.length > 0) {
+                    response = {
+                      ...response,
+                      status: 400,
+                      error: "You have already requested a game",
+                      data: null,
+                    };
+                    return socket.send(JSON.stringify(response));
+                  }
+
+                  let checkPlayingOrHoldGame =
+                    await challengesController.checkPlayingOrHold(
+                      data.payload.userId
+                    );
+
+                  if (!checkPlayingOrHoldGame) {
+                    response = {
+                      ...response,
+                      status: 400,
+                      error: "Update Your Result In Previous Match First",
+                      data: null,
+                    };
+                    return socket.send(JSON.stringify(response));
+                  }
+
+                  if (!currentChallenge) {
+                    response = {
+                      ...response,
+                      status: 400,
+                      error: "Challenge not created",
+                      data: null,
+                    };
+                    return socket.send(JSON.stringify(response));
+                  }
+
+                  const reap = await userController.updateUserByUserId({
+                    _id: data.payload.userId,
+                    hasActiveChallenge: true,
+                  });
+
+                  currentChallenge._doc.state = "requested";
+                  currentChallenge._doc.player = data.payload.userId;
+                  currentChallenge =
+                    await challengesController.updateChallengeById44(
+                      currentChallenge._id,
+                      data.payload.userId
+                    );
+
+                  let challenges2 =
+                    await challengesController.getAllChallenges();
+                  socket.send(JSON.stringify({ status: 4 }));
+
+                  socket.send(JSON.stringify(challenges2));
+                  await challengesController.setLockFalse(
+                    data.payload.challengeId
                   );
 
-                if (!checkPlayingOrHoldGame) {
+                  await session.commitTransaction();
+                } else {
                   response = {
                     ...response,
                     status: 400,
-                    error: "Update Your Result In Previous Match First",
+                    error: "Challenge locked",
                     data: null,
                   };
                   return socket.send(JSON.stringify(response));
                 }
-
-                if (!currentChallenge) {
-                  response = {
-                    ...response,
-                    status: 400,
-                    error: "Challenge not created",
-                    data: null,
-                  };
-                  return socket.send(JSON.stringify(response));
-                }
-
-                const reap = await userController.updateUserByUserId({
-                  _id: data.payload.userId,
-                  hasActiveChallenge: true,
-                });
-
-                currentChallenge._doc.state = "requested";
-                currentChallenge._doc.player = data.payload.userId;
-                currentChallenge =
-                  await challengesController.updateChallengeById44(
-                    currentChallenge._id,
-                    data.payload.userId
-                  );
-
-                let challenges2 = await challengesController.getAllChallenges();
-                socket.send(JSON.stringify({ status: 4 }));
-
-                socket.send(JSON.stringify(challenges2));
-
-                await session.commitTransaction();
               } catch (error) {
                 await session.abortTransaction();
                 console.log("PlayCatcherror", error);
                 throw error;
               } finally {
-                console.log("workingfinally");
-                await challengesController.setLockTrue(
+                console.log("lockend");
+                await challengesController.setLockFalse(
                   data.payload.challengeId
                 );
                 session.endSession();
