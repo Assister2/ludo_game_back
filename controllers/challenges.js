@@ -290,7 +290,15 @@ const challengesController = {
   },
   setLockTrue: async (challengeId) => {
     try {
-      await ChallengeModel.findByIdAndUpdate(challengeId, { locked: true });
+      const challenge = await ChallengeModel.findById(challengeId);
+
+      if (challenge.locked) {
+        return false;
+      }
+
+      challenge.locked = true;
+      await challenge.save();
+      return true;
     } catch (error) {
       console.log("Error setting lock to true:", error);
       throw error;

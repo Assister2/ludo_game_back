@@ -175,82 +175,90 @@ function handleConnection(socket) {
             let challenge = await challengesController.getChallengeById(
               data.payload.challengeId
             );
-            console.log("here", challenge);
-
-            if (!challenge) {
-              response = {
-                ...response,
-                status: 400,
-                error: "Challenge not found",
-                data: null,
-              };
-              return socket.emit("ludogame", JSON.stringify(response));
-            }
-            if (challenge.state != "playing" && challenge.state != "hold") {
-              response = {
-                ...response,
-                status: 400,
-                error: "Challenge not found",
-                data: null,
-              };
-              return socket.emit("ludogame", JSON.stringify(response));
-            }
-            if (
-              challenge.creator._id == data.payload.userId ||
-              challenge.player._id == data.payload.userId
-            ) {
-              if (challenge.player._id == data.payload.userId) {
-                await challengesController.updateChallengeById({
-                  _id: challenge._id,
-                  firstTime: false,
-                });
-              }
-              if (challenge.state == "hold") {
+            if (challenge.player._id && challenge.creator._id && !challenge.locked) {
+              if (!challenge) {
                 response = {
+                  ...response,
                   status: 400,
-                  error: "Challenge is on hold",
+                  error: "Challenge not found",
+                  data: null,
+                };
+                return socket.emit("ludogame", JSON.stringify(response));
+              }
+              if (challenge.state != "playing" && challenge.state != "hold") {
+                response = {
+                  ...response,
+                  status: 400,
+                  error: "Challenge not found",
                   data: null,
                 };
                 return socket.emit("ludogame", JSON.stringify(response));
               }
               if (
-                challenge.creator._id == data.payload.userId &&
-                challenge.results.creator.result !== ""
+                challenge.creator._id == data.payload.userId ||
+                challenge.player._id == data.payload.userId
               ) {
+                if (challenge.player._id == data.payload.userId) {
+                  await challengesController.updateChallengeById({
+                    _id: challenge._id,
+                    firstTime: false,
+                  });
+                }
+                if (challenge.state == "hold") {
+                  response = {
+                    status: 400,
+                    error: "Challenge is on hold",
+                    data: null,
+                  };
+                  return socket.emit("ludogame", JSON.stringify(response));
+                }
+                if (
+                  challenge.creator._id == data.payload.userId &&
+                  challenge.results.creator.result !== ""
+                ) {
+                  response = {
+                    status: 400,
+                    error: "Challenge is on hold",
+                    data: null,
+                  };
+                  return socket.emit("ludogame", JSON.stringify(response));
+                }
+                if (
+                  challenge.player._id == data.payload.userId &&
+                  challenge.results.player.result !== ""
+                ) {
+                  response = {
+                    status: 400,
+                    error: "Challenge is on hold",
+                    data: null,
+                  };
+                  return socket.emit("ludogame", JSON.stringify(response));
+                }
                 response = {
-                  status: 400,
-                  error: "Challenge is on hold",
-                  data: null,
+                  ...response,
+                  status: 200,
+                  error: null,
+                  data: challenge,
                 };
-                return socket.emit("ludogame", JSON.stringify(response));
-              }
-              if (
-                challenge.player._id == data.payload.userId &&
-                challenge.results.player.result !== ""
-              ) {
-                response = {
-                  status: 400,
-                  error: "Challenge is on hold",
-                  data: null,
-                };
+
                 return socket.emit("ludogame", JSON.stringify(response));
               }
               response = {
                 ...response,
-                status: 200,
-                error: null,
-                data: challenge,
+                status: 400,
+                error: "Not Authorized",
+                data: null,
               };
-
+              return socket.emit("ludogame", JSON.stringify(response));
+            } else {
+              response = {
+                ...response,
+                status: 400,
+                error: " challenge not Foundd",
+                data: null,
+              };
               return socket.emit("ludogame", JSON.stringify(response));
             }
-            response = {
-              ...response,
-              status: 400,
-              error: "Not Authorized",
-              data: null,
-            };
-            return socket.emit("ludogame", JSON.stringify(response));
           } catch (error) {
             console.log("error.message3", error.message);
             response = {
