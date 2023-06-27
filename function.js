@@ -17,8 +17,11 @@ async function startGame(data, socket) {
   );
 
   try {
-    if (!startChallenge.locked) {
-      const check = await challengesController.setLockTrue(
+    let startChallenge = await challengesController.getChallengeById(
+      data.payload.challengeId
+    );
+    if (startChallenge.state == "requested") {
+      let startGameChallenge = await challengesController.updateChallengeById22(
         data.payload.challengeId
       );
       if (check) {

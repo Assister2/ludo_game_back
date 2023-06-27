@@ -523,6 +523,35 @@ function handleConnection(socket) {
                   };
                   return socket.send(JSON.stringify(response));
                 }
+
+                if (!currentChallenge) {
+                  response = {
+                    ...response,
+                    status: 400,
+                    error: "Challenge not created",
+                    data: null,
+                  };
+                  return socket.send(JSON.stringify(response));
+                }
+
+                const reap = await userController.updateUserByUserId({
+                  _id: data.payload.userId,
+                  hasActiveChallenge: true,
+                });
+
+                currentChallenge._doc.state = "requested";
+                currentChallenge._doc.player = data.payload.userId;
+                currentChallenge =
+                  await challengesController.updateChallengeById44(
+                    currentChallenge._id,
+                    data.payload.userId
+                  );
+
+                let challenges2 = await challengesController.getAllChallenges();
+
+                socket.send(JSON.stringify(challenges2));
+
+                await session.commitTransaction();
               } catch (error) {
                 await session.abortTransaction();
                 console.log("PlayCatcherror", error);

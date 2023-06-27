@@ -180,13 +180,9 @@ const challengesController = {
       if (!challenge) {
         throw new Error("Challenge not found");
       }
-      challenge.locked = true;
-      await challenge.save();
 
       if (challenge.state === "open" && challenge.status === 1) {
         challenge.status = 0;
-        await challenge.save();
-        challenge.locked = false;
         await challenge.save();
       } else {
         throw new Error("challenge not Deleted");
@@ -248,9 +244,10 @@ const challengesController = {
 
       if (challenge.state === "requested") {
         challenge.player = null;
-
         challenge.state = "open";
         await challenge.save();
+      } else {
+        throw new Error("Invalid state for updating challenge234");
       }
 
       return challenge;
