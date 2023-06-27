@@ -575,8 +575,6 @@ function handleConnection(socket) {
           }
         }
 
-        //   socket.send(JSON.stringify(data))
-
         // });
         let challenges = await challengesController.getAllChallenges();
 
