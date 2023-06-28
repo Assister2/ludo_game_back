@@ -169,7 +169,7 @@ const userController = {
         { _id: userObj._id },
         {
           $set: userObj,
-          $inc: { noOfChallenges: 1 }, // Increment noOfChallenges by 1
+          // Increment noOfChallenges by 1
         },
         { new: true }
       );

@@ -490,9 +490,6 @@ function handleConnection(socket) {
                     data.payload.userId
                   );
 
-                let challenges2 = await challengesController.getAllChallenges();
-
-                socket.send(JSON.stringify(challenges2));
 
                 await session.commitTransaction();
               } catch (error) {
@@ -506,7 +503,11 @@ function handleConnection(socket) {
               // Implement your read operation here
               break;
             case "cancel":
-              cancelChallenge(data.payload.challengeId, data.payload.userId);
+              cancelChallenge(
+                socket,
+                data.payload.challengeId,
+                data.payload.userId
+              );
               break;
             case "delete":
               let challengeObj = {
@@ -569,7 +570,7 @@ function handleConnection(socket) {
               console.log("checkdata", data.payload);
 
               await startGame(data, socket);
-              await bothResultNotUpdated(data.payload.challengeId);
+              // await bothResultNotUpdated(data.payload.challengeId);
 
               break;
           }

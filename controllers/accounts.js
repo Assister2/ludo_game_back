@@ -123,7 +123,6 @@ const accountController = {
         { $set: creatorAccount },
         { new: true }
       );
-      console.log("movingg");
 
       await Account.findOneAndUpdate(
         { userId: playerAccount.userId },
