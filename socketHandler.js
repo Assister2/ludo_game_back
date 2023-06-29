@@ -520,7 +520,6 @@ function handleConnection(socket) {
 
               break;
             case "cancelRequestedOnPageChange":
-              console.log("cancel working");
               await challengesController.cancelRequestedChallengesByPlayerId(
                 data.payload.userId
               );
