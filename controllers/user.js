@@ -181,15 +181,18 @@ const userController = {
   },
   increamentNoOfChallengesUserByUserId: async (userObj) => {
     try {
-      let user = await User.findOneAndUpdate(
-        { _id: userObj._id },
-        {
-          $set: userObj,
-          $inc: { noOfChallenges: 1 }, // Increment noOfChallenges by 1
-        },
-        { new: true }
-      );
-      return user;
+      let user = await User.findById(userObj._id);
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      if (user.noOfChallenges === 0) {
+        user.noOfChallenges = 1;
+
+        user = await user.save();
+        return user;
+      }
     } catch (error) {
       throw error;
     }

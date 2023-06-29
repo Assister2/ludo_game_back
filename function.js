@@ -20,162 +20,70 @@ async function startGame(data, socket) {
     let startChallenge = await challengesController.getChallengeById(
       data.payload.challengeId
     );
-    if (startChallenge.state == "requested") {
+    if (startChallenge.state == "requested" && startChallenge.player) {
       let startGameChallenge = await challengesController.updateChallengeById22(
         data.payload.challengeId
       );
-      if (check) {
+      if (startGameChallenge.state === "playing") {
+        console.log("start");
+        await challengesController.deleteOpenChallengesCreator(
+          startChallenge.creator._id
+        );
+        await challengesController.deleteOpenChallengesCreator(
+          startChallenge.player._id
+        );
+        await challengesController.cancelRequestedChallenges(
+          startChallenge.creator._id
+        );
+        await challengesController.cancelRequestedChallenges(
+          startChallenge.player._id
+        );
+        var noOfChallengesCreator =
+          await userController.increamentNoOfChallengesUserByUserId({
+            _id: data.payload.userId,
+            noOfChallenges: 1,
+          });
+        var noOfChallengesPlayer =
+          await userController.increamentNoOfChallengesUserByUserId({
+            _id: startChallenge.player._id,
+            noOfChallenges: 1,
+          });
+        console.log(
+          "ccc",
+          noOfChallengesCreator.noOfChallenges,
+          noOfChallengesPlayer.noOfChallenges
+        );
+
         if (
-          startChallenge.state == "requested" &&
-          startChallenge.player._id &&
-          check
+          noOfChallengesCreator.noOfChallenges == 1 &&
+          noOfChallengesPlayer.noOfChallenges == 1
         ) {
-          console.log("checkkk121", startChallenge.locked);
-          console.log("checkkk5656", startChallenge);
-          await userController.setUserLockTrue(startChallenge.player._id);
-          await userController.setUserLockTrue(startChallenge.creator._id);
-          let startGameChallenge =
-            await challengesController.updateChallengeById22(
-              data.payload.challengeId
-            );
+          await accountController.decreasePlayersAccount(startChallenge);
 
-          var otherplayerId = startChallenge.player._id;
-
-          if (startChallenge) {
-            await challengesController.deleteOpenChallengesCreator(
-              startChallenge.creator._id
-            );
-            await challengesController.deleteOpenChallengesCreator(
-              startChallenge.player._id
-            );
-          }
-
-          if (startGameChallenge) {
-            var creator33 =
-              await userController.increamentNoOfChallengesUserByUserId({
-                _id: data.payload.userId,
-                hasActiveChallenge: false,
-                // Increment noOfChallenges by 1 for creatorUser
-              });
-
-            var otherplayer2 =
-              await userController.increamentNoOfChallengesUserByUserId({
-                _id: otherplayerId,
-                hasActiveChallenge: false,
-                // Increment noOfChallenges by 1 for otherPlayer
-              });
-
-            await challengesController.deleteRequestedChallenges(
-              startChallenge.creator._id
-            );
-            await challengesController.cancelRequestedChallenges(
-              startChallenge.creator._id
-            );
-            await challengesController.deleteRequestedChallenges(
-              startChallenge.player._id
-            );
-
-            // Check if otherPlayer or creatorUser has noOfChallenges greater than one
-            if (
-              creator33.noOfChallenges != 1 ||
-              otherplayer2.noOfChallenges != 1
-            ) {
-              await challengesController.deleteChallengeById({
-                _id: data.payload.challengeId,
-              });
-              await userController.updateUserByUserId({
-                _id: data.payload.userId,
-                hasActiveChallenge: false,
-                noOfChallenges: 0,
-                // Increment noOfChallenges by 1 for creatorUser
-              });
-              await challengesController.setLockFalse(data.payload.challengeId);
-              await session.abortTransaction();
-              session.endSession();
-
-              // await userController.updateUserByUserId({
-              //   _id: otherplayerId,
-              //   hasActiveChallenge: false,
-              //   noOfChallenges: 0,
-              //   // Increment noOfChallenges by 1 for creatorUser
-              // });
-              response = {
-                ...response,
-                status: 400,
-                error: "Cannot start the game",
-                data: null,
-              };
-              return socket.send(JSON.stringify(response));
-            }
-          }
-
-          if (!startGameChallenge) {
-            response = {
-              ...response,
-              status: 400,
-              error: "Challenge not found startgame",
-              data: null,
-            };
-            return socket.send(JSON.stringify(response));
-          }
-
-          if (
-            creator33.noOfChallenges == 1 &&
-            otherplayer2.noOfChallenges == 1
-          ) {
-            await accountController.decreasePlayersAccount(startChallenge);
-
-            response = {
-              ...response,
-              status: 200,
-              error: null,
-              data: null,
-              challengeRedirect: true,
-              challengeId: startGameChallenge._id,
-            };
-            socket.send(JSON.stringify({ status: 3 }));
-            await challengesController.setLockFalse(data.payload.challengeId);
-            await session.commitTransaction();
-            session.endSession();
-
-            return socket.send(JSON.stringify(response));
-          }
-        } else {
           response = {
-            status: 400,
-            error: "Challenge not found start",
+            ...response,
+            status: 200,
+            error: null,
             data: null,
+            challengeRedirect: true,
+            challengeId: startGameChallenge._id,
           };
+          socket.send(JSON.stringify({ status: 3 }));
+          await session.commitTransaction();
+          session.endSession();
+          console.log("endd");
+          socket.send(JSON.stringify({ status: 22 }));
+
           return socket.send(JSON.stringify(response));
         }
       }
-    } else {
-      response = {
-        ...response,
-        status: 400,
-        error: "Challenge locked",
-        data: null,
-      };
-      return socket.send(JSON.stringify(response));
     }
   } catch (error) {
     await challengesController.setLockFalse(data.payload.challengeId);
     await session.abortTransaction();
     session.endSession();
-    response = {
-      ...response,
-      status: 500,
-      error: "Error starting the game",
-      data: null,
-    };
-
-    // return socket.send(JSON.stringify(response));
   } finally {
-    // await challengesController.setLockFalse(data.payload.challengeId);
-    // if (startChallenge.player._id) {
-    //   await userController.setUserLockFalse(startChallenge.player._id);
-    //   await userController.setUserLockFalse(startChallenge.creator._id);
-    // }
+    socket.send(JSON.stringify({ status: 22 }));
   }
 }
 
@@ -224,70 +132,25 @@ const handleChallengeCancellation = async (
 
   await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet);
 };
-async function cancelChallenge(challengeId, userId) {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  let getChallenge = await challengesController.getChallengeById(challengeId);
+async function cancelChallenge(socket, challengeId, userId) {
   try {
-    if (!getChallenge.locked) {
-      await challengesController.setLockTrue(challengeId);
+    const getChallenge = await challengesController.getChallengeById(
+      challengeId
+    );
+    if (getChallenge.state === "requested") {
+      const cancelledChallenge =
+        await challengesController.updateChallengeById23(challengeId);
 
-      if (getChallenge.state === "requested") {
-        const cancelChallenge = {
-          _id: challengeId,
-          player: null,
-          state: "open",
-        };
-
-        const cancelledChallenge =
-          await challengesController.updateChallengeById23(challengeId);
-
-        if (!cancelledChallenge) {
-          const response = {
-            status: 400,
-            error: "Challenge not created",
-            data: null,
-          };
-
-          return socket.send(JSON.stringify(response));
-        }
-
-        await userController.updateUserByUserId({
-          _id: userId,
-          hasActiveChallenge: false,
-        });
-        await challengesController.setLockFalse(challengeId);
-        await session.commitTransaction();
-        session.endSession();
-      } else {
-        const response = {
-          status: 400,
-          error: "Challenge not found, cancel game",
-          data: null,
-        };
-
-        return socket.send(JSON.stringify(response));
+      if (cancelledChallenge) {
+        return socket.send(JSON.stringify({ status: 21 }));
       }
-    } else {
-      response = {
-        ...response,
-        status: 400,
-        error: "Challenge cancel locked",
-        data: null,
-      };
-      return socket.send(JSON.stringify(response));
     }
   } catch (error) {
-    await challengesController.setLockFalse(challengeId);
+    console.log("cancelled", error);
     await session.abortTransaction();
     session.endSession();
-    const response = {
-      status: 500,
-      error: "Error cancelling the challenge",
-      data: null,
-    };
-
-    // return socket.send(JSON.stringify(response));
+  } finally {
+    socket.send(JSON.stringify({ status: 21 }));
   }
 }
 const handleChallengeUpdate = async (data) => {

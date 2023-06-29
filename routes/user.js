@@ -9,7 +9,6 @@ const router = express.Router();
 router.get("/getUserProfileData", verifyToken, async (req, res) => {
   try {
     let user = req.user;
-    console.log("user", user);
     let userData = await userController.existingUserById(user);
     if (!userData) {
       return responseHandler(res, 400, null, "User not found");

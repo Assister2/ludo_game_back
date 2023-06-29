@@ -547,10 +547,6 @@ function handleConnection(socket) {
                     data.payload.userId
                   );
 
-                let challenges2 = await challengesController.getAllChallenges();
-
-                socket.send(JSON.stringify(challenges2));
-
                 await session.commitTransaction();
               } catch (error) {
                 await session.abortTransaction();
@@ -567,50 +563,24 @@ function handleConnection(socket) {
               // Implement your read operation here
               break;
             case "cancel":
-              cancelChallenge(data.payload.challengeId, data.payload.userId);
+              cancelChallenge(
+                socket,
+                data.payload.challengeId,
+                data.payload.userId
+              );
               break;
             case "delete":
               let challengeObj = {
                 _id: data.payload.challengeId,
                 status: 0,
               };
-              try {
-                await challengesController.setLockTrue(
-                  data.payload.challengeId
-                );
-                let deletedChallenge =
-                  await challengesController.updateDeleteChallengeById(
-                    data.payload.challengeId
-                  );
-                if (deletedChallenge) {
-                  let challenges =
-                    await challengesController.getAllChallenges();
 
-                  socket.send(JSON.stringify(challenges));
-                } else {
-                  response = {
-                    ...response,
-                    status: 400,
-                    error: "Challenge not found",
-                    data: null,
-                  };
-                  return socket.send(JSON.stringify(response));
-                }
+              await challengesController.updateDeleteChallengeById(
+                data.payload.challengeId
+              );
 
-                await userController.updateUserByUserId({
-                  _id: data.payload.userId,
-                  hasActiveChallenge: false,
-                });
-              } catch (error) {
-                console.log("thiserr", error);
-              } finally {
-                await challengesController.setLockFalse(
-                  data.payload.challengeId
-                );
-              }
               break;
             case "cancelRequestedOnPageChange":
-              console.log("cancel working");
               await challengesController.cancelRequestedChallengesByPlayerId(
                 data.payload.userId
               );
@@ -639,16 +609,12 @@ function handleConnection(socket) {
               // });
               break;
             case "startGame":
-              console.log("checkdata", data.payload);
-
               await startGame(data, socket);
-              await bothResultNotUpdated(data.payload.challengeId);
+              // await bothResultNotUpdated(data.payload.challengeId);
 
               break;
           }
         }
-
-        //   socket.send(JSON.stringify(data))
 
         // });
         let challenges = await challengesController.getAllChallenges();

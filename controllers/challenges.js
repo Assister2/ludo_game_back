@@ -207,7 +207,7 @@ const challengesController = {
         challenge.state = "requested";
         challenge.player = playerId;
         await challenge.save();
-      }
+      } 
 
       return challenge;
     } catch (error) {
@@ -227,6 +227,8 @@ const challengesController = {
         challenge.state = "playing";
         challenge.startedAt = new Date();
         await challenge.save();
+      } else {
+        console.log("Invalid state for updating challenge22");
       }
 
       return challenge;
@@ -234,7 +236,17 @@ const challengesController = {
       console.log("error23", error);
     }
   },
+
   updateChallengeById23: async (challengeId) => {
+    let isUpdating = false;
+    if (isUpdating) {
+      // If another request is already updating the database, neglect this request
+      console.log("Request neglected");
+      return;
+    }
+
+    isUpdating = true;
+
     try {
       let challenge = await ChallengeModel.findById(challengeId);
 
@@ -245,15 +257,16 @@ const challengesController = {
       if (challenge.state === "requested") {
         challenge.player = null;
         challenge.state = "open";
-        await challenge.save();
-      } else {
-        throw new Error("Invalid state for updating challenge234");
-      }
 
-      return challenge;
+        await challenge.save();
+        console.log("challengefun");
+        return challenge;
+      }
     } catch (error) {
-      console.log("error", error);
-      throw error;
+      // Handle any errors that occur during the update process
+      console.error(error);
+    } finally {
+      isUpdating = false;
     }
   },
 
