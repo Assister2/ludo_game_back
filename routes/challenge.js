@@ -4,13 +4,13 @@ const accountController = require("../controllers/accounts");
 const challengesController = require("../controllers/challenges");
 const { responseHandler, uploadFileImage } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
-const UserAccount = require("../models/accounts");
+
 const Router = express.Router();
 const path = require("path");
 const currentDate = new Date();
 const { handleChallengeCancellation } = require("../function");
 const History = require("../models/history");
-const { ObjectId } = require("mongodb");
+
 const mongodb = require("mongodb");
 const socket = require("../socket");
 const { handleChallengeUpdate } = require("../function");

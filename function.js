@@ -38,13 +38,11 @@ async function startGame(data, socket) {
         var noOfChallengesCreator =
           await userController.increamentNoOfChallengesUserByUserId({
             _id: data.payload.userId,
-            hasActiveChallenge: false,
             noOfChallenges: 1,
           });
         var noOfChallengesPlayer =
           await userController.increamentNoOfChallengesUserByUserId({
             _id: startChallenge.player._id,
-            hasActiveChallenge: false,
             noOfChallenges: 1,
           });
         console.log(
@@ -147,6 +145,8 @@ async function cancelChallenge(socket, challengeId, userId) {
     console.log("cancelled", error);
     await session.abortTransaction();
     session.endSession();
+  } finally {
+    socket.send(JSON.stringify({ status: 21 }));
   }
 }
 const handleChallengeUpdate = async (data) => {

@@ -490,7 +490,6 @@ function handleConnection(socket) {
                     data.payload.userId
                   );
 
-
                 await session.commitTransaction();
               } catch (error) {
                 await session.abortTransaction();
@@ -514,28 +513,11 @@ function handleConnection(socket) {
                 _id: data.payload.challengeId,
                 status: 0,
               };
-              let deletedChallenge =
-                await challengesController.updateDeleteChallengeById(
-                  data.payload.challengeId
-                );
-              if (deletedChallenge) {
-                let challenges = await challengesController.getAllChallenges();
 
-                socket.send(JSON.stringify(challenges));
-              } else {
-                response = {
-                  ...response,
-                  status: 400,
-                  error: "Challenge not found",
-                  data: null,
-                };
-                return socket.send(JSON.stringify(response));
-              }
+              await challengesController.updateDeleteChallengeById(
+                data.payload.challengeId
+              );
 
-              await userController.updateUserByUserId({
-                _id: data.payload.userId,
-                hasActiveChallenge: false,
-              });
               break;
             case "cancelRequestedOnPageChange":
               console.log("cancel working");
@@ -567,8 +549,6 @@ function handleConnection(socket) {
               // });
               break;
             case "startGame":
-              console.log("checkdata", data.payload);
-
               await startGame(data, socket);
               // await bothResultNotUpdated(data.payload.challengeId);
 
