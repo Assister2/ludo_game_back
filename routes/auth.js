@@ -238,7 +238,6 @@ router.post("/OTP", async (req, res) => {
 });
 
 router.post("/resendOTP", async (req, res) => {
-  console.log("cehckk", req.body);
   try {
     if (!req.body.hasOwnProperty("phone")) {
       return responseHandler(res, 400, null, "Fields are missing");
