@@ -82,9 +82,13 @@ router.post("/login", async (req, res) => {
       return responseHandler(res, 400, null, "Fields are missing");
     }
     let user = await userController.existingUser(req.body.phone);
+
     if (!user) {
       return responseHandler(res, 400, null, "User not found");
     } else {
+      if (user.isBlocked) {
+        return responseHandler(res, 400, null, "Contact Admin for details");
+      }
       let currentDate = new Date();
       let lastUpdateDate = user.otp.updatedAt;
       var seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
