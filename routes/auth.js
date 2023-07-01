@@ -87,7 +87,12 @@ router.post("/login", async (req, res) => {
       return responseHandler(res, 400, null, "User not found");
     } else {
       if (user.isBlocked) {
-        return responseHandler(res, 400, null, "Contact Admin for details");
+        return responseHandler(
+          res,
+          400,
+          null,
+          "your Account has been blocked. !Contact Admin"
+        );
       }
       let currentDate = new Date();
       let lastUpdateDate = user.otp.updatedAt;
