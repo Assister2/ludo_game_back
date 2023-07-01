@@ -133,7 +133,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       let challengeObj = {
         ...challenge._doc,
         results: {
-          [winner]: { result: "win", updatedAt: currentDate },
+          [winner]: { result: "win", updatedAt: new Date() },
           [looser]: {
             result: challenge.results[looser].result,
             updatedAt: challenge.results[looser].updatedAt,
@@ -287,7 +287,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         ...challenge._doc,
         //first who sent i lost his result will be saved lost
         results: {
-          [looser]: { result: "lost", updatedAt: currentDate },
+          [looser]: { result: "lost", updatedAt: new Date() },
 
           [winner]: {
             result: challenge.results[winner].result,
@@ -443,7 +443,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       let challengeObj = {
         ...challenge._doc,
         results: {
-          [canceller]: { result: "cancelled", updatedAt: currentDate },
+          [canceller]: { result: "cancelled", updatedAt: new Date() },
 
           [otherPlayer]: {
             result: challenge.results[otherPlayer].result,
