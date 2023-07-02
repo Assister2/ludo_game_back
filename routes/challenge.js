@@ -494,17 +494,37 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
           cancellerWallet,
           otherPlayerWallet
         );
+        let history = new History();
+        history.userId = challenge[otherPlayer]._id;
+        history.historyText = `Cancelled Against ${challenge[canceller].username}`;
+        history.createdAt = req.body.createdAt;
+        history.closingBalance = otherPlayerWallet.wallet;
+        history.amount = Number(challenge.amount);
+        history.roomCode = challenge.roomCode;
+        history.type = "cancelled";
+        await history.save();
+
+        let historyWinner = new History();
+        historyWinner.userId = challenge[canceller]._id;
+        historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
+        historyWinner.createdAt = req.body.createdAt;
+        historyWinner.closingBalance = cancellerWallet.wallet;
+        historyWinner.amount = Number(challenge.amount);
+        historyWinner.roomCode = challenge.roomCode;
+        historyWinner.type = "cancelled";
+        await historyWinner.save();
       }
 
-      let historyWinner = new History();
-      historyWinner.userId = challenge[canceller]._id;
-      historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
-      historyWinner.createdAt = req.body.createdAt;
-      historyWinner.closingBalance = cancellerWallet.wallet;
-      historyWinner.amount = Number(challenge.amount);
-      historyWinner.roomCode = challenge.roomCode;
-      historyWinner.type = "cancelled";
-      await historyWinner.save();
+      // let historyWinner = new History();
+      // historyWinner.userId = challenge[canceller]._id;
+      // historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
+      // historyWinner.createdAt = req.body.createdAt;
+      // historyWinner.closingBalance = cancellerWallet.wallet;
+      // historyWinner.amount = Number(challenge.amount);
+      // historyWinner.roomCode = challenge.roomCode;
+      // historyWinner.type = "cancelled";
+      // await historyWinner.save();
+      // console.log("histtt", historyWinner);
       challenge = await challengesController.updateChallengeById(challengeObj);
       await session.commitTransaction();
       session.endSession();
