@@ -20,7 +20,7 @@ const userController = {
   existingReferCode: async (referCode) => {
     try {
       let user = await User.findOne({
-        referelCode: referCode,
+        referCode: referCode,
       });
 
       return user;
@@ -48,14 +48,14 @@ const userController = {
   },
   /**
    * existingUserByReferelId - get existing user by referel code.
-   * @param referelCode - referelCode that need to check
+   * @param referCode - referelCode that need to check
    * @returns {Promise<void>}
    */
-  increasenoOfrefer: async (referelCode) => {
+  increasenoOfrefer: async (referCode) => {
     try {
       let user = await User.findOneAndUpdate(
         {
-          referelCode: referelCode,
+          referCode: referCode,
         },
         { $inc: { totalRefer: 1 } }, // Increment totalRefer field by 1
         { new: true } // Return the updated document
@@ -68,13 +68,13 @@ const userController = {
 
   /**
    * existingUserByReferelId - get existing user by referel code.
-   * @param referelCode - referelCode that need to check
+   * @param referCode - referelCode that need to check
    * @returns {Promise<void>}
    */
-  existingUserByReferelId: async (referelCode) => {
+  existingUserByReferelId: async (referCode) => {
     try {
       let user = await User.findOne({
-        referelCode: referelCode,
+        referCode: referCode,
         isBlocked: false,
         otpConfirmed: true,
       });

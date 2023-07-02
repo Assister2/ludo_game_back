@@ -37,13 +37,13 @@ router.post("/signup", async (req, res) => {
       userData.joinedAt = new Date();
       userData.phone = req.body.phone;
       userData.fullName = req.body.fullName;
-      userData.referelCode = generate(10);
+      userData.referCode = generate(10);
       userData.profileImage = `${randomIntFromInterval(1, 4)}.svg`;
       console.log("req.body", req.body);
-      if (req.body.referelCode) {
-        let user = await userController.existingReferCode(req.body.referelCode);
+      if (req.body.referCode) {
+        let user = await userController.existingReferCode(req.body.referCode);
         if (user) {
-          userData.referer = Number(req.body.referelCode);
+          userData.referer = Number(req.body.referCode);
         } else {
           userData = {};
           return responseHandler(res, 400, null, "refer code not found");
@@ -53,7 +53,7 @@ router.post("/signup", async (req, res) => {
         code: generate(6),
         updatedAt: new Date(),
       };
-      if (req.body.referelCode) {
+      if (req.body.referCode) {
         userData.wallet = 50;
       }
 

@@ -58,8 +58,9 @@ let userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  referelCode: {
+  referCode: {
     type: Number,
+    default: null,
   },
   // total cash
   wallet: {
