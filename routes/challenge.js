@@ -2,7 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const accountController = require("../controllers/accounts");
 const challengesController = require("../controllers/challenges");
-const { responseHandler, uploadFileImage } = require("../helpers");
+const { responseHandler } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 
 const Router = express.Router();
@@ -494,11 +494,17 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
           cancellerWallet,
           otherPlayerWallet
         );
+        let cancellerWallet1 = await accountController.getAccountByUserId(
+          challenge[canceller]._id
+        );
+        let otherPlayerWallet1 = await accountController.getAccountByUserId(
+          challenge[otherPlayer]._id
+        );
         let history = new History();
         history.userId = challenge[otherPlayer]._id;
         history.historyText = `Cancelled Against ${challenge[canceller].username}`;
         history.createdAt = req.body.createdAt;
-        history.closingBalance = otherPlayerWallet.wallet;
+        history.closingBalance = otherPlayerWallet1.wallet;
         history.amount = Number(challenge.amount);
         history.roomCode = challenge.roomCode;
         history.type = "cancelled";
@@ -508,7 +514,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         historyWinner.userId = challenge[canceller]._id;
         historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
         historyWinner.createdAt = req.body.createdAt;
-        historyWinner.closingBalance = cancellerWallet.wallet;
+        historyWinner.closingBalance = cancellerWallet1.wallet;
         historyWinner.amount = Number(challenge.amount);
         historyWinner.roomCode = challenge.roomCode;
         historyWinner.type = "cancelled";
