@@ -1,4 +1,5 @@
 const User = require("../models/user");
+const tempUser = require("../models/tempUser");
 const jwtToken = require("jsonwebtoken");
 const userController = {
   /**
@@ -11,6 +12,32 @@ const userController = {
       let user = await User.findOne({
         phone: number,
       });
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
+  existingTempUser: async (number) => {
+    try {
+      let user = await tempUser.findOne({
+        phone: number,
+      });
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
+  deleteExistingTempUser: async (number) => {
+    try {
+      let user = await tempUser.findOne({
+        phone: number,
+      });
+
+      if (user) {
+        await tempUser.deleteOne({ _id: user._id });
+      }
 
       return user;
     } catch (error) {
@@ -91,9 +118,32 @@ const userController = {
    */
   insertUser: async (object) => {
     try {
-      let user = new User(object);
+      const userObject = object.toObject();
+      delete userObject._id;
+      delete userObject.__v;
+
+      let user = new User(userObject);
       await user.save();
+
       return user;
+    } catch (error) {
+      throw error;
+    }
+  },
+  deleteUser: async (userId) => {
+    try {
+      const result = await tempUser.deleteOne({ _id: userId });
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  },
+  tempInsertUser: async (object) => {
+    try {
+      let tempuser = new tempUser(object);
+      await tempuser.save();
+      return tempuser;
     } catch (error) {
       throw error;
     }
@@ -140,6 +190,18 @@ const userController = {
    * @returns {Promise<void>}
    */
   updateUserByPhoneNumber: async (userData) => {
+    try {
+      let user = await User.findOneAndUpdate(
+        { phone: userData.phone },
+        { $set: userData },
+        { new: true }
+      );
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
+  convertTempToUser: async (userData) => {
     try {
       let user = await User.findOneAndUpdate(
         { phone: userData.phone },

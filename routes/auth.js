@@ -23,6 +23,7 @@ router.post("/signup", async (req, res) => {
     } else {
       let userName = await checkUserName(req.body.fullName);
       let user = await userController.existingUser(req.body.phone);
+      await userController.deleteExistingTempUser(req.body.phone);
       if (user) {
         return responseHandler(
           res,
@@ -41,13 +42,7 @@ router.post("/signup", async (req, res) => {
       userData.profileImage = `${randomIntFromInterval(1, 4)}.svg`;
       console.log("req.body", req.body);
       if (req.body.referCode) {
-        let user = await userController.existingReferCode(req.body.referCode);
-        if (user) {
-          userData.referer = Number(req.body.referCode);
-        } else {
-          userData = {};
-          return responseHandler(res, 400, null, "refer code not found");
-        }
+        userData.referer = Number(req.body.referCode);
       }
       userData.otp = {
         code: generate(6),
@@ -61,17 +56,14 @@ router.post("/signup", async (req, res) => {
       if (textRes.return === false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
-        dataStore = userData;
-        // user = await userController.insertUser(userData);
-        // let accountObject = {
-        //   userId: user.id,
-        // };
+        user = await userController.tempInsertUser(userData);
+
         // await accountController.insertAccount(accountObject);
         return responseHandler(res, 200, "OTP Sent", null);
       }
     }
   } catch (error) {
-    console.log("error1212", error);
+    console.log("error", error);
     responseHandler(res, 400, null, error.message);
   }
 });
@@ -186,23 +178,13 @@ router.post("/OTP", async (req, res) => {
     const { body } = req;
     const { token } = body;
     const topic = "ludo";
-    console.log("---------token", body);
+
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
-    } else if (dataStore.phone) {
-      let user = await userController.insertUser(dataStore);
-
-      if (user && dataStore.referer) {
-        await userController.increasenoOfrefer(dataStore.referer);
-      }
-
-      let accountObject = {
-        userId: user.id,
-      };
-      user = await userController.existingUser(req.body.phone);
-      await accountController.insertAccount(accountObject);
+    } else {
+      let user = await userController.existingTempUser(req.body.phone);
       if (!user) {
-        return responseHandler(res, 400, null, "This Number is Not valid");
+        return responseHandler(res, 400, null, "This Number is Not Registered");
       } else {
         let min = 2; // Days you want to subtract
         let date = new Date();
@@ -211,19 +193,26 @@ router.post("/OTP", async (req, res) => {
           return responseHandler(res, 400, null, "OTP is expired");
         }
 
-        // if (user.otp.code != req.body.otp) {
-        //   return responseHandler(
-        //     res,
-        //     400,
-        //     null,
-        //     "Incorrect OTP Please try again"
-        //   );
-        // }
-        else {
+        if (false) {
+          return responseHandler(
+            res,
+            400,
+            null,
+            "Incorrect OTP Please try again"
+          );
+        } else {
           user.otp.count = 0;
           user.otpConfirmed = true;
-          await userController.updateUserByPhoneNumber(user);
-          await userController.issueToken(user);
+          const final = await userController.insertUser(user);
+          await userController.deleteUser(user._id);
+          await userController.issueToken(final);
+          let accountObject = {
+            userId: final.id,
+          };
+          await accountController.insertAccount(accountObject);
+          if (user.referer) {
+            await userController.increasenoOfrefer(user.referer);
+          }
           // try {
           //   await _app
           //     .messaging()
@@ -237,7 +226,8 @@ router.post("/OTP", async (req, res) => {
           // } catch (err) {
           //   console.log("fcm", err);
           // }
-          return responseHandler(res, 200, user, null);
+
+          return responseHandler(res, 200, final, null);
         }
       }
     }
