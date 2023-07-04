@@ -17,7 +17,10 @@ jobs:
             rm -rf backend_ludo
             pm2 kill
             git clone git@github.com:practice5610/backend_ludo.git
-            cd backend_ludo
+            mkdir new
+            mv backend_ludo/built new/
+            rm -rf backend_ludo
+            cd new
             cd built
             npm install pm2 -g
             pm2 start index.js
