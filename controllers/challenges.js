@@ -207,7 +207,7 @@ const challengesController = {
         challenge.state = "requested";
         challenge.player = playerId;
         await challenge.save();
-      } 
+      }
 
       return challenge;
     } catch (error) {
@@ -217,18 +217,31 @@ const challengesController = {
   },
   updateChallengeById22: async (challengeId) => {
     try {
-      let challenge = await ChallengeModel.findById(challengeId);
+      let player = await User.findOne({
+        _id: challengeId.player._id,
+        isBlocked: false,
+        otpConfirmed: true,
+      });
+      let creator = await User.findOne({
+        _id: challengeId.creator._id,
+        isBlocked: false,
+        otpConfirmed: true,
+      });
+      console.log("checkkknoof", player.noOfChallenges, creator.noOfChallenges);
+      let challenge = await ChallengeModel.findById(challengeId._id);
+      if (player.noOfChallenges === 0 && creator.noOfChallenges === 0) {
+        if (!challenge) {
+          throw new Error("Challenge not found");
+        }
 
-      if (!challenge) {
-        throw new Error("Challenge not found");
-      }
-
-      if (challenge.state === "requested") {
-        challenge.state = "playing";
-        challenge.startedAt = new Date();
-        await challenge.save();
-      } else {
-        console.log("Invalid state for updating challenge22");
+        if (challenge.state === "requested") {
+          challenge.state = "playing";
+          challenge.startedAt = new Date();
+          await challenge.save();
+        } else {
+          console.log("Invalid state for updating challenge22");
+          return false;
+        }
       }
 
       return challenge;
