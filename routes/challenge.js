@@ -190,7 +190,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         historyWinner.type = "won";
         await historyWinner.save();
 
-        await accountController.updateAccountByUserId({
+        const userWall = await accountController.updateAccountByUserId({
           ...userWallet._doc,
           wallet: userWallet.wallet + amount,
           winningCash: userWallet.winningCash + amount,
@@ -205,6 +205,16 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           let referalAccount = await userController.existingUserByReferelId(
             referUser.referer
           );
+          let historyWinner = new History();
+          historyWinner.userId = challenge[winner]._id;
+          historyWinner.historyText = `referal from ${referalAccount.username}`;
+          historyWinner.createdAt = req.body.createdAt;
+          historyWinner.roomCode = challenge.roomCode;
+          history.closingBalance = userWall.wallet;
+          historyWinner.amount = Number(challenge.amount * 0.02);
+          historyWinner.type = "referal";
+          await historyWinner.save();
+          console.log("referhistory", historyWinner);
 
           await accountController.increaseRefererAccount({
             userId: referalAccount._id,
