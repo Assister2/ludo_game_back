@@ -49,6 +49,9 @@ async function startGame(data, socket) {
             _id: startChallenge.player._id,
             noOfChallenges: 1,
           });
+        if (!noOfChallengesPlayer || !noOfChallengesCreator) {
+          userController.findAndUpdateChallenge(data.payload.challengeId);
+        }
         console.log(
           "ccc",
           noOfChallengesCreator.noOfChallenges,
@@ -77,10 +80,12 @@ async function startGame(data, socket) {
           socket.send(JSON.stringify({ status: 3 }));
           await session.commitTransaction();
           session.endSession();
-          console.log("endd");
           socket.send(JSON.stringify({ status: 22 }));
 
           return socket.send(JSON.stringify(response));
+        } else {
+          await session.abortTransaction();
+          session.endSession();
         }
       }
     }

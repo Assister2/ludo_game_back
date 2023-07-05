@@ -1,4 +1,5 @@
 const User = require("../models/user");
+const ChallengeModel = require("../models/challenges");
 const tempUser = require("../models/tempUser");
 const jwtToken = require("jsonwebtoken");
 const userController = {
@@ -254,8 +255,32 @@ const userController = {
 
         user = await user.save();
         return user;
+      } else {
+        return false;
       }
     } catch (error) {
+      throw error;
+    }
+  },
+  findAndUpdateChallenge: async (challengeId) => {
+    try {
+      // Find the challenge by ID
+      const challenge = await ChallengeModel.findOne({ _id: challengeId });
+
+      if (!challenge) {
+        throw new Error("Challenge not found");
+      }
+
+      // Update the challenge's state to the requested value
+      challenge.state = "requested";
+
+      // Save the updated challenge
+      await challenge.save();
+
+      return challenge;
+    } catch (error) {
+      // Handle any errors that occurred during the process
+      console.error("Error finding and updating challenge:", error);
       throw error;
     }
   },
