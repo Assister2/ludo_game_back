@@ -63,7 +63,13 @@ async function startGame(data, socket) {
           //   _id: data.payload.challengeId,
           // });
           await userController.updateUserByUserId({
-            _id: data.payload.userId,
+            _id: startGameChallenge.player._id,
+            hasActiveChallenge: false,
+            noOfChallenges: 0,
+            // Increment noOfChallenges by 1 for creatorUser
+          });
+          await userController.updateUserByUserId({
+            _id: startGameChallenge.creator._id,
             hasActiveChallenge: false,
             noOfChallenges: 0,
             // Increment noOfChallenges by 1 for creatorUser
