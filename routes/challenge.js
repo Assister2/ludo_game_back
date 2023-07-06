@@ -223,7 +223,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           historyWinner.historyText = `referal from ${challenge[winner].username}`;
           historyWinner.createdAt = req.body.createdAt;
           historyWinner.roomCode = challenge.roomCode;
-          history.closingBalance = referalAccount22.wallet;
+          historyWinner.closingBalance = referalAccount22.wallet;
           historyWinner.amount = Number(challenge.amount * 0.02);
           historyWinner.type = "referal";
           await historyWinner.save();
