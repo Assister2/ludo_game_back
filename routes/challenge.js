@@ -388,10 +388,24 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
             referUser.referer
           );
 
-          await accountController.increaseRefererAccount({
+          const userWall = await accountController.increaseRefererAccount({
             userId: referalAccount._id,
             amount: challenge.amount,
           });
+          const referalAccount22 = await accountController.getAccountByUserId(
+            referalAccount._id
+          );
+
+          let historyWinner = new History();
+          historyWinner.userId = challenge[winner]._id;
+          historyWinner.historyText = `referal from ${challenge[winner].username}`;
+          historyWinner.createdAt = req.body.createdAt;
+          historyWinner.roomCode = challenge.roomCode;
+          historyWinner.closingBalance = referalAccount22.wallet;
+          historyWinner.amount = Number(challenge.amount * 0.02);
+          historyWinner.type = "referal";
+          await historyWinner.save();
+          console.log("referhistory22", historyWinner);
         }
 
         // let referUser = await userController.existingUserById({ id: challenge[winner]._id })

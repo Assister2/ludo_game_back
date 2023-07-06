@@ -38,7 +38,7 @@ router.post("/signup", async (req, res) => {
       userData.joinedAt = new Date();
       userData.phone = req.body.phone;
       userData.fullName = req.body.fullName;
-      userData.referCode = generate(10);
+      userData.referCode = generate();
       userData.profileImage = `${randomIntFromInterval(1, 4)}.svg`;
       console.log("req.body", req.body);
       if (req.body.referCode) {
