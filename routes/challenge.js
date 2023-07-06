@@ -209,20 +209,21 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           let referalAccount = await userController.existingUserByReferelId(
             referUser.referer
           );
-          // let looserWallet = await accountController.getAccountByUserId(
-          //   looserUserId
-          // );
+
           const userWall = await accountController.increaseRefererAccount({
             userId: referalAccount._id,
             amount: challenge.amount,
           });
+          const referalAccount22 = await accountController.getAccountByUserId(
+            referalAccount._id
+          );
 
           let historyWinner = new History();
           historyWinner.userId = referalAccount._id;
-          historyWinner.historyText = `referal from ${referalAccount.username}`;
+          historyWinner.historyText = `referal from ${challenge[winner].username}`;
           historyWinner.createdAt = req.body.createdAt;
           historyWinner.roomCode = challenge.roomCode;
-          history.closingBalance = userWall.wallet;
+          history.closingBalance = referalAccount22.wallet;
           historyWinner.amount = Number(challenge.amount * 0.02);
           historyWinner.type = "referal";
           await historyWinner.save();
