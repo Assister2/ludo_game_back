@@ -59,9 +59,9 @@ async function startGame(data, socket) {
 
         // Check if otherPlayer or creatorUser has noOfChallenges greater than one
         if (creator33.noOfChallenges != 1 || otherplayer2.noOfChallenges != 1) {
-          await challengesController.deleteChallengeById({
-            _id: data.payload.challengeId,
-          });
+          // await challengesController.deleteChallengeById({
+          //   _id: data.payload.challengeId,
+          // });
           await userController.updateUserByUserId({
             _id: data.payload.userId,
             hasActiveChallenge: false,
