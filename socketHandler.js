@@ -175,7 +175,11 @@ function handleConnection(socket) {
             let challenge = await challengesController.getChallengeById(
               data.payload.challengeId
             );
-            if (challenge.player._id && challenge.creator._id && !challenge.locked) {
+            if (
+              challenge.player._id &&
+              challenge.creator._id &&
+              !challenge.locked
+            ) {
               if (!challenge) {
                 response = {
                   ...response,
@@ -618,8 +622,6 @@ function handleConnection(socket) {
 
         // });
         let challenges = await challengesController.getAllChallenges();
-
-        // console.log("challengess", challenges);
 
         // aWss.clients.forEach(function (client) {
         socket.send(JSON.stringify(challenges));
