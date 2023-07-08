@@ -501,15 +501,7 @@ function handleConnection(socket) {
               );
 
               break;
-            // case "cancelRequestedOnPageChange":
-            //   await challengesController.cancelRequestedChallengesByPlayerId(
-            //     data.payload.userId
-            //   );
-            //   await userController.updateUserByUserId({
-            //     _id: data.payload.userId,
-            //     hasActiveChallenge: false,
-            //   });
-            //   break;
+          
             case "deleteOpenChallengesOfCreator":
               console.log("seleted too");
               // await challengesController.deleteOpenChallengesCreator(
