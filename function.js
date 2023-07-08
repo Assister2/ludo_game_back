@@ -4,32 +4,30 @@ const moment = require("moment");
 
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
-const mongoose = require("mongoose");
+
 async function startGame(data, socket) {
   let response = {
     status: 200,
     data: null,
     error: null,
   };
-
   try {
-    let startChallenge = await challengesController.getChallengeById(
+    // let startChallenge = await challengesController.getChallengeById(
+    //   data.payload.challengeId
+    // );
+    const startGameChallenge = await challengesController.dataBaseUpdate(
       data.payload.challengeId
     );
-    if (startChallenge.state == "requested") {
-      let startGameChallenge = await challengesController.dataBaseUpdate(
-        startChallenge
-      );
-
-      if (!startGameChallenge) {
-        response = {
-          ...response,
-          status: 400,
-          error: "Challenge not found startgame",
-          data: null,
-        };
-        return socket.send(JSON.stringify(response));
-      }
+    if (startGameChallenge.state == "playing") {
+      // if (!startGameChallenge) {
+      //   response = {
+      //     ...response,
+      //     status: 400,
+      //     error: "Challenge not found startgame",
+      //     data: null,
+      //   };
+      //   return socket.send(JSON.stringify(response));
+      // }
       if (startGameChallenge) {
         response = {
           ...response,
