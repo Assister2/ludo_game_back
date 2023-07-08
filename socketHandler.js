@@ -501,13 +501,13 @@ function handleConnection(socket) {
               );
 
               break;
-          
+
             case "deleteOpenChallengesOfCreator":
               console.log("seleted too");
               // await challengesController.deleteOpenChallengesCreator(
               //   data.payload.userId
               // );
-              await challengesController.cancelRequestedChallenges(
+              await challengesController.deleteOpenChallenges(
                 data.payload.userId
               );
               // await challengesController.cancelRequestedChallenges2(
