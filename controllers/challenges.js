@@ -1,5 +1,9 @@
 const ChallengeModel = require("../models/challenges");
 const User = require("../models/user");
+const Account = require("../models/accounts");
+const mongoose = require("mongoose");
+const axios = require("axios");
+
 const moment = require("moment");
 const challengesController = {
   /**
@@ -42,7 +46,7 @@ const challengesController = {
  * deleteOpenChallengesCreator - to get all challenges
  * @returns {Promise<void>}
  */
-  deleteOpenChallengesCreator: async (creatorId) => {
+  deleteOpenChallengesCreator: async (creatorId, playerId) => {
     try {
       let challenge = await ChallengeModel.updateMany(
         { creator: creatorId, state: "open" },
@@ -52,6 +56,133 @@ const challengesController = {
       return challenge;
     } catch (error) {
       console.log("error", error);
+      throw error;
+    }
+  },
+  dataBaseUpdate: async (challenge) => {
+    try {
+      var config = {
+        method: "get",
+        url: "  http://128.199.28.12:3000/ludoking/roomcode",
+        // url: "http://43.205.124.118/ludoking/roomcode/",
+        headers: {},
+      };
+
+      let roomCodeResponse = await axios(config);
+      const roomCode = roomCodeResponse.data;
+      const checkk = await ChallengeModel.findOneAndUpdate(
+        { _id: challenge._id },
+        { $set: { state: "playing", roomCode: roomCode } },
+        { new: true }
+      );
+      await ChallengeModel.updateMany(
+        {
+          creator: challenge.creator._id,
+          state: { $in: ["open", "requested"] },
+        },
+        { $set: { status: 0 } },
+        { new: true }
+      );
+      await ChallengeModel.updateMany(
+        {
+          creator: challenge.player._id,
+          state: { $in: ["open", "requested"] },
+        },
+        { $set: { status: 0 } },
+        { new: true }
+      );
+      await ChallengeModel.updateMany(
+        { player: challenge.creator._id, state: "requested" },
+        { $set: { state: "open", player: null } },
+        { new: true }
+      );
+      await ChallengeModel.updateMany(
+        { player: challenge.player._id, state: "requested" },
+        { $set: { state: "open", player: null } },
+        { new: true }
+      );
+      const creator = await User.findOneAndUpdate(
+        { _id: challenge.creator._id },
+        { $set: { noOfChallenges: 1 } },
+        { new: true }
+      );
+      const player = await User.findOneAndUpdate(
+        { _id: challenge.player._id },
+        { $set: { noOfChallenges: 1 } },
+        { new: true }
+      );
+
+      //decrease accounts of users
+      let creatorChips = { winningCash: 0, depositCash: 0 };
+      let playerChips = { winningCash: 0, depositCash: 0 };
+
+      let playerAccount = await Account.findOne({
+        userId: challenge.player._id,
+      });
+      let creatorAccount = await Account.findOne({
+        userId: challenge.creator._id,
+      });
+      if (playerAccount.depositCash >= challenge.amount) {
+        playerAccount.depositCash -= challenge.amount;
+        playerAccount.wallet -= challenge.amount;
+        playerChips.depositCash = challenge.amount;
+      } else if (playerAccount.depositCash < challenge.amount) {
+        const remaining = challenge.amount - playerAccount.depositCash;
+        if (playerAccount.winningCash < remaining) {
+          throw new Error("Insufficient balance for Player");
+        } else {
+          playerChips = {
+            depositCash: playerAccount.depositCash,
+            winningCash: remaining,
+          };
+          playerAccount.depositCash = 0;
+          playerAccount.winningCash -= remaining;
+          playerAccount.wallet -= challenge.amount;
+        }
+      }
+
+      if (creatorAccount.depositCash >= challenge.amount) {
+        creatorAccount.depositCash -= challenge.amount;
+        creatorAccount.wallet -= challenge.amount;
+        creatorChips.depositCash = challenge.amount;
+      } else if (creatorAccount.depositCash < challenge.amount) {
+        const remaining = challenge.amount - creatorAccount.depositCash;
+
+        if (creatorAccount.winningCash < remaining) {
+          throw new Error("Insufficient balance for creator");
+        } else {
+          creatorChips = {
+            depositCash: creatorAccount.depositCash,
+            winningCash: remaining,
+          };
+          creatorAccount.depositCash = 0;
+          creatorAccount.winningCash -= remaining;
+          creatorAccount.wallet -= challenge.amount;
+        }
+      }
+
+      await Account.findOneAndUpdate(
+        { userId: creatorAccount.userId },
+        { $set: creatorAccount },
+        { new: true }
+      );
+
+      await Account.findOneAndUpdate(
+        { userId: playerAccount.userId },
+        { $set: playerAccount },
+        { new: true }
+      );
+      if (playerChips != null || creatorChips != null) {
+        await challengesController.updateChallengeById({
+          _id: challenge._id,
+          creatorChips: creatorChips,
+          playerChips: playerChips,
+        });
+      }
+
+      return checkk;
+    } catch (error) {
+      console.log("error2323", error);
       throw error;
     }
   },
@@ -175,19 +306,11 @@ const challengesController = {
   },
   updateDeleteChallengeById: async (challengeId) => {
     try {
-      let challenge = await ChallengeModel.findById(challengeId);
-
-      if (!challenge) {
-        throw new Error("Challenge not found");
-      }
-
-      if (challenge.state === "open" && challenge.status === 1) {
-        challenge.status = 0;
-        await challenge.save();
-      } else {
-        throw new Error("challenge not Deleted");
-      }
-
+      let challenge = await ChallengeModel.findOneAndUpdate(
+        { _id: challengeId },
+        { $set: { status: 0 } },
+        { new: true }
+      );
       return challenge;
     } catch (error) {
       console.log("error", error);
@@ -197,16 +320,14 @@ const challengesController = {
 
   updateChallengeById44: async (challengeId, playerId) => {
     try {
-      let challenge = await ChallengeModel.findById(challengeId);
+      let challenge = await ChallengeModel.findOneAndUpdate(
+        { _id: challengeId, state: "open", status: 1 },
+        { $set: { state: "requested", player: playerId } },
+        { new: true }
+      );
 
       if (!challenge) {
         throw new Error("Challenge not found");
-      }
-
-      if (challenge.state === "open" && challenge.status === 1) {
-        challenge.state = "requested";
-        challenge.player = playerId;
-        await challenge.save();
       }
 
       return challenge;
@@ -215,6 +336,7 @@ const challengesController = {
       throw error;
     }
   },
+
   updateChallengeById22: async (challengeId) => {
     try {
       let player = await User.findOne({
@@ -251,35 +373,21 @@ const challengesController = {
   },
 
   updateChallengeById23: async (challengeId) => {
-    let isUpdating = false;
-    if (isUpdating) {
-      // If another request is already updating the database, neglect this request
-      console.log("Request neglected");
-      return;
-    }
-
-    isUpdating = true;
-
     try {
-      let challenge = await ChallengeModel.findById(challengeId);
+      let challenge = await ChallengeModel.findOneAndUpdate(
+        { _id: challengeId, state: "requested" },
+        { $set: { player: null, state: "open" } },
+        { new: true }
+      );
 
       if (!challenge) {
         throw new Error("Challenge not found");
       }
 
-      if (challenge.state === "requested") {
-        challenge.player = null;
-        challenge.state = "open";
-
-        await challenge.save();
-        console.log("challengefun");
-        return challenge;
-      }
+      return challenge;
     } catch (error) {
-      // Handle any errors that occur during the update process
       console.error(error);
-    } finally {
-      isUpdating = false;
+      throw error;
     }
   },
 
