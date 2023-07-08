@@ -20,18 +20,6 @@ const historyRouter = require("./routes/history");
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 
-const userController = require("./controllers/user");
-const { generate } = require("./helpers");
-const Challenge = require("./models/challenges");
-const UserAccount = require("./models/accounts");
-const { existingUserById } = require("./controllers/user");
-const { startGame } = require("./function.js");
-const http = require("http");
-const io = require("socket.io");
-
-const transactionsController = require("./controllers/transactions");
-const expressWs = expressWebSocket(express());
-const axios = require("axios");
 const bodyParser = require("body-parser");
 const app = express();
 // 30 seconds
@@ -41,7 +29,7 @@ dotenv.config();
 const app2 = express();
 mongoose
   .connect(
-    `mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo18`,
+    `mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo19`,
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
