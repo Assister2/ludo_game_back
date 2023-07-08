@@ -110,13 +110,8 @@ const handleChallengeCancellation = async (
 };
 const cancelChallenge = async (socket, challengeId, userId) => {
   try {
-    const getChallenge = await challengesController.getChallengeById(
-      challengeId
-    );
-    if (getChallenge.state === "requested") {
-      await challengesController.updateChallengeById23(challengeId);
-      return socket.send(JSON.stringify({ status: 21 }));
-    }
+    await challengesController.updateChallengeById23(challengeId);
+    return socket.send(JSON.stringify({ status: 21 }));
   } catch (error) {
     console.log("cancelled", error);
   } finally {

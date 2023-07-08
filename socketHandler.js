@@ -395,19 +395,6 @@ function handleConnection(socket) {
                 };
                 return socket.send(JSON.stringify(response));
               }
-              // let user = await userController.existingUserById({
-              //   id: data.payload.userId,
-              // });
-              // await sendFCM(data.payload.amount, user.username);
-              // await userController.updateUserByUserId({
-              //   _id: data.payload.userId,
-              //   hasActiveChallenge: true,
-              // });
-              // await challengesController.updateChallengeById({
-              //   _id: data.payload.challengeId,
-              //   state: "playing",
-              // });
-              // Implement your create operation here
               break;
             case "play":
               let currentChallenge =
@@ -514,33 +501,26 @@ function handleConnection(socket) {
               );
 
               break;
-            case "cancelRequestedOnPageChange":
-              await challengesController.cancelRequestedChallengesByPlayerId(
-                data.payload.userId
-              );
-              await userController.updateUserByUserId({
-                _id: data.payload.userId,
-                hasActiveChallenge: false,
-              });
-              break;
+            // case "cancelRequestedOnPageChange":
+            //   await challengesController.cancelRequestedChallengesByPlayerId(
+            //     data.payload.userId
+            //   );
+            //   await userController.updateUserByUserId({
+            //     _id: data.payload.userId,
+            //     hasActiveChallenge: false,
+            //   });
+            //   break;
             case "deleteOpenChallengesOfCreator":
               console.log("seleted too");
-              await challengesController.deleteOpenChallengesCreator(
-                data.payload.userId
-              );
+              // await challengesController.deleteOpenChallengesCreator(
+              //   data.payload.userId
+              // );
               await challengesController.cancelRequestedChallenges(
                 data.payload.userId
               );
-              await challengesController.cancelRequestedChallenges2(
-                data.payload.userId
-              );
-              // let challenges = await challengesController.getAllChallenges();
-
-              // socket.send(JSON.stringify(challenges));
-              // await userController.updateUserByUserId({
-              //   _id: data.payload.userId,
-              //   hasActiveChallenge: false,
-              // });
+              // await challengesController.cancelRequestedChallenges2(
+              //   data.payload.userId
+              // );
               break;
             case "startGame":
               await startGame(data, socket);
@@ -553,7 +533,6 @@ function handleConnection(socket) {
         // });
         let challenges = await challengesController.getAllChallenges();
 
-        // aWss.clients.forEach(function (client) {
         socket.send(JSON.stringify(challenges));
       } catch (error) {
         console.log("errorwa3", error);
