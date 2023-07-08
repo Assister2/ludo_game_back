@@ -152,7 +152,7 @@ const bothResultNotUpdated = async (challengeId) => {
   setTimeout(async () => {
     try {
       let challenge = await challengesController.getChallengeById(challengeId);
-      console.log("timerChallenge", challenge);
+
       if (challenge.state === "playing" && challenge.player._id) {
         let creatorId = challenge.creator._id;
         let playerId = challenge.player._id;
