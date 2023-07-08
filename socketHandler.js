@@ -52,14 +52,13 @@ function handleConnection(socket) {
       const connections = {};
       const userId = data.payload.userId;
       connections[userId] = socket;
-      // console.log("checkkk", data.type);
+
       switch (data.type) {
         case "getUserWallet":
           try {
             let wallet = await accountController.getAccountByUserId(
               data.payload.userId
             );
-            // console.log("wallet", wallet);
 
             socket.emit(
               "getUserWallet",
