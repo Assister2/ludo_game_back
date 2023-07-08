@@ -97,98 +97,111 @@ const challengesController = {
           { new: true }
         );
         const creator = await User.findOneAndUpdate(
-          { _id: updatedChallenge.creator._id },
+          { _id: updatedChallenge.creator._id, noOfChallenges: 0 },
           { $set: { noOfChallenges: 1 } },
           { new: true }
         );
         const player = await User.findOneAndUpdate(
-          { _id: updatedChallenge.player._id },
+          { _id: updatedChallenge.player._id, noOfChallenges: 0 },
           { $set: { noOfChallenges: 1 } },
           { new: true }
         );
 
         //decrease accounts of users
-        let creatorChips = { winningCash: 0, depositCash: 0 };
-        let playerChips = { winningCash: 0, depositCash: 0 };
-        var config = {
-          method: "get",
-          url: "  http://128.199.28.12:3000/ludoking/roomcode",
-          // url: "http://43.205.124.118/ludoking/roomcode/",
-          headers: {},
-        };
-        let roomCodeResponse = await axios(config);
-        const roomCode = roomCodeResponse.data;
-        updatedChallenge = await ChallengeModel.findOneAndUpdate(
-          { _id: challengeId, state: "playing" },
-          { $set: { roomCode: roomCode } },
-          { new: true }
+        console.log(
+          "creatorrandplayer",
+          creator.noOfChallenges,
+          player.noOfChallenges
         );
+        if (creator.noOfChallenges === 1 && player.noOfChallenges === 1) {
+          let creatorChips = { winningCash: 0, depositCash: 0 };
+          let playerChips = { winningCash: 0, depositCash: 0 };
+          var config = {
+            method: "get",
+            url: "  http://128.199.28.12:3000/ludoking/roomcode",
+            // url: "http://43.205.124.118/ludoking/roomcode/",
+            headers: {},
+          };
+          let roomCodeResponse = await axios(config);
+          const roomCode = roomCodeResponse.data;
+          updatedChallenge = await ChallengeModel.findOneAndUpdate(
+            { _id: challengeId, state: "playing" },
+            { $set: { roomCode: roomCode } },
+            { new: true }
+          );
 
-        let playerAccount = await Account.findOne({
-          userId: updatedChallenge.player._id,
-        });
-        let creatorAccount = await Account.findOne({
-          userId: updatedChallenge.creator._id,
-        });
-        if (playerAccount.depositCash >= updatedChallenge.amount) {
-          playerAccount.depositCash -= updatedChallenge.amount;
-          playerAccount.wallet -= updatedChallenge.amount;
-          playerChips.depositCash = updatedChallenge.amount;
-        } else if (playerAccount.depositCash < updatedChallenge.amount) {
-          const remaining = updatedChallenge.amount - playerAccount.depositCash;
-          if (playerAccount.winningCash < remaining) {
-            throw new Error("Insufficient balance for Player");
-          } else {
-            playerChips = {
-              depositCash: playerAccount.depositCash,
-              winningCash: remaining,
-            };
-            playerAccount.depositCash = 0;
-            playerAccount.winningCash -= remaining;
-            playerAccount.wallet -= updatedChallenge.amount;
-          }
-        }
-
-        if (creatorAccount.depositCash >= updatedChallenge.amount) {
-          creatorAccount.depositCash -= updatedChallenge.amount;
-          creatorAccount.wallet -= updatedChallenge.amount;
-          creatorChips.depositCash = updatedChallenge.amount;
-        } else if (creatorAccount.depositCash < updatedChallenge.amount) {
-          const remaining =
-            updatedChallenge.amount - creatorAccount.depositCash;
-
-          if (creatorAccount.winningCash < remaining) {
-            throw new Error("Insufficient balance for creator");
-          } else {
-            creatorChips = {
-              depositCash: creatorAccount.depositCash,
-              winningCash: remaining,
-            };
-            creatorAccount.depositCash = 0;
-            creatorAccount.winningCash -= remaining;
-            creatorAccount.wallet -= updatedChallenge.amount;
-          }
-        }
-
-        await Account.findOneAndUpdate(
-          { userId: creatorAccount.userId },
-          { $set: creatorAccount },
-          { new: true }
-        );
-
-        await Account.findOneAndUpdate(
-          { userId: playerAccount.userId },
-          { $set: playerAccount },
-          { new: true }
-        );
-        if (playerChips != null || creatorChips != null) {
-          await challengesController.updateChallengeById({
-            _id: updatedChallenge._id,
-            creatorChips: creatorChips,
-            playerChips: playerChips,
+          let playerAccount = await Account.findOne({
+            userId: updatedChallenge.player._id,
           });
-        }
+          let creatorAccount = await Account.findOne({
+            userId: updatedChallenge.creator._id,
+          });
+          if (playerAccount.depositCash >= updatedChallenge.amount) {
+            playerAccount.depositCash -= updatedChallenge.amount;
+            playerAccount.wallet -= updatedChallenge.amount;
+            playerChips.depositCash = updatedChallenge.amount;
+          } else if (playerAccount.depositCash < updatedChallenge.amount) {
+            const remaining =
+              updatedChallenge.amount - playerAccount.depositCash;
+            if (playerAccount.winningCash < remaining) {
+              throw new Error("Insufficient balance for Player");
+            } else {
+              playerChips = {
+                depositCash: playerAccount.depositCash,
+                winningCash: remaining,
+              };
+              playerAccount.depositCash = 0;
+              playerAccount.winningCash -= remaining;
+              playerAccount.wallet -= updatedChallenge.amount;
+            }
+          }
 
+          if (creatorAccount.depositCash >= updatedChallenge.amount) {
+            creatorAccount.depositCash -= updatedChallenge.amount;
+            creatorAccount.wallet -= updatedChallenge.amount;
+            creatorChips.depositCash = updatedChallenge.amount;
+          } else if (creatorAccount.depositCash < updatedChallenge.amount) {
+            const remaining =
+              updatedChallenge.amount - creatorAccount.depositCash;
+
+            if (creatorAccount.winningCash < remaining) {
+              throw new Error("Insufficient balance for creator");
+            } else {
+              creatorChips = {
+                depositCash: creatorAccount.depositCash,
+                winningCash: remaining,
+              };
+              creatorAccount.depositCash = 0;
+              creatorAccount.winningCash -= remaining;
+              creatorAccount.wallet -= updatedChallenge.amount;
+            }
+          }
+
+          await Account.findOneAndUpdate(
+            { userId: creatorAccount.userId },
+            { $set: creatorAccount },
+            { new: true }
+          );
+
+          await Account.findOneAndUpdate(
+            { userId: playerAccount.userId },
+            { $set: playerAccount },
+            { new: true }
+          );
+          if (playerChips != null || creatorChips != null) {
+            await challengesController.updateChallengeById({
+              _id: updatedChallenge._id,
+              creatorChips: creatorChips,
+              playerChips: playerChips,
+            });
+          }
+        } else {
+          await ChallengeModel.findOneAndUpdate(
+            { _id: challengeId, state: "playing" },
+            { $set: { state: "requested" } },
+            { new: true }
+          );
+        }
         return updatedChallenge;
       } else {
         return false;
