@@ -12,7 +12,7 @@ router.post("/buy", verifyToken, async (req, res) => {
     if (!req.body.payload) {
       return responseHandler(res, 400, null, "Fields are missing232");
     }
-    
+
     let { amount } = req.body.payload;
     let user = req.user;
     let account = await accountController.getAccountByUserId(user.id);
@@ -32,7 +32,9 @@ router.post("/buy", verifyToken, async (req, res) => {
       withdrawRequest: false,
     };
 
-    await transactionsController.insertNewTransaction(transactionObject);
+    const transactionId = await transactionsController.insertNewTransaction(
+      transactionObject
+    );
     account = await accountController.updateAccountByUserId(accountObject);
     let history = new History();
     history.userId = user.id;
@@ -41,13 +43,13 @@ router.post("/buy", verifyToken, async (req, res) => {
     history.closingBalance = account.wallet;
     history.amount = Number(amount);
     history.type = "buy";
+    history.transactionId = transactionId._id;
     await history.save();
     return responseHandler(res, 200, account, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
   }
 });
-
 
 router.post("/sell", verifyToken, async (req, res) => {
   try {
@@ -117,7 +119,9 @@ router.post("/sell", verifyToken, async (req, res) => {
         winningCash: Math.max(0, Number(account.winningCash - amount)),
         wallet: Math.max(0, Number(account.wallet - amount)),
       };
-      await transactionsController.insertNewTransaction(transactionObject);
+      const transactionId = await transactionsController.insertNewTransaction(
+        transactionObject
+      );
 
       account = await accountController.updateAccountByUserId(accountObject);
       let history = new History();
@@ -128,6 +132,7 @@ router.post("/sell", verifyToken, async (req, res) => {
       history.status = "pending";
       history.amount = Number(amount);
       history.type = "withdraw";
+      history.transactionId = transactionId._id;
       await history.save();
 
       return responseHandler(res, 200, account, null);
