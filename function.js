@@ -19,15 +19,6 @@ async function startGame(data, socket) {
       data.payload.challengeId
     );
     if (startGameChallenge.state == "playing") {
-      // if (!startGameChallenge) {
-      //   response = {
-      //     ...response,
-      //     status: 400,
-      //     error: "Challenge not found startgame",
-      //     data: null,
-      //   };
-      //   return socket.send(JSON.stringify(response));
-      // }
       if (startGameChallenge) {
         response = {
           ...response,
