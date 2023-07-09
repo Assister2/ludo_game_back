@@ -183,6 +183,10 @@ router.post("/OTP", async (req, res) => {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
       let user = await userController.existingTempUser(req.body.phone);
+      let realUser = await userController.existingUser(req.body.phone);
+      if (realUser) {
+        return responseHandler(res, 400, null, "This Number already in Use");
+      }
       if (!user) {
         return responseHandler(res, 400, null, "This Number is Not Registered");
       } else {

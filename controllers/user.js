@@ -74,6 +74,18 @@ const userController = {
       throw error;
     }
   },
+  existingUserByName: async (name) => {
+    try {
+      let user = await User.findOne({
+        username: name,
+        isBlocked: false,
+        otpConfirmed: true,
+      });
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
   /**
    * existingUserByReferelId - get existing user by referel code.
    * @param referCode - referelCode that need to check

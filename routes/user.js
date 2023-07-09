@@ -30,13 +30,20 @@ router.get("/getUserProfileData", verifyToken, async (req, res) => {
 router.post("/updateUserProfile", verifyToken, async (req, res) => {
   try {
     let user = req.user;
+    let name = req.body.username;
+    let existing = await userController.existingUserByName(name);
+
+
     let userData = await userController.existingUserById(user);
     if (!userData) {
       return responseHandler(res, 400, null, "User not found");
     } else {
-      let userObj = { ...req.body, phone: userData.phone };
-      userData = await userController.updateUserByPhoneNumber(userObj);
+      if (!existing) {
+        let userObj = { ...req.body, phone: userData.phone };
+        userData = await userController.updateUserByPhoneNumber(userObj);
+      }
     }
+
     let account = await accountController.getAccountByUserId(user.id);
     userData._doc.account = account;
     const count = await Challenge.countDocuments({
@@ -45,7 +52,10 @@ router.post("/updateUserProfile", verifyToken, async (req, res) => {
     });
     console.log("count");
     userData._doc.gamesPlayed = count;
-    return responseHandler(res, 200, userData, null);
+    if (existing) {
+      return responseHandler(res, 200, userData, "choose different name");
+    }
+    return responseHandler(res, 200, userData, "Profile Updated");
   } catch (error) {
     return responseHandler(res, 400, null, error.message);
   }
