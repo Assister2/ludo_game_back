@@ -402,6 +402,7 @@ function handleConnection(socket) {
                   data.payload.challengeId
                 );
 
+
               try {
                 if (currentChallenge.state === "requested") {
                   response = {
@@ -485,6 +486,9 @@ function handleConnection(socket) {
                 console.log("PlayCatcherror", error);
                 throw error;
               }
+              finally{
+                socket.send(JSON.stringify({ status: 444 }));
+              }
 
               // Implement your read operation here
               break;
@@ -494,11 +498,13 @@ function handleConnection(socket) {
                 data.payload.challengeId,
                 data.payload.userId
               );
+              socket.send(JSON.stringify({ status: 333 }));
               break;
             case "delete":
               await challengesController.updateDeleteChallengeById(
                 data.payload.challengeId
               );
+              socket.send(JSON.stringify({ status: 222 }));
 
               break;
 
@@ -516,8 +522,8 @@ function handleConnection(socket) {
               break;
             case "startGame":
               await startGame(data, socket);
+              socket.send(JSON.stringify({ status: 111 }));
               // await bothResultNotUpdated(data.payload.challengeId);
-
               break;
           }
         }
