@@ -62,8 +62,20 @@ router.post("/sell", verifyToken, async (req, res) => {
 
     let { amount, upiId } = req.body;
     let user = req.user;
+    let checkOpenOrRequested = await challengesController.checkOpenOrRequested(
+      user.id
+    );
+    if (checkOpenOrRequested.length > 0) {
+      return responseHandler(
+        res,
+        400,
+        account,
+        "You can not sell chips during requested or set challenge"
+      );
+    }
 
     let account = await accountController.getAccountByUserId(user.id);
+
     if (amount > account.winningCash) {
       return responseHandler(
         res,
@@ -72,6 +84,12 @@ router.post("/sell", verifyToken, async (req, res) => {
         "Amount is less than winning cash"
       );
     }
+    let accountObject = {
+      userId: user.id,
+      winningCash: Math.max(0, Number(account.winningCash - amount)),
+      wallet: Math.max(0, Number(account.wallet - amount)),
+    };
+    account = await accountController.updateAccountByUserId(accountObject);
 
     let transactionObject = {
       amount: amount,
@@ -82,19 +100,21 @@ router.post("/sell", verifyToken, async (req, res) => {
       withdrawRequest: true,
       withdraw: { lastWRequest: new Date() },
     };
-    let checkOpenOrRequested = await challengesController.checkOpenOrRequested(
-      user.id
+    const transactionId = await transactionsController.insertNewTransaction(
+      transactionObject
     );
+    let history = new History();
+    history.userId = user.id;
+    history.historyText = "Withdrawal Chips Via UPI";
+    history.createdAt = new Date();
+    history.closingBalance = account.wallet;
+    history.status = "pending";
+    history.amount = Number(amount);
+    history.type = "withdraw";
+    history.transactionId = transactionId._id;
+    await history.save();
 
-    if (checkOpenOrRequested.length > 0) {
-      return responseHandler(
-        res,
-        400,
-        account,
-        "You can not sell chips during requested or set challenge"
-      );
-    }
-    let currentTime = new Date();
+    // let currentTime = new Date();
     // let previousRequest =
     //   await transactionsController.existingTransactionsByUserId(user.id, true);
     // if (previousRequest.length > 0) {
@@ -112,37 +132,16 @@ router.post("/sell", verifyToken, async (req, res) => {
     //     );
     //   }
     // }
-    if (amount > account.winningCash) {
-      return responseHandler(
-        res,
-        400,
-        account,
-        "Amount is less than winning cash"
-      );
-    } else {
-      let accountObject = {
-        userId: user.id,
-        winningCash: Math.max(0, Number(account.winningCash - amount)),
-        wallet: Math.max(0, Number(account.wallet - amount)),
-      };
-      const transactionId = await transactionsController.insertNewTransaction(
-        transactionObject
-      );
 
-      account = await accountController.updateAccountByUserId(accountObject);
-      let history = new History();
-      history.userId = user.id;
-      history.historyText = "Withdrawal Chips Via UPI";
-      history.createdAt = currentTime;
-      history.closingBalance = account.wallet;
-      history.status = "pending";
-      history.amount = Number(amount);
-      history.type = "withdraw";
-      history.transactionId = transactionId._id;
-      await history.save();
+    // let accountObject = {
+    //   userId: user.id,
+    //   winningCash: Math.max(0, Number(account.winningCash - amount)),
+    //   wallet: Math.max(0, Number(account.wallet - amount)),
+    // };
 
-      return responseHandler(res, 200, account, null);
-    }
+    // account = await accountController.updateAccountByUserId(accountObject);
+
+    return responseHandler(res, 200, account, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
   }
