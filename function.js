@@ -82,7 +82,6 @@ const handleChallengeCancellation = async (
       history.roomCode = challenge.roomCode;
       history.type = "cancelled";
       await history.save();
-      console.log("losser2", history);
 
       return;
     }
@@ -104,7 +103,7 @@ const handleChallengeCancellation = async (
       historyWinner.roomCode = challenge.roomCode;
       historyWinner.type = "cancelled";
       await historyWinner.save();
-      console.log("losser1", historyWinner);
+
       return;
     }
 
