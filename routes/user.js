@@ -32,8 +32,6 @@ router.post("/updateUserProfile", verifyToken, async (req, res) => {
     let user = req.user;
     let name = req.body.username;
     let existing = await userController.existingUserByName(name);
-
-
     let userData = await userController.existingUserById(user);
     if (!userData) {
       return responseHandler(res, 400, null, "User not found");
@@ -50,10 +48,9 @@ router.post("/updateUserProfile", verifyToken, async (req, res) => {
       $or: [{ creator: user.id }, { player: user.id }],
       state: { $nin: ["playing", "open", "requested"] },
     });
-    console.log("count");
     userData._doc.gamesPlayed = count;
     if (existing) {
-      return responseHandler(res, 200, userData, "choose different name");
+      return responseHandler(res, 200, userData, "username already exist");
     }
     return responseHandler(res, 200, userData, "Profile Updated");
   } catch (error) {

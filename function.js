@@ -1,5 +1,6 @@
 const accountController = require("./controllers/accounts");
 const ChallengeModel = require("./models/challenges");
+const History = require("./models/history");
 const moment = require("moment");
 
 const challengesController = require("./controllers/challenges");
@@ -72,6 +73,17 @@ const handleChallengeCancellation = async (
         winningCash:
           playerWallet.winningCash + challenge.creatorChips.winningCash,
       });
+      let history = new History();
+      history.userId = challenge.creator._id;
+      history.historyText = `Cancelled Against ${challenge[canceller].username}`;
+      history.createdAt = new Date();
+      history.closingBalance = playerWallet.wallet;
+      history.amount = Number(challenge.amount);
+      history.roomCode = challenge.roomCode;
+      history.type = "cancelled";
+      await history.save();
+      console.log("losser2", history);
+
       return;
     }
     if (player === "player") {
@@ -83,6 +95,16 @@ const handleChallengeCancellation = async (
         winningCash:
           playerWallet.winningCash + challenge.playerChips.winningCash,
       });
+      let historyWinner = new History();
+      historyWinner.userId = challenge.player._id;
+      historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
+      historyWinner.createdAt = new Date();
+      historyWinner.closingBalance = playerWallet.wallet;
+      historyWinner.amount = Number(challenge.amount);
+      historyWinner.roomCode = challenge.roomCode;
+      historyWinner.type = "cancelled";
+      await historyWinner.save();
+      console.log("losser1", historyWinner);
       return;
     }
 

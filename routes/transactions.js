@@ -64,6 +64,14 @@ router.post("/sell", verifyToken, async (req, res) => {
     let user = req.user;
 
     let account = await accountController.getAccountByUserId(user.id);
+    if (amount > account.winningCash) {
+      return responseHandler(
+        res,
+        400,
+        account,
+        "Amount is less than winning cash"
+      );
+    }
 
     let transactionObject = {
       amount: amount,
@@ -86,11 +94,9 @@ router.post("/sell", verifyToken, async (req, res) => {
         "You can not sell chips during requested or set challenge"
       );
     }
-
     let currentTime = new Date();
     // let previousRequest =
     //   await transactionsController.existingTransactionsByUserId(user.id, true);
-
     // if (previousRequest.length > 0) {
     //   let lastRequest = previousRequest[previousRequest.length - 1];
     //   let timeDifference = currentTime - lastRequest.withdraw.lastWRequest;

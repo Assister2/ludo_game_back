@@ -397,7 +397,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           );
 
           let historyWinner = new History();
-          historyWinner.userId = challenge[winner]._id;
+          historyWinner.userId = referalAccount.id;
           historyWinner.historyText = `referal from ${challenge[winner].username}`;
           historyWinner.createdAt = req.body.createdAt;
           historyWinner.roomCode = challenge.roomCode;
