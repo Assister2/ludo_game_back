@@ -98,12 +98,12 @@ const challengesController = {
           { new: true, session }
         );
         const creator = await User.findOneAndUpdate(
-          { _id: updatedChallenge.creator._id, noOfChallenges: 1 },
+          { _id: updatedChallenge.creator._id, noOfChallenges: 0 },
           { $set: { noOfChallenges: 1 } },
           { new: true, session }
         );
         const player = await User.findOneAndUpdate(
-          { _id: updatedChallenge.player._id, noOfChallenges: 1 },
+          { _id: updatedChallenge.player._id, noOfChallenges: 0 },
           { $set: { noOfChallenges: 1 } },
           { new: true, session }
         );
