@@ -98,22 +98,23 @@ const challengesController = {
           { new: true, session }
         );
         const creator = await User.findOneAndUpdate(
-          { _id: updatedChallenge.creator._id, noOfChallenges: 0 },
+          { _id: updatedChallenge.creator._id, noOfChallenges: 1 },
           { $set: { noOfChallenges: 1 } },
           { new: true, session }
         );
         const player = await User.findOneAndUpdate(
-          { _id: updatedChallenge.player._id, noOfChallenges: 0 },
+          { _id: updatedChallenge.player._id, noOfChallenges: 1 },
           { $set: { noOfChallenges: 1 } },
           { new: true, session }
         );
 
+        if (!creator && !player) {
+          await session.abortTransaction();
+          session.endSession();
+          return;
+        }
+
         //decrease accounts of users
-        console.log(
-          "creatorrandplayer",
-          creator.noOfChallenges,
-          player.noOfChallenges
-        );
 
         let creatorChips = { winningCash: 0, depositCash: 0 };
         let playerChips = { winningCash: 0, depositCash: 0 };
