@@ -15,10 +15,10 @@ const accountController = {
    * @param object - object that need to insert
    * @returns {Promise<void>}
    */
-  insertAccount: async (object) => {
+  insertAccount: async (object, session) => {
     try {
       let account = new Account(object);
-      await account.save();
+      await account.save({ session });
       return account;
     } catch (error) {
       throw error;
@@ -34,12 +34,12 @@ const accountController = {
     }
   },
 
-  updateAccountByUserId: async (accountObject) => {
+  updateAccountByUserId: async (accountObject, session) => {
     try {
       let account = await Account.findOneAndUpdate(
         { userId: accountObject.userId },
         { $set: accountObject },
-        { new: true }
+        { new: true, session }
       );
       return account;
     } catch (error) {
@@ -47,7 +47,7 @@ const accountController = {
     }
   },
 
-  increaseRefererAccount: async (object) => {
+  increaseRefererAccount: async (object, session) => {
     try {
       var referelAmount = object.amount * 0.02;
 
@@ -61,7 +61,8 @@ const accountController = {
             referelBalance: +referelAmount,
             winningCash: +referelAmount,
           },
-        }
+        },
+        { session }
       );
       return account;
     } catch (error) {

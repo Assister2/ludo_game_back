@@ -6,10 +6,10 @@ const transactionsController = {
    * @param transactionObj - transactionObj that need to insert
    * @returns {Promise<void>}
    */
-  insertNewTransaction: async (transactionObj) => {
+  insertNewTransaction: async (transactionObj, session) => {
     try {
       let response = new TransactionsModel(transactionObj);
-      response = await response.save();
+      response = await response.save({ session });
       return response;
     } catch (error) {
       throw error;
@@ -21,7 +21,7 @@ const transactionsController = {
    * @param userId - user that need to check
    * @returns {Promise<void>}
    */
-  existingTransactionsByUserId: async (userId,value) => {
+  existingTransactionsByUserId: async (userId, value) => {
     try {
       let response = await TransactionsModel.find({
         userId: userId,

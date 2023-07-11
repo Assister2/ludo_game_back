@@ -1,6 +1,7 @@
 var express = require("express");
 const accountController = require("../controllers/accounts");
 var router = express.Router();
+const mongoose = require("mongoose");
 const auth = require("../controllers/auth");
 const userController = require("../controllers/user");
 const {
@@ -21,9 +22,11 @@ router.post("/signup", async (req, res) => {
     ) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
+      const session = await mongoose.startSession();
+      session.startTransaction();
       let userName = await checkUserName(req.body.fullName);
       let user = await userController.existingUser(req.body.phone);
-      await userController.deleteExistingTempUser(req.body.phone);
+      await userController.deleteExistingTempUser(req.body.phone, session);
       if (user) {
         return responseHandler(
           res,
@@ -56,13 +59,19 @@ router.post("/signup", async (req, res) => {
       if (textRes.return === false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
-        user = await userController.tempInsertUser(userData);
+        user = await userController.tempInsertUser(userData, session);
 
         // await accountController.insertAccount(accountObject);
+        await session.commitTransaction();
+        session.endSession();
+
         return responseHandler(res, 200, "OTP Sent", null);
       }
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
     console.log("error", error);
     responseHandler(res, 400, null, error.message);
   }
@@ -73,6 +82,7 @@ router.post("/login", async (req, res) => {
     if (!req.body.hasOwnProperty("phone")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
+
     let user = await userController.existingUser(req.body.phone);
 
     if (!user) {
@@ -86,6 +96,8 @@ router.post("/login", async (req, res) => {
           "your Account has been blocked. !Contact Admin"
         );
       }
+      const session = await mongoose.startSession();
+      session.startTransaction();
       let currentDate = new Date();
       let lastUpdateDate = user.otp.updatedAt;
       var seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
@@ -110,11 +122,15 @@ router.post("/login", async (req, res) => {
       if (textRes === false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
-        user = await userController.updateUserByPhoneNumber(user);
+        user = await userController.updateUserByPhoneNumber(user, session);
+        await session.commitTransaction();
+        session.endSession();
         return responseHandler(res, 200, "OTP Sent", null);
       }
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     responseHandler(res, 400, null, error.message);
   }
 });
@@ -128,6 +144,8 @@ router.post("/confirmOTP", async (req, res) => {
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
+      const session = await mongoose.startSession();
+      session.startTransaction();
       let user = await userController.existingUser(req.body.phone);
       if (!user) {
         return responseHandler(res, 400, null, "This Number is Not Registered");
@@ -150,8 +168,8 @@ router.post("/confirmOTP", async (req, res) => {
         else {
           user.otp.count = 0;
           user.otpConfirmed = true;
-          await userController.updateUserByPhoneNumber(user);
-          await userController.issueToken(user);
+          await userController.updateUserByPhoneNumber(user, session);
+          await userController.issueToken(user, session);
           // try {
           //   await _app
           //     .messaging()
@@ -165,11 +183,15 @@ router.post("/confirmOTP", async (req, res) => {
           // } catch (err) {
           //   console.log("fcm", err);
           // }
+          await session.commitTransaction();
+          session.endSession();
           return responseHandler(res, 200, user, null);
         }
       }
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     responseHandler(res, 400, null, error.message);
   }
 });
@@ -190,6 +212,8 @@ router.post("/OTP", async (req, res) => {
       if (!user) {
         return responseHandler(res, 400, null, "This Number is Not Registered");
       } else {
+        const session = await mongoose.startSession();
+        session.startTransaction();
         let min = 2; // Days you want to subtract
         let date = new Date();
         let last = new Date(date.getTime() - min * 60 * 1000);
@@ -207,15 +231,15 @@ router.post("/OTP", async (req, res) => {
         } else {
           user.otp.count = 0;
           user.otpConfirmed = true;
-          const final = await userController.insertUser(user);
-          await userController.deleteUser(user._id);
-          await userController.issueToken(final);
+          const final = await userController.insertUser(user, session);
+          await userController.deleteUser(user._id, session);
+          await userController.issueToken(final, session);
           let accountObject = {
             userId: final.id,
           };
-          await accountController.insertAccount(accountObject);
+          await accountController.insertAccount(accountObject, session);
           if (user.referer) {
-            await userController.increasenoOfrefer(user.referer);
+            await userController.increasenoOfrefer(user.referer, session);
           }
           // try {
           //   await _app
@@ -230,12 +254,15 @@ router.post("/OTP", async (req, res) => {
           // } catch (err) {
           //   console.log("fcm", err);
           // }
-
+          await session.commitTransaction();
+          session.endSession();
           return responseHandler(res, 200, final, null);
         }
       }
     }
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     responseHandler(res, 400, null, error.message);
   }
 });

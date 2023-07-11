@@ -5,14 +5,18 @@ const transactionsController = require("../controllers/transactions");
 const { responseHandler } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 const History = require("../models/history");
+const mongoose = require("mongoose");
 const router = express.Router();
 
 router.post("/buy", verifyToken, async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     if (!req.body.payload) {
       return responseHandler(res, 400, null, "Fields are missing232");
     }
 
+    session.startTransaction();
     let { amount } = req.body.payload;
     let user = req.user;
     let account = await accountController.getAccountByUserId(user.id);
@@ -33,9 +37,13 @@ router.post("/buy", verifyToken, async (req, res) => {
     };
 
     const transactionId = await transactionsController.insertNewTransaction(
-      transactionObject
+      transactionObject,
+      session
     );
-    account = await accountController.updateAccountByUserId(accountObject);
+    account = await accountController.updateAccountByUserId(
+      accountObject,
+      session
+    );
     let history = new History();
     history.userId = user.id;
     history.historyText = "Chips Added Via UPI";
@@ -44,10 +52,15 @@ router.post("/buy", verifyToken, async (req, res) => {
     history.amount = Number(amount);
     history.type = "buy";
     history.transactionId = transactionId._id;
-    await history.save();
+    await history.save({ session });
+    await session.commitTransaction();
+    session.endSession();
     return responseHandler(res, 200, account, null);
   } catch (error) {
-    responseHandler(res, 400, null, error.message);
+    await session.abortTransaction();
+    session.endSession();
+    console.log("error", error);
+    throw error;
   }
 });
 
@@ -59,7 +72,9 @@ router.post("/sell", verifyToken, async (req, res) => {
     ) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
+    const session = await mongoose.startSession();
 
+    session.startTransaction();
     let { amount, upiId } = req.body;
     let user = req.user;
     let checkOpenOrRequested = await challengesController.checkOpenOrRequested(
@@ -89,7 +104,10 @@ router.post("/sell", verifyToken, async (req, res) => {
       winningCash: Math.max(0, Number(account.winningCash - amount)),
       wallet: Math.max(0, Number(account.wallet - amount)),
     };
-    account = await accountController.updateAccountByUserId(accountObject);
+    account = await accountController.updateAccountByUserId(
+      accountObject,
+      session
+    );
 
     let transactionObject = {
       amount: amount,
@@ -101,7 +119,8 @@ router.post("/sell", verifyToken, async (req, res) => {
       withdraw: { lastWRequest: new Date() },
     };
     const transactionId = await transactionsController.insertNewTransaction(
-      transactionObject
+      transactionObject,
+      session
     );
     let history = new History();
     history.userId = user.id;
@@ -112,7 +131,7 @@ router.post("/sell", verifyToken, async (req, res) => {
     history.amount = Number(amount);
     history.type = "withdraw";
     history.transactionId = transactionId._id;
-    await history.save();
+    await history.save({ session });
 
     // let currentTime = new Date();
     // let previousRequest =
@@ -140,9 +159,12 @@ router.post("/sell", verifyToken, async (req, res) => {
     // };
 
     // account = await accountController.updateAccountByUserId(accountObject);
-
+    await session.commitTransaction();
+    session.endSession();
     return responseHandler(res, 200, account, null);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     responseHandler(res, 400, null, error.message);
   }
 });

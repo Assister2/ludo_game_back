@@ -1,6 +1,7 @@
 const accountController = require("./controllers/accounts");
 const ChallengeModel = require("./models/challenges");
 const History = require("./models/history");
+const mongoose = require("mongoose");
 const moment = require("moment");
 
 const challengesController = require("./controllers/challenges");
@@ -59,20 +60,29 @@ const handleChallengeCancellation = async (
   canceller,
   otherPlayer,
   cancellerWallet,
-  otherPlayerWallet
+  otherPlayerWallet,
+  session
 ) => {
   challengeObj.state = "resolved";
   // const session = (await startSession()).startTransaction();
-  const updateWalletAndCash = async (challenge, player, playerWallet) => {
+  const updateWalletAndCash = async (
+    challenge,
+    player,
+    playerWallet,
+    session
+  ) => {
     if (player === "creator") {
-      playerWallet = await accountController.updateAccountByUserId({
-        ...playerWallet._doc,
-        wallet: playerWallet.wallet + challenge.amount,
-        depositCash:
-          playerWallet.depositCash + challenge.creatorChips.depositCash,
-        winningCash:
-          playerWallet.winningCash + challenge.creatorChips.winningCash,
-      });
+      playerWallet = await accountController.updateAccountByUserId(
+        {
+          ...playerWallet._doc,
+          wallet: playerWallet.wallet + challenge.amount,
+          depositCash:
+            playerWallet.depositCash + challenge.creatorChips.depositCash,
+          winningCash:
+            playerWallet.winningCash + challenge.creatorChips.winningCash,
+        },
+        session
+      );
       let history = new History();
       history.userId = challenge.creator._id;
       history.historyText = `Cancelled Against ${challenge[canceller].username}`;
@@ -81,19 +91,22 @@ const handleChallengeCancellation = async (
       history.amount = Number(challenge.amount);
       history.roomCode = challenge.roomCode;
       history.type = "cancelled";
-      await history.save();
+      await history.save({ session });
 
       return;
     }
     if (player === "player") {
-      playerWallet = await accountController.updateAccountByUserId({
-        ...playerWallet._doc,
-        wallet: playerWallet.wallet + challenge.amount,
-        depositCash:
-          playerWallet.depositCash + challenge.playerChips.depositCash,
-        winningCash:
-          playerWallet.winningCash + challenge.playerChips.winningCash,
-      });
+      playerWallet = await accountController.updateAccountByUserId(
+        {
+          ...playerWallet._doc,
+          wallet: playerWallet.wallet + challenge.amount,
+          depositCash:
+            playerWallet.depositCash + challenge.playerChips.depositCash,
+          winningCash:
+            playerWallet.winningCash + challenge.playerChips.winningCash,
+        },
+        session
+      );
       let historyWinner = new History();
       historyWinner.userId = challenge.player._id;
       historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
@@ -102,21 +115,23 @@ const handleChallengeCancellation = async (
       historyWinner.amount = Number(challenge.amount);
       historyWinner.roomCode = challenge.roomCode;
       historyWinner.type = "cancelled";
-      await historyWinner.save();
-
+      await historyWinner.save({ session });
       return;
     }
 
-    playerWallet = await accountController.updateAccountByUserId({
-      ...playerWallet._doc,
-      wallet: playerWallet.wallet + challenge.amount,
-      depositCash: playerWallet.depositCash + challenge.amount,
-    });
+    playerWallet = await accountController.updateAccountByUserId(
+      {
+        ...playerWallet._doc,
+        wallet: playerWallet.wallet + challenge.amount,
+        depositCash: playerWallet.depositCash + challenge.amount,
+      },
+      session
+    );
   };
 
-  await updateWalletAndCash(challenge, canceller, cancellerWallet);
+  await updateWalletAndCash(challenge, canceller, cancellerWallet, session);
 
-  await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet);
+  await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet, session);
 };
 const cancelChallenge = async (socket, challengeId, userId) => {
   try {
@@ -149,13 +164,16 @@ const handleChallengeUpdate = async (data) => {
       };
 
       await challenge.save();
-      await challengesController.updateChallengeById(challengeObj);
+      await challengesController.updateChallengeById(challengeObj, session);
 
-      await userController.updateUserByUserId({
-        _id: data.userId,
-        playing: false,
-        noOfChallenges: 0,
-      });
+      await userController.updateUserByUserId(
+        {
+          _id: data.userId,
+          playing: false,
+          noOfChallenges: 0,
+        },
+        session
+      );
     }
   }, 1 * 30 * 1000); // 10 minutes delay
 };
@@ -163,6 +181,9 @@ const handleChallengeUpdate = async (data) => {
 const bothResultNotUpdated = async (challengeId) => {
   setTimeout(async () => {
     try {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
       let challenge = await challengesController.getChallengeById(challengeId);
 
       if (challenge.state === "playing" && challenge.player._id) {
@@ -198,26 +219,37 @@ const bothResultNotUpdated = async (challengeId) => {
                   },
                 },
                 state: "hold",
-              }
+              },
+              { session }
             );
 
             if (updated) {
-              await userController.updateUserByUserId({
-                _id: creatorId,
-                playing: false,
-                noOfChallenges: 0,
-              });
-              await userController.updateUserByUserId({
-                _id: playerId,
-                playing: false,
-                noOfChallenges: 0,
-              });
+              await userController.updateUserByUserId(
+                {
+                  _id: creatorId,
+                  playing: false,
+                  noOfChallenges: 0,
+                },
+                session
+              );
+              await userController.updateUserByUserId(
+                {
+                  _id: playerId,
+                  playing: false,
+                  noOfChallenges: 0,
+                },
+                session
+              );
+              await session.commitTransaction();
+              session.endSession();
             }
           }
         }
       }
     } catch (error) {
       console.log("error", error);
+      await session.abortTransaction();
+      session.endSession();
       throw error;
     }
   }, 6 * 60 * 1000); // 10 minutes delay

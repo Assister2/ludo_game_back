@@ -60,20 +60,24 @@ const challengesController = {
     }
   },
   dataBaseUpdate: async (challengeId) => {
+    const session = await mongoose.startSession();
+
     try {
+      session.startTransaction();
       let updatedChallenge = await ChallengeModel.findOneAndUpdate(
         { _id: challengeId, state: "requested" },
         { $set: { state: "playing" } },
-        { new: true }
+        { new: true, session }
       );
       if (updatedChallenge) {
+        console.log("cccc", updatedChallenge);
         await ChallengeModel.updateMany(
           {
             creator: updatedChallenge.creator._id,
             state: { $in: ["open", "requested"] },
           },
           { $set: { status: 0 } },
-          { new: true }
+          { new: true, session }
         );
         await ChallengeModel.updateMany(
           {
@@ -81,27 +85,27 @@ const challengesController = {
             state: { $in: ["open", "requested"] },
           },
           { $set: { status: 0 } },
-          { new: true }
+          { new: true, session }
         );
         await ChallengeModel.updateMany(
           { player: updatedChallenge.creator._id, state: "requested" },
           { $set: { state: "open", player: null } },
-          { new: true }
+          { new: true, session }
         );
         await ChallengeModel.updateMany(
           { player: updatedChallenge.player._id, state: "requested" },
           { $set: { state: "open", player: null } },
-          { new: true }
+          { new: true, session }
         );
         const creator = await User.findOneAndUpdate(
           { _id: updatedChallenge.creator._id, noOfChallenges: 0 },
           { $set: { noOfChallenges: 1 } },
-          { new: true }
+          { new: true, session }
         );
         const player = await User.findOneAndUpdate(
           { _id: updatedChallenge.player._id, noOfChallenges: 0 },
           { $set: { noOfChallenges: 1 } },
-          { new: true }
+          { new: true, session }
         );
 
         //decrease accounts of users
@@ -124,7 +128,7 @@ const challengesController = {
         updatedChallenge = await ChallengeModel.findOneAndUpdate(
           { _id: challengeId, state: "playing" },
           { $set: { roomCode: roomCode } },
-          { new: true }
+          { new: true, session }
         );
 
         let playerAccount = await Account.findOne({
@@ -176,29 +180,34 @@ const challengesController = {
         await Account.findOneAndUpdate(
           { userId: creatorAccount.userId },
           { $set: creatorAccount },
-          { new: true }
+          { new: true, session }
         );
+        // throw new Error();
 
         await Account.findOneAndUpdate(
           { userId: playerAccount.userId },
           { $set: playerAccount },
-          { new: true }
+          { new: true, session }
         );
         if (playerChips != null || creatorChips != null) {
-          await challengesController.updateChallengeById({
-            _id: updatedChallenge._id,
-            creatorChips: creatorChips,
-            playerChips: playerChips,
-          });
+          await challengesController.updateChallengeById(
+            {
+              _id: updatedChallenge._id,
+              creatorChips: creatorChips,
+              playerChips: playerChips,
+            },
+            session
+          );
         }
-
-        return updatedChallenge;
-      } else {
-        return false;
       }
+      await session.commitTransaction();
+      return updatedChallenge;
     } catch (error) {
+      await session.abortTransaction();
       console.log("error2323", error);
       throw error;
+    } finally {
+      session.endSession();
     }
   },
 
@@ -227,20 +236,29 @@ const challengesController = {
    * @returns {Promise<void>}
    */
   deleteOpenChallenges: async (creatorId) => {
+    const session = await mongoose.startSession();
     try {
-      let challenge = await ChallengeModel.deleteMany({
-        creator: creatorId,
-        state: { $in: ["open", "requested"] },
-      });
+      session.startTransaction();
+      let challenge = await ChallengeModel.deleteMany(
+        {
+          creator: creatorId,
+          state: { $in: ["open", "requested"] },
+        },
+        { session }
+      );
       await ChallengeModel.updateMany(
         { player: creatorId, state: "requested" },
         { $set: { state: "open", player: null } },
-        { new: true }
+        { new: true, session }
       );
+      await session.commitTransaction();
       return challenge;
     } catch (error) {
+      await session.abortTransaction();
       console.log("error", error);
       throw error;
+    } finally {
+      session.endSession();
     }
   },
   cancelRequestedChallenges2: async (creatorId) => {
@@ -310,12 +328,12 @@ const challengesController = {
    * updateChallengeById - updateChallengeById
    * @returns {Promise<void>}
    */
-  updateChallengeById: async (challengeObj) => {
+  updateChallengeById: async (challengeObj, session) => {
     try {
       let challenge = await ChallengeModel.findOneAndUpdate(
         { _id: challengeObj._id },
         { $set: challengeObj },
-        { new: true }
+        { new: true, session }
       );
       return challenge;
     } catch (error) {
@@ -324,23 +342,27 @@ const challengesController = {
     }
   },
   updateDeleteChallengeById: async (challengeId) => {
-    try {
-      await ChallengeModel.findOneAndDelete({
-        _id: challengeId,
-        state: "open",
-      });
-    } catch (error) {
-      console.log("error", error);
-      throw error;
-    }
+    // const session = await mongoose.startSession();
+
+    // session.startTransaction();
+
+    // Intentionally throwing an error during the update operation
+
+    await ChallengeModel.findOneAndDelete({
+      _id: challengeId,
+      state: "open",
+    });
+
+    console.log("checkkreq");
+    // await session.commitTransaction();
   },
 
-  updateChallengeById44: async (challengeId, playerId) => {
+  updateChallengeById44: async (challengeId, playerId, session) => {
     try {
       let challenge = await ChallengeModel.findOneAndUpdate(
         { _id: challengeId, state: "open", status: 1 },
         { $set: { state: "requested", player: playerId } },
-        { new: true }
+        { new: true, session }
       );
       return challenge;
     } catch (error) {

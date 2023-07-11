@@ -4,14 +4,16 @@ const express = require("express");
 const handleConnection = require("./socketHandler.js");
 const path = require("path");
 // import { startGame } from "./function.js";
+const Sentry = require("./sentry.js");
+// or use es6 import statements
+// import * as Sentry from '@sentry/node';
 
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
 
 // const app = express();
-const expressWebSocket = require("express-ws");
-const verifyTokenSocket = require("./services/verifyTokenSocket");
+
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const transactionRouter = require("./routes/transactions");
@@ -54,6 +56,13 @@ mongoose
 // const server = app2.listen(4002, () => {
 //   console.log("socket is running on port 4002");
 // });
+// Set up Sentry request handler middleware
+// app.use(Sentry.Handlers.requestHandler());
+
+// Your application routes and middleware
+
+// Set up Sentry error handler middleware
+// app.use(Sentry.Handlers.errorHandler());
 
 app.use(logger("dev"));
 app.use(express.json({ limit: "50mb" }));

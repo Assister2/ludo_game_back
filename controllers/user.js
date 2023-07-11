@@ -30,14 +30,14 @@ const userController = {
       throw error;
     }
   },
-  deleteExistingTempUser: async (number) => {
+  deleteExistingTempUser: async (number, session) => {
     try {
       let user = await tempUser.findOne({
         phone: number,
       });
 
       if (user) {
-        await tempUser.deleteOne({ _id: user._id });
+        await tempUser.deleteOne({ _id: user._id }, { session });
       }
 
       return user;
@@ -91,14 +91,14 @@ const userController = {
    * @param referCode - referelCode that need to check
    * @returns {Promise<void>}
    */
-  increasenoOfrefer: async (referCode) => {
+  increasenoOfrefer: async (referCode, session) => {
     try {
       let user = await User.findOneAndUpdate(
         {
           referCode: referCode,
         },
         { $inc: { totalRefer: 1 } }, // Increment totalRefer field by 1
-        { new: true } // Return the updated document
+        { new: true, session } // Return the updated document
       );
       return user;
     } catch (error) {
@@ -129,33 +129,33 @@ const userController = {
    * @param object - object that need to insert
    * @returns {Promise<void>}
    */
-  insertUser: async (object) => {
+  insertUser: async (object, session) => {
     try {
       const userObject = object.toObject();
       delete userObject._id;
       delete userObject.__v;
 
       let user = new User(userObject);
-      await user.save();
+      await user.save({ session });
 
       return user;
     } catch (error) {
       throw error;
     }
   },
-  deleteUser: async (userId) => {
+  deleteUser: async (userId, session) => {
     try {
-      const result = await tempUser.deleteOne({ _id: userId });
+      const result = await tempUser.deleteOne({ _id: userId }, { session });
 
       return result;
     } catch (error) {
       throw error;
     }
   },
-  tempInsertUser: async (object) => {
+  tempInsertUser: async (object, session) => {
     try {
       let tempuser = new tempUser(object);
-      await tempuser.save();
+      await tempuser.save({ session });
       return tempuser;
     } catch (error) {
       throw error;
@@ -168,7 +168,7 @@ const userController = {
    * @returns {Promise<void>}
    */
 
-  issueToken: async (userData) => {
+  issueToken: async (userData, session) => {
     try {
       let tokenGenerated = jwtToken.sign(
         {
@@ -185,7 +185,7 @@ const userController = {
       let user = await User.findOneAndUpdate(
         { phone: userData.phone },
         { $set: { jwtToken: tokenObject } },
-        { new: true }
+        { new: true, session }
       );
       if (!userData.hasOwnProperty("jwtToken")) {
         userData.jwtToken = {};
@@ -202,12 +202,12 @@ const userController = {
    * @param phoneNumber - phoneNumber that need to check
    * @returns {Promise<void>}
    */
-  updateUserByPhoneNumber: async (userData) => {
+  updateUserByPhoneNumber: async (userData, session) => {
     try {
       let user = await User.findOneAndUpdate(
         { phone: userData.phone },
         { $set: userData },
-        { new: true }
+        { new: true, session }
       );
       return user;
     } catch (error) {
@@ -226,12 +226,12 @@ const userController = {
       throw error;
     }
   },
-  updateUserByUserId: async (userObj) => {
+  updateUserByUserId: async (userObj, session) => {
     try {
       let user = await User.findOneAndUpdate(
         { _id: userObj._id },
         { $set: userObj },
-        { new: true }
+        { new: true, session }
       );
       return user;
     } catch (error) {

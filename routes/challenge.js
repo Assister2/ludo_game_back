@@ -77,8 +77,6 @@ Router.get(
 //   return responseHandler(res, 200, challenge, null);
 // });
 Router.post("/win/:id", verifyToken, async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
     const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
@@ -87,12 +85,17 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
     if (!req.body.hasOwnProperty("image")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
+      const session = await mongoose.startSession();
+      session.startTransaction();
       let user = req.user;
-      await userController.updateUserByUserId({
-        _id: user.id,
-        playing: false,
-        noOfChallenges: 0,
-      });
+      await userController.updateUserByUserId(
+        {
+          _id: user.id,
+          playing: false,
+          noOfChallenges: 0,
+        },
+        session
+      );
       let challenge = await challengesController.getChallengeById(
         req.params.id
       );
@@ -170,12 +173,15 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         challengeObj.state = "resolved";
         amount = amount * 2 - (amount * 3) / 100;
 
-        const winnWall = await accountController.updateAccountByUserId({
-          ...userWallet._doc,
-          wallet: userWallet.wallet + amount,
-          winningCash: userWallet.winningCash + amount,
-          totalWin: userWallet.totalWin + challenge.amount,
-        });
+        const winnWall = await accountController.updateAccountByUserId(
+          {
+            ...userWallet._doc,
+            wallet: userWallet.wallet + amount,
+            winningCash: userWallet.winningCash + amount,
+            totalWin: userWallet.totalWin + challenge.amount,
+          },
+          session
+        );
         let looserWallet23 = await accountController.getAccountByUserId(
           challenge[looser]._id
         );
@@ -187,7 +193,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         history.closingBalance = looserWallet23.wallet;
         history.amount = Number(challenge.amount);
         history.type = "lost";
-        await history.save();
+        await history.save({ session });
 
         let historyWinner = new History();
         historyWinner.userId = challenge[winner]._id;
@@ -199,7 +205,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           challenge.amount - (challenge.amount * 3) / 100
         );
         historyWinner.type = "won";
-        await historyWinner.save();
+        await historyWinner.save({ session });
 
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
@@ -210,10 +216,13 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
             referUser.referer
           );
 
-          const userWall = await accountController.increaseRefererAccount({
-            userId: referalAccount._id,
-            amount: challenge.amount,
-          });
+          const userWall = await accountController.increaseRefererAccount(
+            {
+              userId: referalAccount._id,
+              amount: challenge.amount,
+            },
+            session
+          );
           const referalAccount22 = await accountController.getAccountByUserId(
             referalAccount._id
           );
@@ -226,7 +235,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           historyWinner.closingBalance = referalAccount22.wallet;
           historyWinner.amount = Number(challenge.amount * 0.02);
           historyWinner.type = "referal";
-          await historyWinner.save();
+          await historyWinner.save({ session });
           console.log("referhistory", historyWinner);
         }
       }
@@ -234,7 +243,10 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
 
-      challenge = await challengesController.updateChallengeById(challengeObj);
+      challenge = await challengesController.updateChallengeById(
+        challengeObj,
+        session
+      );
       await session.commitTransaction();
       session.endSession();
 
@@ -252,16 +264,21 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
+      const io = socket.get();
+      const session = await mongoose.startSession();
+      session.startTransaction();
       let user = req.user;
-      await userController.updateUserByUserId({
-        _id: user.id,
-        playing: false,
-        noOfChallenges: 0,
-      });
+      await userController.updateUserByUserId(
+        {
+          _id: user.id,
+          playing: false,
+          noOfChallenges: 0,
+        },
+        session
+      );
       let challenge = await challengesController.getChallengeById(
         req.params.id
       );
@@ -339,7 +356,8 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           looser,
           winner,
           looserWallet,
-          userWallet
+          userWallet,
+          session
         );
       }
 
@@ -363,7 +381,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         history.closingBalance = looserWallet.wallet;
         history.amount = Number(challenge.amount);
         history.type = "lost";
-        await history.save();
+        await history.save({ session });
 
         let historyWinner = new History();
         historyWinner.userId = challenge[winner]._id;
@@ -375,9 +393,9 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           challenge.amount - (challenge.amount * 3) / 100
         );
         historyWinner.type = "won";
-        await historyWinner.save();
+        await historyWinner.save({ session });
 
-        await accountController.updateAccountByUserId(wall);
+        await accountController.updateAccountByUserId(wall, session);
 
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
@@ -388,10 +406,13 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
             referUser.referer
           );
 
-          const userWall = await accountController.increaseRefererAccount({
-            userId: referalAccount._id,
-            amount: challenge.amount,
-          });
+          const userWall = await accountController.increaseRefererAccount(
+            {
+              userId: referalAccount._id,
+              amount: challenge.amount,
+            },
+            session
+          );
           const referalAccount22 = await accountController.getAccountByUserId(
             referalAccount._id
           );
@@ -404,7 +425,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           historyWinner.closingBalance = referalAccount22.wallet;
           historyWinner.amount = Number(challenge.amount * 0.02);
           historyWinner.type = "referal";
-          await historyWinner.save();
+          await historyWinner.save({ session });
           console.log("referhistory22", historyWinner);
         }
 
@@ -417,7 +438,10 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       if (challenge.results[winner].result == "cancelled") {
         challengeObj.state = "hold";
       }
-      challenge = await challengesController.updateChallengeById(challengeObj);
+      challenge = await challengesController.updateChallengeById(
+        challengeObj,
+        session
+      );
       await session.commitTransaction();
       session.endSession();
 
@@ -432,23 +456,25 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
 });
 
 Router.post("/cancel/:id", verifyToken, async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
-    const io = socket.get();
-
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
     if (!req.body.hasOwnProperty("cancellationReason")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
+      const session = await mongoose.startSession();
+      session.startTransaction();
       let user = req.user;
-      await userController.updateUserByUserId({
-        _id: user.id,
-        playing: false,
-        noOfChallenges: 0,
-      });
+      const io = socket.get();
+      await userController.updateUserByUserId(
+        {
+          _id: user.id,
+          playing: false,
+          noOfChallenges: 0,
+        },
+        session
+      );
       let challenge = await challengesController.getChallengeById(
         req.params.id
       );
@@ -524,7 +550,8 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
           canceller,
           otherPlayer,
           cancellerWallet,
-          otherPlayerWallet
+          otherPlayerWallet,
+          session
         );
         let cancellerWallet1 = await accountController.getAccountByUserId(
           challenge[canceller]._id
@@ -540,7 +567,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         history.amount = Number(challenge.amount);
         history.roomCode = challenge.roomCode;
         history.type = "cancelled";
-        await history.save();
+        await history.save({ session });
 
         let historyWinner = new History();
         historyWinner.userId = challenge[canceller]._id;
@@ -550,7 +577,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         historyWinner.amount = Number(challenge.amount);
         historyWinner.roomCode = challenge.roomCode;
         historyWinner.type = "cancelled";
-        await historyWinner.save();
+        await historyWinner.save({ session });
       }
 
       // let historyWinner = new History();
@@ -563,7 +590,10 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       // historyWinner.type = "cancelled";
       // await historyWinner.save();
       // console.log("histtt", historyWinner);
-      challenge = await challengesController.updateChallengeById(challengeObj);
+      challenge = await challengesController.updateChallengeById(
+        challengeObj,
+        session
+      );
       await session.commitTransaction();
       session.endSession();
       return responseHandler(res, 200, challenge, null);

@@ -1,36 +1,12 @@
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const express = require("express");
-const path = require("path");
-const {
-  startGame,
-  cancelChallenge,
-  bothResultNotUpdated,
-} = require("./function.js");
-const cookieParser = require("cookie-parser");
-// const logger = require("morgan");
-// const cors = require("cors");
-// const http = require("http");
-const authRouter = require("./routes/auth");
-const userRouter = require("./routes/user");
-const transactionRouter = require("./routes/transactions");
-const challengesRouter = require("./routes/challenge");
-const historyRouter = require("./routes/history");
-// const app = express();
-const expressWebSocket = require("express-ws");
-const verifyTokenSocket = require("./services/verifyTokenSocket");
-const { existingUserById } = require("./controllers/user");
+
+const { startGame, cancelChallenge } = require("./function.js");
+
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
-const userController = require("./controllers/user");
-const { generate } = require("./helpers");
-const Challenge = require("./models/challenges");
-const UserAccount = require("./models/accounts");
-const transactionsController = require("./controllers/transactions");
-const expressWs = expressWebSocket(express());
-const axios = require("axios");
-const bodyParser = require("body-parser");
-const app = express();
+
 // 30 seconds
 
 // const { sendFCM } = require("./routes/notification");
@@ -177,20 +153,16 @@ function handleConnection(socket) {
             let challenge = await challengesController.getChallengeById(
               data.payload.challengeId
             );
-            if (
-              challenge.player._id &&
-              challenge.creator._id &&
-              !challenge.locked
-            ) {
-              if (!challenge) {
-                response = {
-                  ...response,
-                  status: 400,
-                  error: "Challenge not found",
-                  data: null,
-                };
-                return socket.emit("ludogame", JSON.stringify(response));
-              }
+            if (challenge.player._id && challenge.creator._id) {
+              // if (!challenge) {
+              //   response = {
+              //     ...response,
+              //     status: 400,
+              //     error: "Challenge not found",
+              //     data: null,
+              //   };
+              //   return socket.emit("ludogame", JSON.stringify(response));
+              // }
               if (challenge.state != "playing" && challenge.state != "hold") {
                 response = {
                   ...response,
@@ -380,12 +352,12 @@ function handleConnection(socket) {
               };
 
               challenge = await challengesController.createChallenge(challenge);
-              if (challenge) {
-                socket.send(JSON.stringify({ status: 2 }));
+              // if (challenge) {
+              //   socket.send(JSON.stringify({ status: 2 }));
 
-                let challenges = await challengesController.getAllChallenges();
-                return socket.send(JSON.stringify(challenges));
-              }
+              //   let challenges = await challengesController.getAllChallenges();
+              //   return socket.send(JSON.stringify(challenges));
+              // }
               if (!challenge) {
                 response = {
                   ...response,
@@ -395,13 +367,16 @@ function handleConnection(socket) {
                 };
                 return socket.send(JSON.stringify(response));
               }
+              socket.send(JSON.stringify({ status: 2 }));
               break;
             case "play":
+              const session = await mongoose.startSession();
+
+              session.startTransaction();
               let currentChallenge =
                 await challengesController.getChallengeByChallengeId(
                   data.payload.challengeId
                 );
-
 
               try {
                 if (currentChallenge.state === "requested") {
@@ -470,8 +445,11 @@ function handleConnection(socket) {
                 currentChallenge =
                   await challengesController.updateChallengeById44(
                     currentChallenge._id,
-                    data.payload.userId
+                    data.payload.userId,
+                    session
                   );
+                await session.commitTransaction();
+                session.endSession();
                 socket.send(JSON.stringify({ status: 4 }));
                 if (!currentChallenge) {
                   response = {
@@ -483,10 +461,11 @@ function handleConnection(socket) {
                   return socket.send(JSON.stringify(response));
                 }
               } catch (error) {
+                await session.abortTransaction();
+                session.endSession();
                 console.log("PlayCatcherror", error);
                 throw error;
-              }
-              finally{
+              } finally {
                 socket.send(JSON.stringify({ status: 444 }));
               }
 
