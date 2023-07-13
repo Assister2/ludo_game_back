@@ -78,6 +78,8 @@ router.post("/signup", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     if (!req.body.hasOwnProperty("phone")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -96,8 +98,7 @@ router.post("/login", async (req, res) => {
           "your Account has been blocked. !Contact Admin"
         );
       }
-      const session = await mongoose.startSession();
-      session.startTransaction();
+
       let currentDate = new Date();
       let lastUpdateDate = user.otp.updatedAt;
       var seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
