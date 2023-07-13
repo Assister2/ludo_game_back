@@ -1,5 +1,5 @@
 let io;
-
+const authSocketMiddleware = require("./middleware/RSocket");
 module.exports = {
   init: (server) => {
     io = require("socket.io")(server, {
@@ -22,6 +22,9 @@ module.exports = {
           }
         },
       },
+    });
+    io.use((socket, next) => {
+      authSocketMiddleware(socket, next);
     });
 
     return io;
