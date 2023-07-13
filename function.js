@@ -134,14 +134,7 @@ const handleChallengeCancellation = async (
   await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet, session);
 };
 const cancelChallenge = async (socket, challengeId, userId) => {
-  try {
-    await challengesController.updateChallengeById23(challengeId);
-    return socket.send(JSON.stringify({ status: 21 }));
-  } catch (error) {
-    console.log("cancelled", error);
-  } finally {
-    socket.send(JSON.stringify({ status: 21 }));
-  }
+  await challengesController.updateChallengeById23(challengeId);
 };
 const handleChallengeUpdate = async (data) => {
   setTimeout(async () => {

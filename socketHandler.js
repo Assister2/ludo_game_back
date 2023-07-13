@@ -476,10 +476,8 @@ function handleConnection(socket) {
               // Implement your read operation here
               break;
             case "cancel":
-              cancelChallenge(
-                socket,
-                data.payload.challengeId,
-                data.payload.userId
+              await challengesController.updateChallengeById23(
+                data.payload.challengeId
               );
               socket.send(JSON.stringify({ status: 333 }));
               break;
