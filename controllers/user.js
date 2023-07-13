@@ -238,6 +238,18 @@ const userController = {
       throw error;
     }
   },
+  updateUserNoSession: async (userObj) => {
+    try {
+      let user = await User.findOneAndUpdate(
+        { _id: userObj._id },
+        { $set: userObj },
+        { new: true }
+      );
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
   setUserLockTrue: async (userId) => {
     try {
       await User.findByIdAndUpdate(userId, { locked: true });

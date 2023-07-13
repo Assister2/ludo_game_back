@@ -342,6 +342,19 @@ const challengesController = {
       throw error;
     }
   },
+  updatePlayingChallenge: async (challengeObj) => {
+    try {
+      let challenge = await ChallengeModel.findOneAndUpdate(
+        { _id: challengeObj._id },
+        { $set: challengeObj },
+        { new: true }
+      );
+      return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
   updateDeleteChallengeById: async (challengeId) => {
     // const session = await mongoose.startSession();
 

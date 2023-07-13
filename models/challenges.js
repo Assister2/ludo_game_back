@@ -111,7 +111,7 @@ const challengeSchema = new mongoose.Schema({
   },
   apiResult: {
     type: mongoose.Schema.Types.Mixed,
-    default: {},
+    default: null,
   },
   startedAt: {
     type: Date,

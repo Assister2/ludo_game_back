@@ -157,16 +157,13 @@ const handleChallengeUpdate = async (data) => {
         };
 
         await challenge.save();
-        await challengesController.updateChallengeById(challengeObj, session);
+        await challengesController.updatePlayingChallenge(challengeObj);
 
-        await userController.updateUserByUserId(
-          {
-            _id: data.userId,
-            playing: false,
-            noOfChallenges: 0,
-          },
-          session
-        );
+        await userController.updateUserNoSession({
+          _id: data.userId,
+          playing: false,
+          noOfChallenges: 0,
+        });
       }
     }
   }, 5 * 60 * 1000); // 10 minutes delay
@@ -179,56 +176,54 @@ const bothResultNotUpdated = async (challengeId) => {
         challengeId
       );
       if (challenge) {
-        if (challenge.state === "playing" && challenge.player._id) {
-          let creatorId = challenge.creator._id;
-          let playerId = challenge.player._id;
+        let creatorId = challenge.creator._id;
+        let playerId = challenge.player._id;
 
-          // Iterate through the challenges
-          if (
-            challenge.results.creator.result === "" &&
-            challenge.results.player.result === ""
-          ) {
-            const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
+        // Iterate through the challenges
+        if (
+          challenge.results.creator.result === "" &&
+          challenge.results.player.result === ""
+        ) {
+          // const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
 
-            // Compare the createdAt time with the current time
-            const minutesPassed = moment().diff(createdAt, "minutes");
+          // // Compare the createdAt time with the current time
+          // const minutesPassed = moment().diff(createdAt, "minutes");
 
-            if (minutesPassed > 1) {
-              // Challenge was created more than 3 minutes ago, perform update
-              const updated = await ChallengeModel.findByIdAndUpdate(
-                challenge._id,
-                {
-                  results: {
-                    ...challenge.results,
-                    creator: {
-                      result: "",
-                      timeover: true,
-                      updatedAt: new Date(),
-                    },
-                    player: {
-                      result: "",
-                      timeover: true,
-                      updatedAt: new Date(),
-                    },
-                  },
-                  state: "hold",
-                }
-              );
-
-              if (updated) {
-                await userController.updateUserByUserId({
-                  _id: creatorId,
-                  playing: false,
-                  noOfChallenges: 0,
-                });
-                await userController.updateUserByUserId({
-                  _id: playerId,
-                  playing: false,
-                  noOfChallenges: 0,
-                });
-              }
+          // if (minutesPassed > 1) {
+          // Challenge was created more than 3 minutes ago, perform update
+          const updated = await ChallengeModel.findByIdAndUpdate(
+            challenge._id,
+            {
+              results: {
+                ...challenge.results,
+                creator: {
+                  result: "",
+                  timeover: true,
+                  updatedAt: new Date(),
+                },
+                player: {
+                  result: "",
+                  timeover: true,
+                  updatedAt: new Date(),
+                },
+              },
+              state: "hold",
             }
+          );
+
+          if (updated) {
+            await userController.updateUserNoSession({
+              _id: creatorId,
+              playing: false,
+              noOfChallenges: 0,
+            });
+            await userController.updateUserNoSession({
+              _id: playerId,
+              playing: false,
+              noOfChallenges: 0,
+            });
           }
+          // }
         }
       } else {
         return;
@@ -238,7 +233,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
       throw error;
     }
-  }, 20 * 60 * 1000); // 10 minutes delay
+  }, 5 * 60 * 1000); // 10 minutes delay
 };
 
 module.exports = {

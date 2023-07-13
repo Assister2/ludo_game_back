@@ -119,18 +119,31 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
       const { roomCode } = challenge;
       let apiResult = null;
-      await axios
-        .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
-        .then((response) => {
-          const data = response.data;
-          // Process the data received from the API
-          console.log("dddd", data);
-          apiResult = data;
-        })
-        .catch((error) => {
-          // Handle the error case
-          console.error(error);
-        });
+      if (!challenge.apiResult) {
+        axios
+          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`, {
+            cancelToken: new CancelToken(function executor(cancel) {
+              // Store the cancel function
+              cancelRequest = cancel;
+            }),
+            timeout: 3000, // Set the timeout to 5 seconds
+          })
+          .then((response) => {
+            const data = response.data;
+            // Process the data received from the API
+            console.log("dddd", data);
+            apiResult = data;
+          })
+          .catch((error) => {
+            if (axios.isCancel(error)) {
+              // Request was canceled
+              console.log("Request canceled", error.message);
+            } else {
+              // Handle other errors
+              console.error(error);
+            }
+          });
+      }
       // console.log("testtt", response);
 
       let challengeObj = {
@@ -146,8 +159,10 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           [winner]: file,
           [looser]: challenge.winnerScreenShot[looser],
         },
-        apiResult: apiResult,
       };
+      if (apiResult !== null) {
+        challengeObj.apiResult = apiResult;
+      }
 
       if (challenge.results[looser].result == "win") {
         challengeObj.state = "hold";
@@ -307,18 +322,31 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       amount = amount * 2 - (amount * 3) / 100;
       const { roomCode } = challenge;
       let apiResult = null;
-      await axios
-        .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
-        .then((response) => {
-          const data = response.data;
-          // Process the data received from the API
-          console.log("dddd", data);
-          apiResult = data;
-        })
-        .catch((error) => {
-          // Handle the error case
-          console.error(error);
-        });
+      if (!challenge.apiResult) {
+        axios
+          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`, {
+            cancelToken: new CancelToken(function executor(cancel) {
+              // Store the cancel function
+              cancelRequest = cancel;
+            }),
+            timeout: 3000, // Set the timeout to 5 seconds
+          })
+          .then((response) => {
+            const data = response.data;
+            // Process the data received from the API
+            console.log("dddd", data);
+            apiResult = data;
+          })
+          .catch((error) => {
+            if (axios.isCancel(error)) {
+              // Request was canceled
+              console.log("Request canceled", error.message);
+            } else {
+              // Handle other errors
+              console.error(error);
+            }
+          });
+      }
       let challengeObj = {
         ...challenge._doc,
         //first who sent i lost his result will be saved lost
@@ -330,9 +358,10 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
             updatedAt: challenge.results[winner].updatedAt,
           },
         },
-        apiResult: apiResult,
       };
-
+      if (apiResult !== null) {
+        challengeObj.apiResult = apiResult;
+      }
       let data = {
         challengeId: req.params.id,
         userId: challenge[winner]._id,
@@ -491,16 +520,19 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       );
       const { roomCode } = challenge;
       let apiResult = null;
-      await axios
-        .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
-        .then((response) => {
-          const data = response.data;
-          apiResult = data;
-        })
-        .catch((error) => {
-          // Handle the error case
-          console.error(error);
-        });
+      if (!challenge.apiResult) {
+        await axios
+          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
+          .then((response) => {
+            const data = response.data;
+            apiResult = data;
+          })
+          .catch((error) => {
+            // Handle the error case
+            console.error(error);
+          });
+      }
+
       let challengeObj = {
         ...challenge._doc,
         results: {
@@ -511,9 +543,13 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
             updatedAt: challenge.results[otherPlayer].updatedAt,
           },
         },
-        apiResult: apiResult,
+
         cancellationReasons: { [canceller]: req.body.cancellationReason },
       };
+      if (apiResult !== null) {
+        challengeObj.apiResult = apiResult;
+      }
+      console.log("checkapiresultt", challengeObj);
       let data = {
         challengeId: req.params.id,
         userId: challenge[otherPlayer]._id,
