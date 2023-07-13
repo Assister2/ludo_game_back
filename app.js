@@ -32,7 +32,7 @@ dotenv.config();
 const allowedOrigins = [
   "https://www.gotiking.com/",
   "https://gotiking.com/",
-  "https://gotiking.com",
+  "https://www.gotiking.com",
   "http://localhost:3000", // Replace with your localhost port if different
   // 'http://localhost:4000', // Add additional localhost ports if needed
 ];
