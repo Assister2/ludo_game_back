@@ -145,114 +145,107 @@ const cancelChallenge = async (socket, challengeId, userId) => {
 };
 const handleChallengeUpdate = async (data) => {
   setTimeout(async () => {
-    const challenge = await challengesController.getChallengeById(
+    const challenge = await challengesController.getChallengeById12(
       data.challengeId
     );
-
-    if (challenge.results[data.otherPlayer].result === "") {
-      const challengeObj = {
-        ...challenge._doc,
-        results: {
-          ...challenge.results,
-          [data.otherPlayer]: {
-            result: "",
-            timeover: true,
-            updatedAt: new Date(),
+    if (challenge) {
+      if (challenge.results[data.otherPlayer].result === "") {
+        const challengeObj = {
+          ...challenge._doc,
+          results: {
+            ...challenge.results,
+            [data.otherPlayer]: {
+              result: "",
+              timeover: true,
+              updatedAt: new Date(),
+            },
           },
-        },
-        state: "hold",
-      };
+          state: "hold",
+        };
 
-      await challenge.save();
-      await challengesController.updateChallengeById(challengeObj, session);
+        await challenge.save();
+        await challengesController.updateChallengeById(challengeObj, session);
 
-      await userController.updateUserByUserId(
-        {
-          _id: data.userId,
-          playing: false,
-          noOfChallenges: 0,
-        },
-        session
-      );
+        await userController.updateUserByUserId(
+          {
+            _id: data.userId,
+            playing: false,
+            noOfChallenges: 0,
+          },
+          session
+        );
+      }
     }
-  }, 1 * 30 * 1000); // 10 minutes delay
+  }, 5 * 60 * 1000); // 10 minutes delay
 };
 
 const bothResultNotUpdated = async (challengeId) => {
   setTimeout(async () => {
     try {
-      const session = await mongoose.startSession();
-      session.startTransaction();
+      let challenge = await challengesController.getChallengeById12(
+        challengeId
+      );
+      if (challenge) {
+        if (challenge.state === "playing" && challenge.player._id) {
+          let creatorId = challenge.creator._id;
+          let playerId = challenge.player._id;
 
-      let challenge = await challengesController.getChallengeById(challengeId);
+          // Iterate through the challenges
+          if (
+            challenge.results.creator.result === "" &&
+            challenge.results.player.result === ""
+          ) {
+            const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
 
-      if (challenge.state === "playing" && challenge.player._id) {
-        let creatorId = challenge.creator._id;
-        let playerId = challenge.player._id;
+            // Compare the createdAt time with the current time
+            const minutesPassed = moment().diff(createdAt, "minutes");
 
-        // Iterate through the challenges
-        if (
-          challenge.results.creator.result === "" &&
-          challenge.results.player.result === ""
-        ) {
-          const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
-
-          // Compare the createdAt time with the current time
-          const minutesPassed = moment().diff(createdAt, "minutes");
-
-          if (minutesPassed > 1) {
-            // Challenge was created more than 3 minutes ago, perform update
-            const updated = await ChallengeModel.findByIdAndUpdate(
-              challenge._id,
-              {
-                results: {
-                  ...challenge.results,
-                  creator: {
-                    result: "",
-                    timeover: true,
-                    updatedAt: new Date(),
-                  },
-                  player: {
-                    result: "",
-                    timeover: true,
-                    updatedAt: new Date(),
-                  },
-                },
-                state: "hold",
-              },
-              { session }
-            );
-
-            if (updated) {
-              await userController.updateUserByUserId(
+            if (minutesPassed > 1) {
+              // Challenge was created more than 3 minutes ago, perform update
+              const updated = await ChallengeModel.findByIdAndUpdate(
+                challenge._id,
                 {
+                  results: {
+                    ...challenge.results,
+                    creator: {
+                      result: "",
+                      timeover: true,
+                      updatedAt: new Date(),
+                    },
+                    player: {
+                      result: "",
+                      timeover: true,
+                      updatedAt: new Date(),
+                    },
+                  },
+                  state: "hold",
+                }
+              );
+
+              if (updated) {
+                await userController.updateUserByUserId({
                   _id: creatorId,
                   playing: false,
                   noOfChallenges: 0,
-                },
-                session
-              );
-              await userController.updateUserByUserId(
-                {
+                });
+                await userController.updateUserByUserId({
                   _id: playerId,
                   playing: false,
                   noOfChallenges: 0,
-                },
-                session
-              );
-              await session.commitTransaction();
-              session.endSession();
+                });
+              }
             }
           }
         }
+      } else {
+        return;
       }
     } catch (error) {
       console.log("error", error);
-      await session.abortTransaction();
-      session.endSession();
+
       throw error;
     }
-  }, 6 * 60 * 1000); // 10 minutes delay
+  }, 20 * 60 * 1000); // 10 minutes delay
 };
 
 module.exports = {

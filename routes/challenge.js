@@ -77,6 +77,7 @@ Router.get(
 //   return responseHandler(res, 200, challenge, null);
 // });
 Router.post("/win/:id", verifyToken, async (req, res) => {
+  const session = await mongoose.startSession();
   try {
     const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
@@ -85,7 +86,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
     if (!req.body.hasOwnProperty("image")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
-      const session = await mongoose.startSession();
       session.startTransaction();
       let user = req.user;
       await userController.updateUserByUserId(
@@ -254,9 +254,11 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
     }
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
+
     console.log("error", error);
     return responseHandler(res, 400, null, error.message);
+  } finally {
+    session.endSession();
   }
 });
 
@@ -268,8 +270,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
       const io = socket.get();
-      const session = await mongoose.startSession();
-      session.startTransaction();
+
       let user = req.user;
       await userController.updateUserByUserId(
         {
@@ -449,13 +450,16 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
     }
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
+
     console.log("error", error);
     return responseHandler(res, 400, null, error.message);
+  } finally {
+    session.endSession();
   }
 });
 
 Router.post("/cancel/:id", verifyToken, async (req, res) => {
+  const session = await mongoose.startSession();
   try {
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -463,7 +467,6 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
     if (!req.body.hasOwnProperty("cancellationReason")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
-      const session = await mongoose.startSession();
       session.startTransaction();
       let user = req.user;
       const io = socket.get();
@@ -595,14 +598,16 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         session
       );
       await session.commitTransaction();
-      session.endSession();
+
       return responseHandler(res, 200, challenge, null);
     }
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
+
     console.log("error", error);
     return responseHandler(res, 400, null, error.message);
+  } finally {
+    session.endSession();
   }
 });
 

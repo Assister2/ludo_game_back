@@ -55,8 +55,8 @@ router.post("/signup", async (req, res) => {
         userData.wallet = 50;
       }
 
-      let textRes = await sendText(userData.otp.code, userData.phone);
-      if (textRes.return === false) {
+      // let textRes = await sendText(userData.otp.code, userData.phone);
+      if (false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
         user = await userController.tempInsertUser(userData, session);
@@ -298,10 +298,10 @@ router.post("/resendOTP", async (req, res) => {
         count: user.otp.count + 1,
       };
 
-      let textRes = await sendText(user.otp.code, user.phone);
-      textRes.return = true;
+      // let textRes = await sendText(user.otp.code, user.phone);
+      // textRes.return = true;
 
-      if (textRes.return === false) {
+      if (false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
         user = await userController.updateUserByPhoneNumber(user);

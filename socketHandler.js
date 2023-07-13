@@ -2,7 +2,11 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const express = require("express");
 
-const { startGame, cancelChallenge } = require("./function.js");
+const {
+  startGame,
+  cancelChallenge,
+  bothResultNotUpdated,
+} = require("./function.js");
 
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
@@ -502,7 +506,7 @@ function handleConnection(socket) {
             case "startGame":
               await startGame(data, socket);
               socket.send(JSON.stringify({ status: 111 }));
-              // await bothResultNotUpdated(data.payload.challengeId);
+              await bothResultNotUpdated(data.payload.challengeId);
               break;
           }
         }
