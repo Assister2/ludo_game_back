@@ -79,6 +79,7 @@ Router.get(
 Router.post("/win/:id", verifyToken, async (req, res) => {
   const session = await mongoose.startSession();
   try {
+    session.startTransaction();
     const io = socket.get();
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -86,8 +87,24 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
     if (!req.body.hasOwnProperty("image")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
-      session.startTransaction();
+      let challenge = await challengesController.getPlayingChallengeById(
+        req.params.id
+      );
+      if (!challenge) {
+        return responseHandler(res, 400, null, "result already updated");
+      }
       let user = req.user;
+      let winner = user.id == challenge.creator._id ? "creator" : "player";
+      let looser = user.id != challenge.creator._id ? "creator" : "player";
+      if (challenge.results[winner].result !== "") {
+        return responseHandler(
+          res,
+          400,
+          null,
+          `${winner} result already updatedd`
+        );
+      }
+
       await userController.updateUserByUserId(
         {
           _id: user.id,
@@ -96,9 +113,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         },
         session
       );
-      let challenge = await challengesController.getChallengeById(
-        req.params.id
-      );
 
       let amount = Number(challenge.amount);
       let userWallet = await accountController.getAccountByUserId(user.id);
@@ -106,8 +120,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       const image = req.body.image;
 
       let file = image;
-      let winner = user.id == challenge.creator._id ? "creator" : "player";
-      let looser = user.id != challenge.creator._id ? "creator" : "player";
 
       if (challenge.results[winner !== ""]) {
         return responseHandler(
@@ -284,9 +296,20 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
+      let challenge = await challengesController.getPlayingChallengeById(
+        req.params.id
+      );
+      let user = req.user;
+      let looser = user.id == challenge.creator._id ? "creator" : "player";
+      let winner = user.id != challenge.creator._id ? "creator" : "player";
+      if (!challenge) {
+        return responseHandler(res, 400, null, "result already updated");
+      }
+      if (challenge.results[looser].result !== "") {
+        return responseHandler(res, 400, null, "result already updatedd");
+      }
       const io = socket.get();
 
-      let user = req.user;
       await userController.updateUserByUserId(
         {
           _id: user.id,
@@ -295,11 +318,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         },
         session
       );
-      let challenge = await challengesController.getChallengeById(
-        req.params.id
-      );
-      let looser = user.id == challenge.creator._id ? "creator" : "player";
-      let winner = user.id != challenge.creator._id ? "creator" : "player";
 
       if (challenge.results[looser].result !== "") {
         return responseHandler(
@@ -490,15 +508,28 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
 Router.post("/cancel/:id", verifyToken, async (req, res) => {
   const session = await mongoose.startSession();
   try {
+    session.startTransaction();
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
     if (!req.body.hasOwnProperty("cancellationReason")) {
       return responseHandler(res, 400, null, "Fields are missing");
     } else {
-      session.startTransaction();
+      let challenge = await challengesController.getPlayingChallengeById(
+        req.params.id
+      );
       let user = req.user;
+      let canceller = user.id == challenge.creator._id ? "creator" : "player";
+      let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
+      if (!challenge) {
+        return responseHandler(res, 400, null, "result already updated");
+      }
+      if (challenge.results[canceller].result !== "") {
+        return responseHandler(res, 400, null, "result already updatedd");
+      }
+
       const io = socket.get();
+
       await userController.updateUserByUserId(
         {
           _id: user.id,
@@ -507,11 +538,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         },
         session
       );
-      let challenge = await challengesController.getChallengeById(
-        req.params.id
-      );
-      let canceller = user.id == challenge.creator._id ? "creator" : "player";
-      let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
+
       let cancellerWallet = await accountController.getAccountByUserId(
         challenge[canceller]._id
       );
@@ -549,7 +576,6 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       if (apiResult !== null) {
         challengeObj.apiResult = apiResult;
       }
-      console.log("checkapiresultt", challengeObj);
       let data = {
         challengeId: req.params.id,
         userId: challenge[otherPlayer]._id,

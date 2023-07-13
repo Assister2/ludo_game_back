@@ -504,6 +504,18 @@ const challengesController = {
       throw error;
     }
   },
+  getPlayingChallengeById: async (challengeId) => {
+    try {
+      let challenge = await ChallengeModel.findById({
+        _id: challengeId,
+        state: "playing",
+      }).populate("creator player", "username");
+      return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
   getChallengeById12: async (challengeId) => {
     try {
       let challenge = await ChallengeModel.findOne({
