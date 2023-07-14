@@ -12,15 +12,15 @@ if (process.env.NODE_ENV === "production") {
     tracesSampleRate: 1.0,
   });
   process.on("uncaughtException", (error) => {
-    console.error("Uncaught Exception:", error);
+    console.error("Uncaught ExceptionSami:", error);
     Sentry.captureException(error);
-    process.exit(1);
+    // process.exit(1);
   });
 
   process.on("unhandledRejection", (reason, promise) => {
-    console.error("Unhandled Promise Rejection:", reason);
+    console.error("Unhandled Promise RejectionSS :", reason);
     Sentry.captureException(reason);
-    process.exit(1);
+    // process.exit(1);
   });
 }
 module.exports = Sentry;

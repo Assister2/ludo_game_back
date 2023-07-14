@@ -3,55 +3,27 @@ const mongoose = require("mongoose");
 const express = require("express");
 const handleConnection = require("./socketHandler.js");
 const path = require("path");
-// import { startGame } from "./function.js";
+
 const Sentry = require("./sentry.js");
-// or use es6 import statements
-// import * as Sentry from '@sentry/node';
 
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
-
-// const app = express();
-
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const transactionRouter = require("./routes/transactions");
 const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
-// const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
-
 const bodyParser = require("body-parser");
 const app = express();
-// 30 seconds
 const socket = require("./socket");
 // const { sendFCM } = require("./routes/notification");
 dotenv.config();
 
-const allowedOrigins = [
-  "https://www.gotiking.com/",
-  "https://gotiking.com",
-  "https://gotiking.com/",
-  "https://www.gotiking.com",
-  "http://localhost:3000", // Replace with your localhost port if different
-  // 'http://localhost:4000', // Add additional localhost ports if needed
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    console.log("checkorigion", origin);
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log("socket connection not allowed:");
-    }
-  },
-};
+app.use(cors());
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.errorHandler());
-app.use(cors());
-
 mongoose
   .connect(
     `mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo19`,
@@ -76,30 +48,14 @@ mongoose
     });
   })
   .catch((error) => {
-    Sentry.captureException(error);
-    console.log(error.message);
+    console.log("eerror", error.message);
   });
-
-// const server = app2.listen(4002, () => {
-//   console.log("socket is running on port 4002");
-// });
-// Set up Sentry request handler middleware
-// app.use(Sentry.Handlers.requestHandler());
-
-// Your application routes and middleware
-
-// Set up Sentry error handler middleware
-// app.use(Sentry.Handlers.errorHandler());
 
 app.use(logger("dev"));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-// app.use((req, res, next) => {
-//   res.header("Access-Control-Allow-Origin", "ludo-frontend.vercel.app");
-//   next();
-// });
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(
@@ -115,9 +71,5 @@ app.use("/api/user", userRouter);
 app.use("/api/transaction", transactionRouter);
 app.use("/api/challenges", challengesRouter);
 app.use("/api/history", historyRouter);
-// const server = app2.listen(process.env.PORT || 5000, () => {
-//   console.log(`\nServer is UP on PORT ${process.env.SERVER_PORT}`);
-//   console.log(`Visit  `(`localhost:${5000}`));
-// });
 
 module.exports = app;
