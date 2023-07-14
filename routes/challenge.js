@@ -245,7 +245,14 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       if (challenge.results[looser].result == "cancelled") {
         challengeObj.state = "hold";
       }
-
+      await userController.updateUserByUserId(
+        {
+          _id: user.id,
+          playing: false,
+          noOfChallenges: 0,
+        },
+        session
+      );
       challenge = await challengesController.updateChallengeById(
         challengeObj,
         session
@@ -285,15 +292,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         return responseHandler(res, 400, null, "result already updatedd");
       }
       const io = socket.get();
-
-      await userController.updateUserByUserId(
-        {
-          _id: user.id,
-          playing: false,
-          noOfChallenges: 0,
-        },
-        session
-      );
 
       if (challenge.results[looser].result !== "") {
         return responseHandler(
@@ -449,6 +447,14 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       if (challenge.results[winner].result == "cancelled") {
         challengeObj.state = "hold";
       }
+      await userController.updateUserByUserId(
+        {
+          _id: user.id,
+          playing: false,
+          noOfChallenges: 0,
+        },
+        session
+      );
       challenge = await challengesController.updateChallengeById(
         challengeObj,
         session
