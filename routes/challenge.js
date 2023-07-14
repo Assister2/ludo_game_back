@@ -104,16 +104,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           `${winner} result already updatedd`
         );
       }
-
-      await userController.updateUserByUserId(
-        {
-          _id: user.id,
-          playing: false,
-          noOfChallenges: 0,
-        },
-        session
-      );
-
       let amount = Number(challenge.amount);
       let userWallet = await accountController.getAccountByUserId(user.id);
       console.log("winner---------");
@@ -263,7 +253,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           historyWinner.amount = Number(challenge.amount * 0.02);
           historyWinner.type = "referal";
           await historyWinner.save({ session });
-          console.log("referhistory", historyWinner);
         }
       }
       if (challenge.results[looser].result == "cancelled") {
@@ -530,15 +519,6 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
 
       const io = socket.get();
 
-      await userController.updateUserByUserId(
-        {
-          _id: user.id,
-          playing: false,
-          noOfChallenges: 0,
-        },
-        session
-      );
-
       let cancellerWallet = await accountController.getAccountByUserId(
         challenge[canceller]._id
       );
@@ -655,6 +635,14 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       // historyWinner.type = "cancelled";
       // await historyWinner.save();
       // console.log("histtt", historyWinner);
+      await userController.updateUserByUserId(
+        {
+          _id: user.id,
+          playing: false,
+          noOfChallenges: 0,
+        },
+        session
+      );
       challenge = await challengesController.updateChallengeById(
         challengeObj,
         session

@@ -462,31 +462,43 @@ const challengesController = {
       throw error;
     }
   },
-  setLockTrue: async (challengeId) => {
+  getOpenChallengeByChallengeId: async (challengeId) => {
     try {
-      const challenge = await ChallengeModel.findById(challengeId);
-
-      if (challenge.locked) {
-        return false;
-      }
-
-      challenge.locked = true;
-      await challenge.save();
-      return true;
+      let challenge = await ChallengeModel.findById({
+        _id: challengeId,
+        state: "open",
+      }).populate("creator", "username");
+      return challenge;
     } catch (error) {
-      console.log("Error setting lock to true:", error);
+      console.log("error", error);
       throw error;
     }
   },
+  // setLockTrue: async (challengeId) => {
+  //   try {
+  //     const challenge = await ChallengeModel.findById(challengeId);
 
-  setLockFalse: async (challengeId) => {
-    try {
-      await ChallengeModel.findByIdAndUpdate(challengeId, { locked: false });
-    } catch (error) {
-      console.log("Error setting lock to false:", error);
-      throw error;
-    }
-  },
+  //     if (challenge.locked) {
+  //       return false;
+  //     }
+
+  //     challenge.locked = true;
+  //     await challenge.save();
+  //     return true;
+  //   } catch (error) {
+  //     console.log("Error setting lock to true:", error);
+  //     throw error;
+  //   }
+  // },
+
+  // setLockFalse: async (challengeId) => {
+  //   try {
+  //     await ChallengeModel.findByIdAndUpdate(challengeId, { locked: false });
+  //   } catch (error) {
+  //     console.log("Error setting lock to false:", error);
+  //     throw error;
+  //   }
+  // },
 
   /**
    * getChallengeById - to get  challenge by challenge id

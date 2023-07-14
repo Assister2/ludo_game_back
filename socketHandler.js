@@ -335,14 +335,7 @@ function handleConnection(socket) {
             };
             return socket.send(JSON.stringify(response));
           }
-          // var config = {
-          //   method: "get",
-          //   url: "  http://128.199.28.12:3000/ludoking/roomcode",
-          //   // url: "http://43.205.124.118/ludoking/roomcode/",
-          //   headers: {},
-          // };
 
-          // let roomCodeResponse = await axios(config);
           let challenge = {
             creator: data.payload.userId,
             amount: data.payload.amount,
@@ -351,12 +344,6 @@ function handleConnection(socket) {
           };
 
           challenge = await challengesController.createChallenge(challenge);
-          // if (challenge) {
-          //   socket.send(JSON.stringify({ status: 2 }));
-
-          //   let challenges = await challengesController.getAllChallenges();
-          //   return socket.send(JSON.stringify(challenges));
-          // }
           if (!challenge) {
             response = {
               ...response,
@@ -373,12 +360,12 @@ function handleConnection(socket) {
 
           session.startTransaction();
           let currentChallenge =
-            await challengesController.getChallengeByChallengeId(
+            await challengesController.getOpenChallengeByChallengeId(
               data.payload.challengeId
             );
 
           try {
-            if (currentChallenge.state === "requested") {
+            if (!currentChallenge) {
               response = {
                 ...response,
                 status: 400,
