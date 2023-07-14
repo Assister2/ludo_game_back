@@ -83,16 +83,16 @@ const handleChallengeCancellation = async (
         },
         session
       );
-      // let history = new History();
-      // history.userId = challenge.creator._id;
-      // history.historyText = `Cancelled Against ${challenge[canceller].username}`;
-      // history.createdAt = new Date();
-      // history.closingBalance = playerWallet.wallet;
-      // history.amount = Number(challenge.amount);
-      // history.roomCode = challenge.roomCode;
-      // history.type = "cancelled";
-      // await history.save({ session });
-
+      let history = new History();
+      history.userId = challenge.creator._id;
+      history.historyText = `Cancelled Against ${challenge[canceller].username}`;
+      history.createdAt = new Date();
+      history.closingBalance = playerWallet.wallet;
+      history.amount = Number(challenge.amount);
+      history.roomCode = challenge.roomCode;
+      history.type = "cancelled";
+      await history.save({ session });
+      console.log("cehckkkhistory", history);
       return;
     }
     if (player === "player") {
@@ -107,15 +107,16 @@ const handleChallengeCancellation = async (
         },
         session
       );
-      // let historyWinner = new History();
-      // historyWinner.userId = challenge.player._id;
-      // historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
-      // historyWinner.createdAt = new Date();
-      // historyWinner.closingBalance = playerWallet.wallet;
-      // historyWinner.amount = Number(challenge.amount);
-      // historyWinner.roomCode = challenge.roomCode;
-      // historyWinner.type = "cancelled";
-      // await historyWinner.save({ session });
+      let historyWinner = new History();
+      historyWinner.userId = challenge.player._id;
+      historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
+      historyWinner.createdAt = new Date();
+      historyWinner.closingBalance = playerWallet.wallet;
+      historyWinner.amount = Number(challenge.amount);
+      historyWinner.roomCode = challenge.roomCode;
+      historyWinner.type = "cancelled";
+      await historyWinner.save({ session });
+      console.log("cehckkkhistoryhistoryWinner", historyWinner);
       return;
     }
 

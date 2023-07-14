@@ -598,31 +598,35 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
           otherPlayerWallet,
           session
         );
-        let cancellerWallet1 = await accountController.getAccountByUserId(
-          challenge[canceller]._id
-        );
-        let otherPlayerWallet1 = await accountController.getAccountByUserId(
-          challenge[otherPlayer]._id
-        );
-        let history = new History();
-        history.userId = challenge[otherPlayer]._id;
-        history.historyText = `Cancelled Against ${challenge[canceller].username}`;
-        history.createdAt = req.body.createdAt;
-        history.closingBalance = otherPlayerWallet1.wallet;
-        history.amount = Number(challenge.amount);
-        history.roomCode = challenge.roomCode;
-        history.type = "cancelled";
-        await history.save({ session });
+        // let cancellerWallet1 = await accountController.getAccountByUserId(
+        //   challenge[canceller]._id
+        // );
+        // let otherPlayerWallet1 = await accountController.getAccountByUserId(
+        //   challenge[otherPlayer]._id
+        // );
+        // console.log("canceller", cancellerWallet1);
+        // console.log("otherPlayerWallet1", otherPlayerWallet1);
+        // let history = new History();
+        // history.userId = challenge[otherPlayer]._id;
+        // history.historyText = `Cancelled Against ${challenge[canceller].username}`;
+        // history.createdAt = req.body.createdAt;
+        // history.closingBalance = otherPlayerWallet1.wallet;
+        // history.amount = Number(challenge.amount);
+        // history.roomCode = challenge.roomCode;
+        // history.type = "cancelled";
+        // await history.save({ session });
 
-        let historyWinner = new History();
-        historyWinner.userId = challenge[canceller]._id;
-        historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
-        historyWinner.createdAt = req.body.createdAt;
-        historyWinner.closingBalance = cancellerWallet1.wallet;
-        historyWinner.amount = Number(challenge.amount);
-        historyWinner.roomCode = challenge.roomCode;
-        historyWinner.type = "cancelled";
-        await historyWinner.save({ session });
+        // let historyWinner = new History();
+        // historyWinner.userId = challenge[canceller]._id;
+        // historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
+        // historyWinner.createdAt = req.body.createdAt;
+        // historyWinner.closingBalance = cancellerWallet1.wallet;
+        // historyWinner.amount = Number(challenge.amount);
+        // historyWinner.roomCode = challenge.roomCode;
+        // historyWinner.type = "cancelled";
+        // await historyWinner.save({ session });
+        // console.log("historyof", history);
+        // console.log("historyof2", historyWinner);
       }
 
       // let historyWinner = new History();
