@@ -123,27 +123,14 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       let apiResult = null;
       if (!challenge.apiResult) {
         axios
-          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`, {
-            cancelToken: new CancelToken(function executor(cancel) {
-              // Store the cancel function
-              cancelRequest = cancel;
-            }),
-            timeout: 3000, // Set the timeout to 5 seconds
-          })
+          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
           .then((response) => {
             const data = response.data;
-            // Process the data received from the API
-            console.log("dddd", data);
             apiResult = data;
           })
           .catch((error) => {
-            if (axios.isCancel(error)) {
-              // Request was canceled
-              console.log("Request canceled", error.message);
-            } else {
-              // Handle other errors
-              console.error(error);
-            }
+            // Handle the error case
+            console.error(error);
           });
       }
       // console.log("testtt", response);
@@ -331,27 +318,14 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       let apiResult = null;
       if (!challenge.apiResult) {
         axios
-          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`, {
-            cancelToken: new CancelToken(function executor(cancel) {
-              // Store the cancel function
-              cancelRequest = cancel;
-            }),
-            timeout: 3000, // Set the timeout to 5 seconds
-          })
+          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
           .then((response) => {
             const data = response.data;
-            // Process the data received from the API
-            console.log("dddd", data);
             apiResult = data;
           })
           .catch((error) => {
-            if (axios.isCancel(error)) {
-              // Request was canceled
-              console.log("Request canceled", error.message);
-            } else {
-              // Handle other errors
-              console.error(error);
-            }
+            // Handle the error case
+            console.error(error);
           });
       }
       let challengeObj = {
