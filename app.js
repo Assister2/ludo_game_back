@@ -19,7 +19,7 @@ const userRouter = require("./routes/user");
 const transactionRouter = require("./routes/transactions");
 const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
-const accountController = require("./controllers/accounts");
+// const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 
 const bodyParser = require("body-parser");
@@ -48,8 +48,9 @@ const corsOptions = {
     }
   },
 };
-
-app.use(cors(corsOptions));
+app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.errorHandler());
+app.use(cors());
 
 mongoose
   .connect(
@@ -74,7 +75,11 @@ mongoose
       handleConnection(socket);
     });
   })
-  .catch((error) => console.log(error.message));
+  .catch((error) => {
+    Sentry.captureException(error);
+    console.log(error.message);
+  });
+
 // const server = app2.listen(4002, () => {
 //   console.log("socket is running on port 4002");
 // });
