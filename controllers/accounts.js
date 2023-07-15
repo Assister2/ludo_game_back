@@ -62,7 +62,7 @@ const accountController = {
             winningCash: +referelAmount,
           },
         },
-        { session }
+        { new: true, session }
       );
       return account;
     } catch (error) {
