@@ -279,12 +279,13 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       let challenge = await challengesController.getPlayingChallengeById(
         req.params.id
       );
-      let user = req.user;
-      let looser = user.id == challenge.creator._id ? "creator" : "player";
-      let winner = user.id != challenge.creator._id ? "creator" : "player";
       if (!challenge) {
         return responseHandler(res, 400, null, "result already updated");
       }
+      let user = req.user;
+      let looser = user.id == challenge.creator._id ? "creator" : "player";
+      let winner = user.id != challenge.creator._id ? "creator" : "player";
+
       if (challenge.results[looser].result !== "") {
         return responseHandler(res, 400, null, "result already updatedd");
       }
@@ -484,12 +485,13 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       let challenge = await challengesController.getPlayingChallengeById(
         req.params.id
       );
-      let user = req.user;
-      let canceller = user.id == challenge.creator._id ? "creator" : "player";
-      let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
       if (!challenge) {
         return responseHandler(res, 400, null, "result already updated");
       }
+      let user = req.user;
+      let canceller = user.id == challenge.creator._id ? "creator" : "player";
+      let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
+
       if (challenge.results[canceller].result !== "") {
         return responseHandler(res, 400, null, "result already updatedd");
       }

@@ -157,7 +157,7 @@ const handleChallengeUpdate = async (data) => {
           state: "hold",
         };
 
-        await challenge.save();
+        // await challenge.save();
         await challengesController.updatePlayingChallenge(challengeObj);
 
         await userController.updateUserNoSession({
@@ -167,7 +167,7 @@ const handleChallengeUpdate = async (data) => {
         });
       }
     }
-  }, 5 * 60 * 1000); // 10 minutes delay
+  }, 1 * 30 * 1000); // 10 minutes delay
 };
 
 const bothResultNotUpdated = async (challengeId) => {
@@ -234,7 +234,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
       throw error;
     }
-  }, 5 * 60 * 1000); // 10 minutes delay
+  }, 2 * 60 * 1000); // 10 minutes delay
 };
 
 module.exports = {

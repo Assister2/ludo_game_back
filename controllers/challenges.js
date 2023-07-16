@@ -518,7 +518,7 @@ const challengesController = {
   },
   getPlayingChallengeById: async (challengeId) => {
     try {
-      let challenge = await ChallengeModel.findById({
+      let challenge = await ChallengeModel.findOne({
         _id: challengeId,
         state: "playing",
       }).populate("creator player", "username");
