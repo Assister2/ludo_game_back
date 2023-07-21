@@ -9,5 +9,8 @@ const options = {
   store: store,
   resave: true,
   saveUninitialized: false,
+  cookie: {
+    secure: true, // Set this to true to enable the cookie over HTTPS
+  },
 };
 module.exports = options;
