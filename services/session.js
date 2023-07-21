@@ -8,10 +8,9 @@ const options = {
   secret: "I am stuck, help me please!",
   store: store,
   resave: true,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     secure: true,
-    sameSite: "none",
   },
 };
 module.exports = options;
