@@ -9,8 +9,6 @@ const options = {
   store: store,
   resave: true,
   saveUninitialized: true,
-  cookie: {
-    secure: true,
-  },
+  cookie: { httpOnly: false, secure: true },
 };
 module.exports = options;
