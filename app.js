@@ -3,30 +3,37 @@ const mongoose = require("mongoose");
 const express = require("express");
 const handleConnection = require("./socketHandler.js");
 const path = require("path");
-
+const session = require("express-session");
 const Sentry = require("./sentry.js");
-
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const transactionRouter = require("./routes/transactions");
+const options = require("./services/session.js");
 const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
 const challengesController = require("./controllers/challenges");
 const bodyParser = require("body-parser");
 const app = express();
 const socket = require("./socket");
-// const { sendFCM } = require("./routes/notification");
+const sessionAuthMiddleware = require("./middleware/session.js");
+const expressSession = session(options);
+
 dotenv.config();
 
-app.use(cors());
+app.use(
+  cors({
+    credentials: true,
+    origin: "http://localhost:3000",
+  })
+);
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.errorHandler());
 mongoose
   .connect(
-    `mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo20`,
+    "mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo20",
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -65,8 +72,11 @@ app.use(
     parameterLimit: 50000,
   })
 );
+
+app.use(expressSession);
+
 app.use("/api/auth", authRouter);
-app.use(express.json({ limit: "50mb" }));
+app.use(sessionAuthMiddleware);
 app.use("/api/user", userRouter);
 app.use("/api/transaction", transactionRouter);
 app.use("/api/challenges", challengesRouter);

@@ -5,7 +5,7 @@
   "scripts": {
     "start": "nodemon node ./bin/www",
     "staging": "nodemon node ./built/index.js",
-    "build": "esbuild app.js --platform=node --bundle --outfile=built/index.js"
+    "build": "node -r dotenv/config ./node_modules/esbuild/bin/esbuild app.js --platform=node --bundle --outfile=built/index.js"
   },
   "dependencies": {
     "@sentry/node": "^7.57.0",
@@ -13,11 +13,13 @@
     "axios": "^1.3.4",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.2",
+    "connect-mongodb-session": "^3.1.1",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "debug": "~2.6.9",
     "dotenv": "^8.2.0",
     "express": "~4.16.1",
+    "express-session": "^1.17.3",
     "express-ws": "^5.0.2",
     "http-errors": "~1.6.3",
     "joi": "^14.3.1",

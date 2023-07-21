@@ -168,7 +168,7 @@ const userController = {
    * @returns {Promise<void>}
    */
 
-  issueToken: async (userData, session) => {
+  issueToken: async (userData) => {
     try {
       let tokenGenerated = jwtToken.sign(
         {
@@ -185,7 +185,7 @@ const userController = {
       let user = await User.findOneAndUpdate(
         { phone: userData.phone },
         { $set: { jwtToken: tokenObject } },
-        { new: true, session }
+        { new: true }
       );
       if (!userData.hasOwnProperty("jwtToken")) {
         userData.jwtToken = {};
@@ -202,12 +202,12 @@ const userController = {
    * @param phoneNumber - phoneNumber that need to check
    * @returns {Promise<void>}
    */
-  updateUserByPhoneNumber: async (userData, session) => {
+  updateUserByPhoneNumber: async (userData) => {
     try {
       let user = await User.findOneAndUpdate(
         { phone: userData.phone },
         { $set: userData },
-        { new: true, session }
+        { new: true }
       );
       return user;
     } catch (error) {

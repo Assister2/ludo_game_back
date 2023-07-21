@@ -7,7 +7,6 @@ const verifyToken = require("../middleware/verifyToken");
 const History = require("../models/history");
 const mongoose = require("mongoose");
 const router = express.Router();
-
 router.post("/buy", verifyToken, async (req, res) => {
   const session = await mongoose.startSession();
 
