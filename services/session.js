@@ -9,6 +9,6 @@ const options = {
   store: store,
   resave: true,
   saveUninitialized: true,
-  cookie: { httpOnly: false, secure: true },
+  cookie: { httpOnly: false, secure: true, domain: ".gotiking.com" },
 };
 module.exports = options;

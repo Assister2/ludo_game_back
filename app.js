@@ -17,6 +17,7 @@ const historyRouter = require("./routes/history");
 const challengesController = require("./controllers/challenges");
 const bodyParser = require("body-parser");
 const app = express();
+app.set("trust proxy", 1);
 const socket = require("./socket");
 const sessionAuthMiddleware = require("./middleware/session.js");
 const expressSession = session(options);
