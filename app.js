@@ -55,7 +55,7 @@ mongoose
     });
     setInterval(async () => {
       // await challengesController.purgeDatabase();
-      await purgeDatabase.UpdateOpenChallenges();
+      await challengesController.UpdateOpenChallenges();
     }, 3 * 60 * 1000);
     const io = socket.init(server2);
 
