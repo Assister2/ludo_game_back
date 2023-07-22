@@ -253,7 +253,7 @@ router.post("/OTP", async (req, res) => {
           const final = await userController.insertUser(user, session);
           await userController.deleteUser(user._id, session);
           await userController.issueToken(final, session);
-          req.session.user = { _id: user._id, username: user.username };
+          req.session.user = { _id: final._id, username: user.username };
           let accountObject = {
             userId: final.id,
           };
