@@ -54,7 +54,8 @@ mongoose
       console.log("application and socket is running on port 4001");
     });
     setInterval(async () => {
-      await challengesController.UpdateOpenChallenges();
+      // await challengesController.purgeDatabase();
+      await purgeDatabase.UpdateOpenChallenges();
     }, 3 * 60 * 1000);
     const io = socket.init(server2);
 

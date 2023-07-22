@@ -3,8 +3,12 @@ const User = require("../models/user");
 const Account = require("../models/accounts");
 const mongoose = require("mongoose");
 const axios = require("axios");
+const History = require("../models/history");
+const TransactionsModel = require("../models/transactions");
 
 const moment = require("moment");
+const tempUser = require("../models/tempUser");
+const { Transaction } = require("mongodb-core/lib/transactions");
 const challengesController = {
   /**
    * createChallenge - challengeObject that need to be insert.
@@ -287,6 +291,19 @@ const challengesController = {
         state: { $nin: ["resolved"] },
       }).populate("creator player", "username profileImage");
       return challenge;
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  },
+  purgeDatabase: async (challengeObject) => {
+    try {
+      await ChallengeModel.deleteMany();
+      await User.deleteMany();
+      await Account.deleteMany();
+      await tempUser.deleteMany();
+      await TransactionsModel.deleteMany();
+      await History.deleteMany();
     } catch (error) {
       console.log("error", error);
       throw error;
