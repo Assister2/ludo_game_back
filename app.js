@@ -25,6 +25,9 @@ const expressSession = session(options);
 dotenv.config();
 const allowedOrigins = [
   "https://www.gotiking.com/",
+  "https://push.gotiking.com",
+  "https://push.gotiking.com/",
+  "https://gotiking.com/",
   "https://gotiking.com",
   "https://www.gotiking.com",
   "http://localhost:3000",
