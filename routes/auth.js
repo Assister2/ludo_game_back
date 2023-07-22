@@ -68,8 +68,11 @@ router.post("/login", async (req, res) => {
             return;
           }
 
-          const activeSessions = sessions.filter((n) =>
-            n.session.user._id.equals(user._id)
+          const activeSessions = sessions.filter(
+            (n) =>
+              n.session.user &&
+              n.session.user._id &&
+              n.session.user._id.equals(user._id)
           );
 
           activeSessions.forEach((session) => {
