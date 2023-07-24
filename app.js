@@ -60,7 +60,7 @@ mongoose
     setInterval(async () => {
       // await challengesController.purgeDatabase();
       await challengesController.UpdateOpenChallenges();
-    }, 1 * 30 * 1000);
+    }, 2 * 60 * 1000);
     const io = socket.init(server2);
 
     io.on("connection", (socket) => {

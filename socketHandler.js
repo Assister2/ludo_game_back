@@ -435,6 +435,9 @@ function handleConnection(socket) {
             );
             await session.commitTransaction();
             session.endSession();
+            let challenges = await challengesController.getAllChallenges();
+
+            socket.send(JSON.stringify(challenges));
             socket.send(JSON.stringify({ status: 4 }));
             if (!currentChallenge) {
               response = {
