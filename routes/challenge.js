@@ -6,12 +6,11 @@ const { responseHandler } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 
 const Router = express.Router();
-const path = require("path");
-const currentDate = new Date();
+
 const { handleChallengeCancellation } = require("../function");
 const History = require("../models/history");
 
-const mongodb = require("mongodb");
+
 const socket = require("../socket");
 const { handleChallengeUpdate } = require("../function");
 const axios = require("axios");

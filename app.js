@@ -27,6 +27,7 @@ const allowedOrigins = [
   "https://www.gotiking.com/",
   "https://push.gotiking.com",
   "https://push.gotiking.com/",
+  "https://push.gotiking.com",
   "https://gotiking.com/",
   "https://gotiking.com",
   "https://www.gotiking.com",
@@ -59,7 +60,7 @@ mongoose
     setInterval(async () => {
       // await challengesController.purgeDatabase();
       await challengesController.UpdateOpenChallenges();
-    }, 3 * 60 * 1000);
+    }, 1 * 30 * 1000);
     const io = socket.init(server2);
 
     io.on("connection", (socket) => {

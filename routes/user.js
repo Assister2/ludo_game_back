@@ -21,6 +21,7 @@ router.get("/getUserProfileData", verifyToken, async (req, res) => {
       state: { $nin: ["playing", "open", "requested"] },
     });
     userData._doc.gamesPlayed = count;
+
     return responseHandler(res, 200, userData, null);
   } catch (error) {
     return responseHandler(res, 400, null, error.message);

@@ -167,7 +167,7 @@ const handleChallengeUpdate = async (data) => {
         });
       }
     }
-  }, 1 * 30 * 1000); // 10 minutes delay
+  }, 1 * 60 * 1000); // 10 minutes delay
 };
 
 const bothResultNotUpdated = async (challengeId) => {

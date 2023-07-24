@@ -304,6 +304,7 @@ const challengesController = {
       await tempUser.deleteMany();
       await TransactionsModel.deleteMany();
       await History.deleteMany();
+      console.log("database deleted");
     } catch (error) {
       console.log("error", error);
       throw error;
@@ -312,7 +313,6 @@ const challengesController = {
   UpdateOpenChallenges: async () => {
     try {
       const challenges = await ChallengeModel.find({
-        status: 1,
         state: "open",
       });
       challenges;
@@ -321,15 +321,15 @@ const challengesController = {
       if (challenges.length > 0) {
         // Iterate through the challenges
         for (const challenge of challenges) {
-          const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
-
-          // Compare the createdAt time with the current time
+          const createdAt = moment(challenge.createdAt);
+         
           const minutesPassed = moment().diff(createdAt, "minutes");
 
           if (minutesPassed > 1) {
             // Challenge was created more than 3 minutes ago, perform update
-            await ChallengeModel.findByIdAndUpdate(challenge._id, {
-              status: 0,
+            await ChallengeModel.findOneAndDelete({
+              _id: challenge._id,
+              state: "open",
             });
             updatedCount++;
           }
