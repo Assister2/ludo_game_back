@@ -1,7 +1,7 @@
 var express = require("express");
 
 const accountController = require("../controllers/accounts");
-
+const socket = require("../socket");
 var router = express.Router();
 const mongoose = require("mongoose");
 const auth = require("../controllers/auth");
@@ -204,6 +204,8 @@ router.post("/confirmOTP", async (req, res) => {
           user.otpConfirmed = true;
           user = await userController.updateUserByPhoneNumber(user);
           await userController.issueToken(user);
+          const io = socket.get();
+          io.emit("getUserProfile", { data: null });
           req.session.user = { _id: user._id, username: user.username };
 
           return responseHandler(res, 200, user, null);
