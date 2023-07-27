@@ -451,7 +451,7 @@ function handleConnection(socket) {
           } catch (error) {
             await session.abortTransaction();
             session.endSession();
-            console.log("PlayCatcherror", error);
+
             throw error;
           } finally {
             socket.send(JSON.stringify({ status: 444 }));
