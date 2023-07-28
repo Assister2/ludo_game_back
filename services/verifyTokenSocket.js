@@ -7,7 +7,7 @@ module.exports = async function (token) {
   }
 
   try {
-    let verified = jwt.verify(token, process.env.TOKEN_SECRET);
+    let verified = jwt.verify(token, "234124qweASd");
     console.log("verified", verified);
     return verified
  

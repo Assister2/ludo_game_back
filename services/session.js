@@ -1,9 +1,9 @@
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
-require('dotenv').config(); // Load environment variables from .env file
+require("dotenv").config(); // Load environment variables from .env file
 
 const store = new MongoDBStore({
-  uri: process.env.DB_URI, // Use an environment variable for MongoDB URI
+  uri: "mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo21", // Use an environment variable for MongoDB URI
   collection: "sessions",
   // Add more options for MongoDBStore if necessary, like connectionOptions, autoReconnect, etc.
 });
@@ -22,8 +22,8 @@ const options = {
   cookie: {
     httpOnly: false,
     maxAge: parseInt(maxAgeForSessionCookie),
-    secure: process.env.USE_SECURE_COOKIE === "true", // Use an environment variable to conditionally enable secure cookie
-    domain: process.env.COOKIE_DOMAIN || undefined, // Use an environment variable for the cookie domain or leave it undefined
+    secure: true, // Use an environment variable to conditionally enable secure cookie
+    domain: ".gotiking.com", // Use an environment variable for the cookie domain or leave it undefined
   },
 };
 
