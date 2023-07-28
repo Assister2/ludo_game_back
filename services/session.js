@@ -22,8 +22,8 @@ const options = {
   cookie: {
     httpOnly: false,
     maxAge: parseInt(maxAgeForSessionCookie),
-    // secure: true, // Use an environment variable to conditionally enable secure cookie
-    // domain: ".gotiking.com", // Use an environment variable for the cookie domain or leave it undefined
+    secure: true, // Use an environment variable to conditionally enable secure cookie
+    domain: ".gotiking.com", // Use an environment variable for the cookie domain or leave it undefined
   },
 };
 
