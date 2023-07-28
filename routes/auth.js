@@ -6,6 +6,8 @@ var router = express.Router();
 const mongoose = require("mongoose");
 const auth = require("../controllers/auth");
 const userController = require("../controllers/user");
+const sessionHelper = require("../helperFunctions/sessionHelper");
+const OTPHelper = require("../helperFunctions/OTPhelper");
 const {
   responseHandler,
   generate,
@@ -16,76 +18,69 @@ const User = require("../models/user");
 const checkUserName = require("../services");
 // const { _app } = require("../firebaseInit");
 
+// Assuming you have imported all the required modules and functions
+
 router.post("/login", async (req, res) => {
   try {
     if (!req.body.hasOwnProperty("phone")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
 
-    let user = await userController.existingUser(req.body.phone);
+    const phoneNumber = req.body.phone;
+    const user = await userController.existingUser(phoneNumber);
 
     if (!user) {
       return responseHandler(res, 400, null, "User not found");
-    } else {
-      if (user.isBlocked) {
-        return responseHandler(
-          res,
-          400,
-          null,
-          "your Account has been blocked. !Contact Admin"
-        );
-      }
-
-      let currentDate = new Date();
-      let lastUpdateDate = user.otp.updatedAt;
-      var seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
-
-      if (seconds <= 3600 && user.otp.count >= 5) {
-        return responseHandler(
-          res,
-          400,
-          null,
-          "Can Request For 5 OTP In One hour Maximum"
-        );
-      }
-      user.otp = {
-        code: generate(6),
-        updatedAt: new Date(),
-        count: user.otp.count + 1,
-      };
-
-      // let textRes = await sendText(user.otp.code, user.phone);
-      let textRes;
-      textRes = true;
-      if (textRes === false) {
-        return responseHandler(res, 400, null, textRes.message);
-      } else {
-        user = await userController.updateUserByPhoneNumber(user);
-        req.sessionStore.all(function (err, sessions) {
-          if (err) {
-            console.error("Error fetching sessions:", err);
-            res.status(500).send({ Success: "Server error" });
-            return;
-          }
-
-          const activeSessions = sessions.filter(
-            (n) =>
-              n.session.user &&
-              n.session.user._id &&
-              n.session.user._id.equals(user._id)
-          );
-
-          activeSessions.forEach((session) => {
-            req.sessionStore.destroy(session._id, function (err) {
-              if (err) {
-                console.error("Error destroying session:", err);
-              }
-            });
-          });
-        });
-        return responseHandler(res, 200, "OTP Sent", user);
-      }
     }
+
+    if (user.isBlocked) {
+      return responseHandler(
+        res,
+        400,
+        null,
+        "Your account has been blocked. Contact Admin!"
+      );
+    }
+
+    const currentDate = new Date();
+    const lastUpdateDate = user.otp.updatedAt;
+    const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
+    const MAX_OTP_REQUESTS_PER_HOUR = 5;
+    const ONE_HOUR_IN_SECONDS = 3600;
+
+    if (
+      seconds <= ONE_HOUR_IN_SECONDS &&
+      user.otp.count >= MAX_OTP_REQUESTS_PER_HOUR
+    ) {
+      return responseHandler(
+        res,
+        400,
+        null,
+        "Can Request For 5 OTP In One hour Maximum"
+      );
+    }
+
+    const OTP_CODE_LENGTH = 6;
+    user.otp = {
+      code: generate(OTP_CODE_LENGTH),
+      updatedAt: new Date(),
+      count: user.otp.count + 1,
+    };
+
+    const otpSentSuccessfully = await OTPHelper.sendOTP(
+      user.otp.code,
+      user.phone
+    );
+
+    if (!otpSentSuccessfully) {
+      return responseHandler(res, 400, null, "Error sending OTP");
+    }
+
+    await sessionHelper.removeAllUserSessions(req.sessionStore, user._id);
+
+    await userController.updateUserByPhoneNumber(user);
+
+    return responseHandler(res, 200, "OTP Sent", user);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
   }
@@ -115,58 +110,66 @@ router.post("/signup", async (req, res) => {
       !req.body.hasOwnProperty("phone")
     ) {
       return responseHandler(res, 400, null, "Fields are missing");
-    } else {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-      let userName = await checkUserName(req.body.fullName);
-      let user = await userController.existingUser(req.body.phone);
+    }
+
+    const userName = await checkUserName(req.body.fullName);
+    const user = await userController.existingUser(req.body.phone);
+
+    if (user) {
+      return responseHandler(
+        res,
+        400,
+        null,
+        "Already registered, please try to login"
+      );
+    }
+
+    const userData = {
+      username: userName,
+      joinedAt: new Date(),
+      phone: req.body.phone,
+      fullName: req.body.fullName,
+      referCode: generate(),
+      profileImage: `${randomIntFromInterval(1, 9)}.svg`,
+    };
+
+    if (req.body.referCode) {
+      userData.referer = Number(req.body.referCode);
+      userData.wallet = 50;
+    }
+
+    userData.otp = {
+      code: generate(6),
+      updatedAt: new Date(),
+    };
+
+    const otpSentSuccessfully = await OTPHelper.sendOTP(
+      userData.otp.code,
+      userData.phone
+    );
+
+    if (!otpSentSuccessfully) {
+      return responseHandler(res, 400, null, "Error sending OTP");
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
       await userController.deleteExistingTempUser(req.body.phone, session);
-      if (user) {
-        return responseHandler(
-          res,
-          400,
-          null,
-          "Already registered please try to login"
-        );
-      }
+      const newUser = await userController.tempInsertUser(userData, session);
 
-      let userData = {};
-      userData.username = userName;
-      userData.joinedAt = new Date();
-      userData.phone = req.body.phone;
-      userData.fullName = req.body.fullName;
-      userData.referCode = generate();
-      userData.profileImage = `${randomIntFromInterval(1, 9)}.svg`;
-      console.log("req.body", req.body);
-      if (req.body.referCode) {
-        userData.referer = Number(req.body.referCode);
-      }
-      userData.otp = {
-        code: generate(6),
-        updatedAt: new Date(),
-      };
-      if (req.body.referCode) {
-        userData.wallet = 50;
-      }
+      await session.commitTransaction();
+      session.endSession();
 
-      // let textRes = await sendText(userData.otp.code, userData.phone);
-      if (false) {
-        return responseHandler(res, 400, null, textRes.message);
-      } else {
-        user = await userController.tempInsertUser(userData, session);
-
-        // await accountController.insertAccount(accountObject);
-        await session.commitTransaction();
-        session.endSession();
-
-        return responseHandler(res, 200, "OTP Sent", null);
-      }
+      return responseHandler(res, 200, "OTP Sent", null);
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
-    console.log("error", error);
+    console.error("Error during signup:", error);
     responseHandler(res, 400, null, error.message);
   }
 });
@@ -176,46 +179,49 @@ router.post("/confirmOTP", async (req, res) => {
     const { body } = req;
     const { token } = body;
     const topic = "ludo";
-    console.log("---------token", body);
+
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
-    } else {
-      let user = await userController.existingUser(req.body.phone);
-      if (!user) {
-        return responseHandler(res, 400, null, "This Number is Not Registered");
-      } else {
-        let min = 2; // Days you want to subtract
-        let date = new Date();
-        let last = new Date(date.getTime() - min * 60 * 1000);
-        if (user.otp.updatedAt < last) {
-          return responseHandler(res, 400, null, "OTP is expired");
-        }
-
-        // if (user.otp.code != req.body.otp) {
-        //   return responseHandler(
-        //     res,
-        //     400,
-        //     null,
-        //     "Incorrect OTP Please try again"
-        //   );
-        // }
-        else {
-          user.otp.count = 0;
-          user.otpConfirmed = true;
-          user = await userController.updateUserByPhoneNumber(user);
-          await userController.issueToken(user);
-          const io = socket.get();
-          io.emit("getUserProfile", { data: null });
-          req.session.user = { _id: user._id, username: user.username };
-
-          return responseHandler(res, 200, user, null);
-        }
-      }
     }
+
+    const phoneNumber = req.body.phone;
+    const providedOTP = req.body.otp;
+    const user = await userController.existingUser(phoneNumber);
+
+    if (!user) {
+      return responseHandler(res, 400, null, "This Number is Not Registered");
+    }
+
+    const OTP_EXPIRATION_MINUTES = 2;
+    const date = new Date();
+    const otpExpirationTime = new Date(
+      date.getTime() - OTP_EXPIRATION_MINUTES * 60 * 1000
+    );
+
+    if (user.otp.updatedAt < otpExpirationTime) {
+      return responseHandler(res, 400, null, "OTP is expired");
+    }
+
+    // if (user.otp.code !== providedOTP) {
+    //   return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
+    // }
+
+    user.otp.count = 0;
+    user.otpConfirmed = true;
+    await userController.updateUserByPhoneNumber(user);
+    await userController.issueToken(user);
+
+    const io = socket.get();
+    io.emit("getUserProfile", { data: null });
+
+    req.session.user = { _id: user._id, username: user.username };
+
+    return responseHandler(res, 200, user, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
   }
 });
+
 router.post("/OTP", async (req, res) => {
   try {
     const { body } = req;
@@ -224,67 +230,81 @@ router.post("/OTP", async (req, res) => {
 
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
-    } else {
-      let user = await userController.existingTempUser(req.body.phone);
-      let realUser = await userController.existingUser(req.body.phone);
-      if (realUser) {
-        return responseHandler(res, 400, null, "This Number already in Use");
-      }
-      if (!user) {
-        return responseHandler(res, 400, null, "This Number is Not Registered");
-      } else {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        let min = 2; // Days you want to subtract
-        let date = new Date();
-        let last = new Date(date.getTime() - min * 60 * 1000);
-        if (user.otp.updatedAt < last) {
-          return responseHandler(res, 400, null, "OTP is expired");
-        }
+    }
 
-        if (false) {
-          return responseHandler(
-            res,
-            400,
-            null,
-            "Incorrect OTP Please try again"
-          );
-        } else {
-          user.otp.count = 0;
-          user.otpConfirmed = true;
-          const final = await userController.insertUser(user, session);
-          await userController.deleteUser(user._id, session);
-          await userController.issueToken(final, session);
-          req.session.user = { _id: final._id, username: user.username };
-          let accountObject = {
-            userId: final.id,
-          };
-          await accountController.insertAccount(accountObject, session);
-          if (user.referer) {
-            await userController.increasenoOfrefer(user.referer, session);
-          }
-          // try {
-          //   await _app
-          //     .messaging()
-          //     .subscribeToTopic(token, topic)
-          //     .then((resp) => {
-          //       console.log(resp);
-          //     })
-          //     .catch((err) => {
-          //       console.log(err);
-          //     });
-          // } catch (err) {
-          //   console.log("fcm", err);
-          // }
-          await session.commitTransaction();
-          session.endSession();
-          return responseHandler(res, 200, final, null);
-        }
+    const phoneNumber = req.body.phone;
+    const providedOTP = req.body.otp;
+
+    const realUser = await userController.existingUser(phoneNumber);
+
+    if (realUser) {
+      return responseHandler(res, 400, null, "This Number already in Use");
+    }
+    const user = await userController.existingTempUser(phoneNumber);
+    if (!user) {
+      return responseHandler(res, 400, null, "This Number is Not Registered");
+    }
+
+    const OTP_EXPIRATION_MINUTES = 2;
+    const date = new Date();
+    const otpExpirationTime = new Date(
+      date.getTime() - OTP_EXPIRATION_MINUTES * 60 * 1000
+    );
+
+    if (user.otp.updatedAt < otpExpirationTime) {
+      return responseHandler(res, 400, null, "OTP is expired");
+    }
+
+    // if (false) {
+    //   return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
+    // }
+
+    user.otp.count = 0;
+    user.otpConfirmed = true;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const finalUser = await userController.insertUser(user, session);
+      await userController.deleteUser(user._id, session);
+      await userController.issueToken(finalUser, session);
+      req.session.user = { _id: finalUser._id, username: user.username };
+
+      const accountObject = {
+        userId: finalUser.id,
+      };
+      await accountController.insertAccount(accountObject, session);
+
+      if (user.referer) {
+        await userController.increasenoOfrefer(user.referer, session);
       }
+
+      // try {
+      //   await _app
+      //     .messaging()
+      //     .subscribeToTopic(token, topic)
+      //     .then((resp) => {
+      //       console.log(resp);
+      //     })
+      //     .catch((err) => {
+      //       console.log(err);
+      //     });
+      // } catch (err) {
+      //   console.log("fcm", err);
+      // }
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return responseHandler(res, 200, finalUser, null);
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    console.error("Error during OTP verification:", error);
     responseHandler(res, 400, null, error.message);
   }
 });
@@ -295,16 +315,21 @@ router.post("/resendOTP", async (req, res) => {
       return responseHandler(res, 400, null, "Fields are missing");
     }
 
-    // Check if the user already exists in the database
-    let user = await userController.existingUser(req.body.phone);
+    const phoneNumber = req.body.phone;
+    const user = await userController.existingUser(phoneNumber);
 
     if (user) {
       // User already exists, proceed with resending the OTP
-      let currentDate = new Date();
-      let lastUpdateDate = user.otp.updatedAt;
-      var seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
+      const otpResendLimit = 5;
+      const otpResendLimitDuration = 3600; // in seconds (1 hour)
+      const currentDate = new Date();
+      const lastUpdateDate = user.otp.updatedAt;
+      const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
 
-      if (seconds <= 3600 && user.otp.count >= 5) {
+      if (
+        seconds <= otpResendLimitDuration &&
+        user.otp.count >= otpResendLimit
+      ) {
         return responseHandler(
           res,
           400,
@@ -314,32 +339,40 @@ router.post("/resendOTP", async (req, res) => {
       }
 
       // Generate a new OTP and update the user's OTP information
-      user.otp = {
-        code: generate(6),
-        updatedAt: new Date(),
-        count: user.otp.count + 1,
-      };
+      const newOTP = generate(6);
+      const updatedUser = updateOTPInfo(user, newOTP);
 
-      // let textRes = await sendText(user.otp.code, user.phone);
+      // let textRes = await sendText(newOTP, user.phone);
       // textRes.return = true;
 
       if (false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
-        user = await userController.updateUserByPhoneNumber(user);
+        await userController.updateUserByPhoneNumber(updatedUser);
         return responseHandler(res, 200, "OTP Sent", null);
       }
     } else {
-      const otp = {
-        code: generate(6),
-        updatedAt: new Date(),
-        count: 1,
-      };
+      // User does not exist, generate a new OTP for registration flow
+      const newOTP = generate(6);
+      // Perform registration-related tasks if needed
+
       return responseHandler(res, 200, "OTP Sent", null);
     }
   } catch (error) {
     responseHandler(res, 400, null, error.message);
   }
 });
+
+// Helper function to update user's OTP information
+function updateOTPInfo(user, newOTP) {
+  return {
+    ...user,
+    otp: {
+      code: newOTP,
+      updatedAt: new Date(),
+      count: user.otp.count + 1,
+    },
+  };
+}
 
 module.exports = router;

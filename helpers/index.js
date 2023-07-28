@@ -22,20 +22,6 @@ const generate = () => {
   return referCode;
 };
 
-const uploadFileImage = (base64, fileName, extension) => {
-  try {
-    const path = fileName + `.${extension}`;
-    const imgdata = base64;
-    const base64Data = imgdata.replace(/^data:([A-Za-z-+/]+);base64,/, "");
-    const imageUrl = `${fileName}.${extension}`;
-    fs.writeFileSync(path, base64Data, { encoding: "base64" });
-    return imageUrl;
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
-};
-
 function randomIntFromInterval(min, max) {
   // min and max included
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -44,6 +30,6 @@ function randomIntFromInterval(min, max) {
 module.exports = {
   responseHandler,
   generate,
-  uploadFileImage,
+
   randomIntFromInterval,
 };

@@ -18,13 +18,9 @@ jobs:
             rm -rf new
             pm2 kill
             git clone git@github.com:practice5610/backend_ludo.git
-            mkdir new
-            mv backend_ludo/built new/
-            rm -rf backend_ludo
-            cd new
-            cd built
+            cd backend_ludo
+            npm install
             npm install pm2 -g
-            pm2 start index.js
             sudo service nginx restart
             sudo systemctl reload nginx
             echo 'Deployment successful to DigitalOcean'

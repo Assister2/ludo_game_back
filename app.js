@@ -1,7 +1,5 @@
-const dotenv = require("dotenv");
-const mongoose = require("mongoose");
+// app.js
 const express = require("express");
-const handleConnection = require("./socketHandler.js");
 const path = require("path");
 const session = require("express-session");
 const Sentry = require("./sentry.js");
@@ -11,64 +9,60 @@ const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const transactionRouter = require("./routes/transactions");
-const options = require("./services/session.js");
+const bodyParser = require("body-parser");
+const sessionAuthMiddleware = require("./middleware/session.js");
 const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
+const options = require("./services/session.js");
+const connectDB = require("./database/db");
 const challengesController = require("./controllers/challenges");
-const bodyParser = require("body-parser");
+const socket = require("./socket");
+const handleConnection = require("./socketHandler.js");
+let connectedSocketsCount = 0;
 const app = express();
 app.set("trust proxy", 1);
-const socket = require("./socket");
-const sessionAuthMiddleware = require("./middleware/session.js");
-const expressSession = session(options);
+const allowedOrigins = require("./origion/allowedOrigins.js");
 
-dotenv.config();
-const allowedOrigins = [
-  "https://www.gotiking.com/",
-  "https://push.gotiking.com",
-  "https://push.gotiking.com/",
-  "https://push.gotiking.com",
-  "https://gotiking.com/",
-  "https://gotiking.com",
-  "https://www.gotiking.com",
-  "http://localhost:3000",
-
-  // Add more origins as needed
-];
 app.use(
   cors({
     credentials: true,
     origin: allowedOrigins,
   })
 );
+
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.errorHandler());
-mongoose
-  .connect(
-    "mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo20",
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useFindAndModify: false,
-    }
-  )
+connectDB()
   .then(() => {
-    console.log("MongoDB connected");
-    const server2 = app.listen(4001, () => {
-      console.log("application and socket is running on port 4001");
+    const server = app.listen(4001, () => {
+      console.log("Application and socket are running on port 4001");
     });
+
     setInterval(async () => {
-      // await challengesController.purgeDatabase();
       await challengesController.UpdateOpenChallenges();
     }, 2 * 60 * 1000);
-    const io = socket.init(server2);
+
+    const io = socket.init(server);
 
     io.on("connection", (socket) => {
+      // Increment connectedSocketsCount on new connection
+      connectedSocketsCount++;
+      console.log(
+        `Socket connected! Total connections: ${connectedSocketsCount}`
+      );
       handleConnection(socket);
+
+      // Decrement connectedSocketsCount on disconnection
+      socket.on("disconnect", () => {
+        connectedSocketsCount--;
+        console.log(
+          `Socket disconnected! Total connections: ${connectedSocketsCount}`
+        );
+      });
     });
   })
   .catch((error) => {
-    console.log("eerror", error.message);
+    console.error("Error connecting to MongoDB:", error.message);
   });
 
 app.use(logger("dev"));
@@ -86,7 +80,7 @@ app.use(
   })
 );
 
-app.use(expressSession);
+app.use(session(options));
 
 app.use("/api/auth", authRouter);
 app.use(sessionAuthMiddleware);
