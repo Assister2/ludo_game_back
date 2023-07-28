@@ -16,7 +16,7 @@ const maxAgeForSessionCookie =
   process.env.SESSION_COOKIE_MAX_AGE || thirtyDaysInMilliseconds;
 
 const options = {
-  secret: process.env.SESSION_SECRET,
+  secret: "somethinsecret",
   store: store,
   resave: false,
   saveUninitialized: false,
