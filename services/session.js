@@ -1,7 +1,6 @@
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
-const dotenv = require("dotenv");
-dotenv.config(); // Load environment variables from .env file
+require('dotenv').config(); // Load environment variables from .env file
 
 const store = new MongoDBStore({
   uri: process.env.DB_URI, // Use an environment variable for MongoDB URI

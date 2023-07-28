@@ -8,7 +8,7 @@ var debug = require("debug")("taskjwt:server");
 var http = require("http");
 var app = require("../app"); // Require the refactored Express app
 var www = require("./www"); // Require the new www.js file
-
+require('dotenv').config();
 /**
  * Get port from environment and store in Express.
  */
