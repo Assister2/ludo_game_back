@@ -14,9 +14,6 @@ jobs:
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{secrets.SSH_USERNAME}}
           script: |
-            rm -rf backend_ludo
-            rm -rf new
-            pm2 kill
             git clone git@github.com:practice5610/backend_ludo.git
             cd backend_ludo
             npm install
