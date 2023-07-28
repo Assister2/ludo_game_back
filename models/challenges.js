@@ -12,6 +12,13 @@ const challengeSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: true,
+    
+  },
+  fake: {
+    type: Boolean,
+    required: false,
+    default: false,
+
   },
   state: {
     type: String,

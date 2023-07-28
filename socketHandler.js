@@ -1,10 +1,9 @@
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const express = require("express");
 
 const {
   startGame,
-  cancelChallenge,
+
   bothResultNotUpdated,
 } = require("./function.js");
 
@@ -15,7 +14,7 @@ const challengesController = require("./controllers/challenges");
 
 // const { sendFCM } = require("./routes/notification");
 dotenv.config();
-const app2 = express();
+
 function handleConnection(socket) {
   const HEARTBEAT_INTERVAL = 30000;
   // io.emit("Sent a message 4seconds after connection!");

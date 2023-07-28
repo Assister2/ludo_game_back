@@ -34,7 +34,7 @@ app.use(
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.errorHandler());
 connectDB()
-  .then(() => {
+  .then(async () => {
     const server = app.listen(4001, () => {
       console.log("Application and socket are running on port 4001");
     });

@@ -67,6 +67,10 @@ let userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  fake: {
+    type: Boolean,
+    default: false,
+  },
   // winning cash
 
   // depositCash

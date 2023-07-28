@@ -2,6 +2,7 @@ const ChallengeModel = require("../models/challenges");
 const User = require("../models/user");
 const Account = require("../models/accounts");
 const mongoose = require("mongoose");
+
 const axios = require("axios");
 const History = require("../models/history");
 const TransactionsModel = require("../models/transactions");
@@ -322,7 +323,7 @@ const challengesController = {
         // Iterate through the challenges
         for (const challenge of challenges) {
           const createdAt = moment(challenge.createdAt);
-         
+
           const minutesPassed = moment().diff(createdAt, "minutes");
 
           if (minutesPassed > 1) {
@@ -372,6 +373,100 @@ const challengesController = {
       throw error;
     }
   },
+  createFakeChallenges: async () => {
+    const getRandomMultipleOf50 = (min, max) => {
+      const randomNum =
+        getRandomNumber(Math.ceil(min / 50), Math.floor(max / 50)) * 50;
+      return randomNum >= min && randomNum <= max
+        ? randomNum
+        : getRandomMultipleOf50(min, max);
+    };
+    const getRandomNumber = (min, max) =>
+      Math.floor(Math.random() * (max - min + 1)) + min;
+    try {
+      const numberOfChallenges = 50;
+
+      // Fetch all fake user IDs from the User model
+      const fakeUserIds = await User.find({ fake: true }).select("_id");
+
+      const fakeChallenges = Array.from({ length: numberOfChallenges }, () => {
+        const randomCreatorIndex = getRandomNumber(0, fakeUserIds.length - 1);
+        const randomPlayerIndex = getRandomNumber(0, fakeUserIds.length - 1);
+
+        return {
+          creator: fakeUserIds[randomCreatorIndex]._id, // Random creator ID from fake user IDs
+          player: fakeUserIds[randomPlayerIndex]._id, // Random player ID from fake user IDs
+          amount: getRandomMultipleOf50(100, 500), // Random amount between 100 and 500
+          state: "playing", // Set state to "playing"
+          fake: true,
+        };
+      });
+
+      await ChallengeModel.insertMany(fakeChallenges);
+      console.log("Fake challenges created successfully!");
+    } catch (error) {
+      console.error("Error creating fake challenges:", error);
+      throw error;
+    }
+  },
+  createFakeUsers: async () => {
+    const getRandomNumber = (min, max) =>
+      Math.floor(Math.random() * (max - min + 1)) + min;
+
+    // Function to generate a random username
+    const generateRandomUsername = () => {
+      const adjectives = [
+        "happy",
+        "sleepy",
+        "grumpy",
+        "silly",
+        "shiny",
+        "funny",
+        "clever",
+        "fierce",
+      ];
+      const nouns = [
+        "panda",
+        "tiger",
+        "lion",
+        "butterfly",
+        "zebra",
+        "unicorn",
+        "dolphin",
+        "dragon",
+      ];
+      const adjective = adjectives[getRandomNumber(0, adjectives.length - 1)];
+      const noun = nouns[getRandomNumber(0, nouns.length - 1)];
+      return `${adjective}_${noun}_${getRandomNumber(1000, 9999)}`;
+    };
+
+    // Function to generate a random profile image from "1.svg" to "10.svg"
+    const generateRandomProfileImage = () => {
+      const profileImageNumber = getRandomNumber(1, 10);
+      return `${profileImageNumber}.svg`;
+    };
+    try {
+      const numberOfUsers = 100;
+      const fakeUsers = Array.from({ length: numberOfUsers }, () => {
+        const username = generateRandomUsername(); // Generate a random username
+        const profileImage = generateRandomProfileImage(); // Random profile image "1.svg" to "10.svg"
+
+        return {
+          username,
+          fullName: "John Doe", // You can set a default full name if needed
+          profileImage,
+          fake: true, // Set fake to true
+        };
+      });
+
+      await User.insertMany(fakeUsers);
+      console.log("Fake users created successfully!");
+    } catch (error) {
+      console.error("Error creating fake users:", error);
+      throw error;
+    }
+  },
+
   updateDeleteChallengeById: async (challengeId) => {
     // const session = await mongoose.startSession();
 
