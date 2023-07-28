@@ -45,14 +45,11 @@ connectDB()
     const io = socket.init(server);
 
     io.on("connection", (socket) => {
-      // Increment connectedSocketsCount on new connection
       connectedSocketsCount++;
       console.log(
         `Socket connected! Total connections: ${connectedSocketsCount}`
       );
       handleConnection(socket);
-
-      // Decrement connectedSocketsCount on disconnection
       socket.on("disconnect", () => {
         connectedSocketsCount--;
         console.log(
