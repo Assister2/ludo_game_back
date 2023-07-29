@@ -261,6 +261,7 @@ function handleConnection(socket) {
           };
 
           challenge = await challengesController.createChallenge(challenge);
+          socket.send(JSON.stringify({ status: "enabled" }));
           if (!challenge) {
             response = {
               ...response,

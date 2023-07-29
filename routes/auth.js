@@ -67,20 +67,17 @@ router.post("/login", async (req, res) => {
       count: user.otp.count + 1,
     };
 
-    const otpSentSuccessfully = await OTPHelper.sendOTP(
-      user.otp.code,
-      user.phone
-    );
+    const otpSentSuccessfully = await sendText(user.otp.code, user.phone);
 
-    if (!otpSentSuccessfully) {
+    if (otpSentSuccessfully.return === false) {
       return responseHandler(res, 400, null, "Error sending OTP");
+    } else {
+      await sessionHelper.removeAllUserSessions(req.sessionStore, user._id);
+
+      await userController.updateUserByPhoneNumber(user);
+
+      return responseHandler(res, 200, "OTP Sent", user);
     }
-
-    await sessionHelper.removeAllUserSessions(req.sessionStore, user._id);
-
-    await userController.updateUserByPhoneNumber(user);
-
-    return responseHandler(res, 200, "OTP Sent", user);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
   }
@@ -143,12 +140,12 @@ router.post("/signup", async (req, res) => {
       updatedAt: new Date(),
     };
 
-    const otpSentSuccessfully = await OTPHelper.sendOTP(
+    const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
     );
 
-    if (!otpSentSuccessfully) {
+    if (otpSentSuccessfully.return === false) {
       return responseHandler(res, 400, null, "Error sending OTP");
     }
 
@@ -202,9 +199,9 @@ router.post("/confirmOTP", async (req, res) => {
       return responseHandler(res, 400, null, "OTP is expired");
     }
 
-    // if (user.otp.code !== providedOTP) {
-    //   return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
-    // }
+    if (user.otp.code !== providedOTP) {
+      return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
+    }
 
     user.otp.count = 0;
     user.otpConfirmed = true;
@@ -254,10 +251,9 @@ router.post("/OTP", async (req, res) => {
     if (user.otp.updatedAt < otpExpirationTime) {
       return responseHandler(res, 400, null, "OTP is expired");
     }
-
-    // if (false) {
-    //   return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
-    // }
+    if (user.otp.code !== providedOTP) {
+      return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
+    }
 
     user.otp.count = 0;
     user.otpConfirmed = true;
@@ -342,10 +338,10 @@ router.post("/resendOTP", async (req, res) => {
       const newOTP = generate(6);
       const updatedUser = updateOTPInfo(user, newOTP);
 
-      // let textRes = await sendText(newOTP, user.phone);
+      let textRes = await sendText(newOTP, user.phone);
       // textRes.return = true;
 
-      if (false) {
+      if (textRes.return === false) {
         return responseHandler(res, 400, null, textRes.message);
       } else {
         await userController.updateUserByPhoneNumber(updatedUser);
