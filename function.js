@@ -14,9 +14,7 @@ async function startGame(data, socket) {
     error: null,
   };
   try {
-    // let startChallenge = await challengesController.getChallengeById(
-    //   data.payload.challengeId
-    // );
+  
     const startGameChallenge = await challengesController.dataBaseUpdate(
       data.payload.challengeId
     );
@@ -30,7 +28,7 @@ async function startGame(data, socket) {
           challengeRedirect: true,
           challengeId: startGameChallenge._id,
         };
-        socket.send(JSON.stringify({ status: 3 }));
+       
 
         return socket.send(JSON.stringify(response));
       }
@@ -92,7 +90,7 @@ const handleChallengeCancellation = async (
       history.roomCode = challenge.roomCode;
       history.type = "cancelled";
       await history.save({ session });
-      console.log("cehckkkhistory", history);
+     
       return;
     }
     if (player === "player") {

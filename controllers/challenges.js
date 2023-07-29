@@ -75,7 +75,6 @@ const challengesController = {
         { new: true, session }
       );
       if (updatedChallenge) {
-        console.log("cccc", updatedChallenge);
         await ChallengeModel.updateMany(
           {
             creator: updatedChallenge.creator._id,
@@ -213,6 +212,7 @@ const challengesController = {
       console.log("error2323", error);
       throw error;
     } finally {
+      socket.send(JSON.stringify({ status: "enabled" }));
       session.endSession();
     }
   },
@@ -468,19 +468,10 @@ const challengesController = {
   },
 
   updateDeleteChallengeById: async (challengeId) => {
-    // const session = await mongoose.startSession();
-
-    // session.startTransaction();
-
-    // Intentionally throwing an error during the update operation
-
     await ChallengeModel.findOneAndDelete({
       _id: challengeId,
       state: "open",
     });
-
-    console.log("checkkreq");
-    // await session.commitTransaction();
   },
 
   updateChallengeById44: async (challengeId, playerId, session) => {

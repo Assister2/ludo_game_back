@@ -55,86 +55,13 @@ function handleConnection(socket) {
               error: error.message,
               data: null,
             };
-            console.log("cehckkerr,", response);
 
             return socket.emit("getUserWallet", JSON.stringify(response));
           }
-        // case "updatePlayersWallet":
-        //   try {
-        //     let challenge = await challengesController.getChallengeById(
-        //       data.payload.challengeId
-        //     );
-        //     if (!challenge) {
-        //       response = {
-        //         ...response,
-        //         status: 400,
-        //         error: data.payload,
-        //         data: null,
-        //       };
-        //       console.log("testttt", response);
-        //       return socket.emit("getUserWallet", JSON.stringify(response));
-        //     }
-        //     let playerWallet = await accountController.getAccountByUserId(
-        //       challenge.player._id
-        //     );
-        //     let creatorWallet = await accountController.getAccountByUserId(
-        //       challenge.creator._id
-        //     );
-        //     if (challenge) {
-        //       console.log("-------coming here ---------");
-        //       if (connections.get(data.payload.creatorId) !== undefined) {
-        //         let connection = connections.get(data.payload.creatorId);
-        //         let creatorResponse = {
-        //           ...response,
-        //           status: 200,
-        //           error: null,
-        //           data: creatorWallet,
-        //         };
-        //         console.log("working creator");
-        //         connection.send(JSON.stringify(creatorResponse));
-        //       }
-        //       if (connections.get(data.payload.playerId) !== undefined) {
-        //         console.log("working player");
-        //         let connection = connections.get(data.payload.playerId);
-        //         let playerResponse = {
-        //           ...response,
-        //           status: 200,
-        //           error: null,
-        //           data: playerWallet,
-        //         };
-        //         connection.send(JSON.stringify(playerResponse));
-        //       }
-        //       connections.set(`guide${data.payload.playerId}`, socket);
-        //       if (
-        //         connections.get(`guide${data.payload.playerId}`) !== undefined
-        //       ) {
-        //         console.log("working player guide");
-        //         let connection = connections.get(
-        //           `guide${data.payload.playerId}`
-        //         );
-        //         let playerResponse = {
-        //           ...response,
-        //           status: 200,
-        //           error: null,
-        //           data: playerWallet,
-        //         };
-        //         connection.send(JSON.stringify(playerResponse));
-        //       }
-        //     }
-        //     // sendDataToUser(challenge.player?._id, playerResponse)
-        //     // sendDataToUser(challenge.creator._id, creatorResponse)
-        //     // return socket.send(JSON.stringify(response));
-        //     return;
-        //   } catch (error) {
-        //     console.log("error.message2", error.message);
-        //     response = { status: 400, error: error.message, data: null };
-        //     return socket.send(JSON.stringify(response));
-        //   }
       }
     } catch (error) {
-      console.log("Errorwa233", error.message);
       let response = { status: 400, error: error, data: null };
-      console.log("ssss", response);
+
       return socket.send(JSON.stringify(response));
     }
     // Parse the incoming message as JSON
@@ -157,15 +84,6 @@ function handleConnection(socket) {
               data.payload.challengeId
             );
             if (challenge.player._id && challenge.creator._id) {
-              // if (!challenge) {
-              //   response = {
-              //     ...response,
-              //     status: 400,
-              //     error: "Challenge not found",
-              //     data: null,
-              //   };
-              //   return socket.emit("ludogame", JSON.stringify(response));
-              // }
               if (challenge.state != "playing" && challenge.state != "hold") {
                 response = {
                   ...response,
@@ -273,7 +191,7 @@ function handleConnection(socket) {
 
     socket.on("message", async (message) => {
       const data = JSON.parse(message);
-      // console.log("testdata", data);
+
       let userId = "";
       let response = {
         status: 200,
@@ -319,7 +237,7 @@ function handleConnection(socket) {
               error: "Same Amount Challenge already exist",
               data: null,
             };
-            console.log("checkerror", response);
+
             return socket.send(JSON.stringify(response));
           }
           let checkPlayingOrHold =
@@ -352,18 +270,18 @@ function handleConnection(socket) {
             };
             return socket.send(JSON.stringify(response));
           }
-          socket.send(JSON.stringify({ status: 2 }));
+
           break;
         case "play":
           const session = await mongoose.startSession();
-
           session.startTransaction();
-          let currentChallenge =
-            await challengesController.getOpenChallengeByChallengeId(
-              data.payload.challengeId
-            );
 
           try {
+            let currentChallenge =
+              await challengesController.getOpenChallengeByChallengeId(
+                data.payload.challengeId
+              );
+
             if (!currentChallenge) {
               response = {
                 ...response,
@@ -417,27 +335,19 @@ function handleConnection(socket) {
               };
               return socket.send(JSON.stringify(response));
             }
-            if (!currentChallenge) {
-              response = {
-                ...response,
-                status: 400,
-                error: "Challenge not created",
-                data: null,
-              };
-              return socket.send(JSON.stringify(response));
-            }
 
             currentChallenge = await challengesController.updateChallengeById44(
               currentChallenge._id,
               data.payload.userId,
               session
             );
+
             await session.commitTransaction();
             session.endSession();
-            let challenges = await challengesController.getAllChallenges();
 
+            let challenges = await challengesController.getAllChallenges();
             socket.send(JSON.stringify(challenges));
-            socket.send(JSON.stringify({ status: 4 }));
+
             if (!currentChallenge) {
               response = {
                 ...response,
@@ -447,13 +357,12 @@ function handleConnection(socket) {
               };
               return socket.send(JSON.stringify(response));
             }
+
+            socket.send(JSON.stringify({ status: "enabled" }));
           } catch (error) {
             await session.abortTransaction();
             session.endSession();
-
             throw error;
-          } finally {
-            socket.send(JSON.stringify({ status: 444 }));
           }
 
           // Implement your read operation here
@@ -462,18 +371,19 @@ function handleConnection(socket) {
           await challengesController.updateChallengeById23(
             data.payload.challengeId
           );
-          socket.send(JSON.stringify({ status: 333 }));
+          socket.send(JSON.stringify({ status: "enabled" }));
+
           break;
         case "delete":
           await challengesController.updateDeleteChallengeById(
             data.payload.challengeId
           );
-          socket.send(JSON.stringify({ status: 222 }));
+
+          socket.send(JSON.stringify({ status: "enabled" }));
 
           break;
 
         case "deleteOpenChallengesOfCreator":
-          console.log("seleted too");
           // await challengesController.deleteOpenChallengesCreator(
           //   data.payload.userId
           // );
@@ -484,7 +394,8 @@ function handleConnection(socket) {
           break;
         case "startGame":
           await startGame(data, socket);
-          socket.send(JSON.stringify({ status: 111 }));
+          socket.send(JSON.stringify({ status: "enabled" }));
+
           await bothResultNotUpdated(data.payload.challengeId);
           break;
       }
