@@ -65,8 +65,8 @@ router.post("/login", async (req, res) => {
       code: generate(OTP_CODE_LENGTH),
       updatedAt: new Date(),
       count: user.otp.count + 1,
-    };
-
+    };  
+ 
     const otpSentSuccessfully = await sendText(user.otp.code, user.phone);
 
     if (otpSentSuccessfully.return === false) {
@@ -140,7 +140,6 @@ router.post("/signup", async (req, res) => {
       updatedAt: new Date(),
     };
 
-
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
@@ -201,7 +200,7 @@ router.post("/confirmOTP", async (req, res) => {
       return responseHandler(res, 400, null, "OTP is expired");
     }
 
-    if (user.otp.code !== providedOTP) {
+    if (user.otp.code != providedOTP) {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
 
@@ -253,7 +252,8 @@ router.post("/OTP", async (req, res) => {
     if (user.otp.updatedAt < otpExpirationTime) {
       return responseHandler(res, 400, null, "OTP is expired");
     }
-    if (user.otp.code !== providedOTP) {
+    
+    if (user.otp.code != providedOTP) {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
 

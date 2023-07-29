@@ -32,8 +32,8 @@ async function handleBuyChips(req, res) {
     await session.withTransaction(async () => {
       const transactionObject = {
         amount: amount,
-        type: 0, //type 0 is for buying
-        status: 1,
+        type: 0, //type 0 is for buying 1 for withdraw
+        status: 1,// 0 for failed 1 for success and 2 for pending
         userId: user.id,
       };
 

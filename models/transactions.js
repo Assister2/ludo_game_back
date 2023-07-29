@@ -16,7 +16,7 @@ let transactionsSchema = new mongoose.Schema({
     require: true,
   },
   status: {
-    type: Number, // 0 for failed 1 for success
+    type: Number, // 0 for failed 1 for success 2 for pending
     default: 0,
   },
   userId: {
