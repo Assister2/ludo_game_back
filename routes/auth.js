@@ -14,7 +14,7 @@ const {
   randomIntFromInterval,
 } = require("../helpers");
 const sendText = require("../helpers/sendSMS");
-const User = require("../models/user");
+
 const checkUserName = require("../services");
 // const { _app } = require("../firebaseInit");
 
@@ -126,7 +126,7 @@ router.post("/signup", async (req, res) => {
       joinedAt: new Date(),
       phone: req.body.phone,
       fullName: req.body.fullName,
-      referCode: generate(),
+      referCode: generate(10),
       profileImage: `${randomIntFromInterval(1, 9)}.svg`,
     };
 
@@ -140,10 +140,12 @@ router.post("/signup", async (req, res) => {
       updatedAt: new Date(),
     };
 
+
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
     );
+
 
     if (otpSentSuccessfully.return === false) {
       return responseHandler(res, 400, null, "Error sending OTP");
