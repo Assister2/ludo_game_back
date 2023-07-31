@@ -45,9 +45,10 @@ router.post("/login", async (req, res) => {
     const currentDate = new Date();
     const lastUpdateDate = user.otp.updatedAt;
     const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
-    const MAX_OTP_REQUESTS_PER_HOUR = 5;
+    const MAX_OTP_REQUESTS_PER_HOUR = 2;
     const ONE_HOUR_IN_SECONDS = 3600;
-
+    console.log("loginreqq", seconds, ONE_HOUR_IN_SECONDS);
+    console.log("loginreqq", user.otp.count);
     if (
       seconds <= ONE_HOUR_IN_SECONDS &&
       user.otp.count >= MAX_OTP_REQUESTS_PER_HOUR
@@ -66,7 +67,7 @@ router.post("/login", async (req, res) => {
       updatedAt: new Date(),
       count: user.otp.count + 1,
     };
-   
+
     const otpSentSuccessfully = await sendText(user.otp.code, user.phone);
 
     if (otpSentSuccessfully.return === false) {
@@ -131,28 +132,22 @@ router.post("/signup", async (req, res) => {
     };
 
     if (req.body.referCode) {
-      const exitingRefer = await userController.existingReferCode(req.body.referCode);
-      if(exitingRefer){
+      const exitingRefer = await userController.existingReferCode(
+        req.body.referCode
+      );
+      if (exitingRefer) {
         userData.referer = Number(req.body.referCode);
         userData.wallet = 50;
-      }else{
-        return responseHandler(
-          res,
-          400,
-          null,
-          "Refer User Not found"
-        );
+      } else {
+        return responseHandler(res, 400, null, "Refer User Not found");
       }
-
-      
     }
 
     userData.otp = {
       code: generate(6),
       updatedAt: new Date(),
     };
-    console.log("signupdata",userData.otp.code)
-   
+    console.log("signupdata", userData.otp.code);
 
     const otpSentSuccessfully = await sendText(
       userData.otp.code,

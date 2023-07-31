@@ -6,10 +6,10 @@ const transactionsController = {
    * @param transactionObj - transactionObj that need to insert
    * @returns {Promise<void>}
    */
-  insertNewTransaction: async (transactionObj, session) => {
+  insertNewTransaction: async (transactionObj) => {
     try {
       let response = new TransactionsModel(transactionObj);
-      response = await response.save({ session });
+      response = await response.save();
       return response;
     } catch (error) {
       throw error;
@@ -28,6 +28,24 @@ const transactionsController = {
         withdrawRequest: value,
       });
       return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  updateTransactionById: async (TransactionId) => {
+    try {
+      const updatedTransaction = await TransactionsModel.findOneAndUpdate(
+        {
+          _id: TransactionId, // Assuming that the transaction ID is stored in the '_id' field
+        },
+        {
+          status: 1,
+        },
+        {
+          new: true, // Return the updated document after the update
+        }
+      );
+      return updatedTransaction;
     } catch (error) {
       throw error;
     }

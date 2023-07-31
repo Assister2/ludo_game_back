@@ -1,15 +1,20 @@
 const axios = require("axios");
 const axiosConfig = axios.create(); // You may have other configurations here
 
-const getUPILink = async (userId, amount, userFullName) => {
+const getUPILink = async (transactionId, amount, User) => {
   try {
     const requestData = {
-      key: process.env.PAY_ON_UPI_SECRET,
-      client_txn_id: userId, // Replace this with a unique transaction ID or use a library to generate it.
+      key: "dee5431c-c840-4a57-8ffd-09053db9a21e",
+      client_txn_id: transactionId, // Replace this with a unique transaction ID or use a library to generate it.
       amount: String(amount), // Convert amount to string
       p_info: "Buy Chips",
-      customer_name: userFullName,
-      redirect_url: "http://68.183.89.191:3000/wallet",
+      customer_name: User.fullName,
+      customer_email: "emigotiking@gmail.com",
+      customer_mobile: User.phone,
+      redirect_url: "https://www.gotiking.com/play",
+      udf1: "user defined field 1 (max 25 char)",
+      udf2: "user defined field 2 (max 25 char)",
+      udf3: "user defined field 3 (max 25 char)",
     };
 
     const response = await axios.post(
@@ -23,7 +28,7 @@ const getUPILink = async (userId, amount, userFullName) => {
     );
 
     // Assuming the response contains the payment URL
-    const paymentUrl = response.data.payment_url;
+    const paymentUrl = response.data;
 
     // Redirect the user to the payment URL or use it as needed
     console.log("Payment URL:", paymentUrl);
@@ -33,3 +38,4 @@ const getUPILink = async (userId, amount, userFullName) => {
     throw error;
   }
 };
+module.exports = getUPILink;
