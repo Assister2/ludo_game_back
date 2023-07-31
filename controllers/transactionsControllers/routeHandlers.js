@@ -5,17 +5,18 @@ const {
   userController,
   responseHandler,
   History,
-  mongoose,
 } = require("../../commonImports/commonImports");
 const getUPILink = require("./paymentUPI");
+const mongoose = require("mongoose");
 
 async function handleBuyChips(req, res) {
-  const session = mongoose.startSession();
+  const session = await mongoose.startSession();
+
   try {
+    session.startTransaction();
     if (!req.body.payload) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
-    
 
     const { amount } = req.body.payload;
     const { user } = req;
@@ -32,71 +33,20 @@ async function handleBuyChips(req, res) {
       userId: user.id,
     };
     const Transaction = await transactionsController.insertNewTransaction(
-      transactionObject,session
+      transactionObject,
+      session
     );
     console.log("userByid", User);
+    const paymentUrl = await getUPILink(Transaction._id, amount, User);
     await session.commitTransaction();
     session.endSession();
-    const paymentUrl = await getUPILink(Transaction._id, amount, User);
-
-    // const history = new History();
-    // history.userId = user.id;
-    // history.historyText = "Chips Added Via UPI";
-    // history.createdAt = new Date();
-    // history.closingBalance = null;
-    // history.amount = Number(amount);
-    // history.type = "buy";
-    // history.transactionId = Transaction._id;
-    // await history.save();
-    // console.log("userhistoru", history);
-
-    // const account = await accountController.getAccountByUserId(user.id);
-
-    // if (!account) {
-    //   return responseHandler(res, 404, null, "Account not found");
-    // }
-
-    // if (amount <= 0 || amount > 20000) {
-    //   return responseHandler(res, 400, {}, "Amount limit is 0 to 20000");
-    // }
-
-    // let transactionId;
-
-    // console.log("transcation", transactionId);
-    // console.log("values", transactionId._id, user.fullName);
-    // const paymentUrl = await getUPILink(
-    //   transactionId._id,
-    //   amount,
-    //   user.fullName
-    // );
-    // console.log("paymenturl", paymentUrl);
-
-    // const accountObject = {
-    //   userId: user.id,
-    //   depositCash: account.depositCash + amount,
-    //   wallet: account.wallet + amount,
-    //   withdrawRequest: false,
-    // };
-
-    // updatedAccount = await accountController.updateAccountByUserId(
-    //   accountObject,
-    //   session
-    // );
-
-    // const history = new History();
-    // history.userId = user.id;
-    // history.historyText = "Chips Added Via UPI";
-    // history.createdAt = req.body.payload.createdAt;
-    // history.closingBalance = updatedAccount.wallet;
-    // history.amount = Number(amount);
-    // history.type = "buy";
-    // history.transactionId = transactionId._id;
-    // await history.save({ session });
 
     return responseHandler(res, 200, paymentUrl, null);
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
     console.log("BuyChipError", error);
     throw error;
   }
@@ -189,7 +139,6 @@ async function handleSellChips(req, res) {
 }
 
 async function handleGetWallet(req, res) {
-  
   try {
     let userId = req.user.id;
     let account = await accountController.getAccountByUserId(userId);
@@ -204,7 +153,6 @@ async function handleGetWallet(req, res) {
   }
 }
 async function ConfirmPayment(req, res) {
-  
   try {
     console.log("confirmpayment working");
     const data = req.body;
@@ -216,9 +164,14 @@ async function ConfirmPayment(req, res) {
     session.startTransaction();
 
     try {
-      const userTransaction = await transactionsController.existingTransactionsById(data.client_txn_id);
+      const userTransaction =
+        await transactionsController.existingTransactionsById(
+          data.client_txn_id
+        );
       await transactionsController.updateTransactionById(userTransaction._id);
-      const account = await accountController.getAccountByUserId(userTransaction.userId);
+      const account = await accountController.getAccountByUserId(
+        userTransaction.userId
+      );
       const accountObject = {
         userId: userTransaction.userId,
         depositCash: account.depositCash + amount,
@@ -226,7 +179,10 @@ async function ConfirmPayment(req, res) {
         withdrawRequest: false,
       };
 
-      const updatedAccount = await accountController.updateAccountByUserId(accountObject, session);
+      const updatedAccount = await accountController.updateAccountByUserId(
+        accountObject,
+        session
+      );
 
       const history = new History();
       history.userId = userTransaction.userId;
@@ -237,7 +193,7 @@ async function ConfirmPayment(req, res) {
       history.type = "buy";
       history.transactionId = userTransaction._id;
 
-      await history.save({session});
+      await history.save({ session });
 
       await session.commitTransaction();
       session.endSession();
