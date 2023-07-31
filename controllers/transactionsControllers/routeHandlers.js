@@ -10,90 +10,69 @@ const {
 const getUPILink = require("./paymentUPI");
 
 async function handleBuyChips(req, res) {
+  const session = await mongoose.startSession();
   try {
     if (!req.body.payload) {
-      return responseHandler(res, 400, null, "Fields are missing");
+      return responseHandler(res, 400, null, "Fields are missing232");
     }
-    
 
     const { amount } = req.body.payload;
     const { user } = req;
-    if (amount <= 0 || amount > 20000) {
-      return responseHandler(res, 400, {}, "Amount limit is 0 to 20000");
+    const account = await accountController.getAccountByUserId(user.id);
+
+    if (!account) {
+      return responseHandler(res, 404, null, "Account not found");
     }
-    const User = await userController.existingUserById({
-      id: user.id,
+
+    if (amount <= 0 || amount > 20000) {
+      return responseHandler(res, 400, account, "Amount limit is 0 to 20000");
+    }
+
+    let transactionId;
+    let updatedAccount;
+
+    await session.withTransaction(async () => {
+      const transactionObject = {
+        amount: amount,
+        type: 0, //type 0 is for buying
+        status: 1,
+        userId: user.id,
+      };
+
+      const accountObject = {
+        userId: user.id,
+        depositCash: account.depositCash + amount,
+        wallet: account.wallet + amount,
+        withdrawRequest: false,
+      };
+
+      transactionId = await transactionsController.insertNewTransaction(
+        transactionObject,
+        session
+      );
+
+      updatedAccount = await accountController.updateAccountByUserId(
+        accountObject,
+        session
+      );
+
+      const history = new History();
+      history.userId = user.id;
+      history.historyText = "Chips Added Via UPI";
+      history.createdAt = req.body.payload.createdAt;
+      history.closingBalance = updatedAccount.wallet;
+      history.amount = Number(amount);
+      history.type = "buy";
+      history.transactionId = transactionId._id;
+      await history.save({ session });
     });
-    const transactionObject = {
-      amount: amount,
-      type: 0, //type 0 is for buying 1 for withdraw
-      status: 2, // 0 for failed 1 for success and 2 for pending
-      userId: user.id,
-    };
-    const Transaction = await transactionsController.insertNewTransaction(
-      transactionObject
-    );
-    console.log("userByid", User);
-    const paymentUrl = await getUPILink(Transaction._id, amount, User);
 
-    // const history = new History();
-    // history.userId = user.id;
-    // history.historyText = "Chips Added Via UPI";
-    // history.createdAt = new Date();
-    // history.closingBalance = null;
-    // history.amount = Number(amount);
-    // history.type = "buy";
-    // history.transactionId = Transaction._id;
-    // await history.save();
-    // console.log("userhistoru", history);
-
-    // const account = await accountController.getAccountByUserId(user.id);
-
-    // if (!account) {
-    //   return responseHandler(res, 404, null, "Account not found");
-    // }
-
-    // if (amount <= 0 || amount > 20000) {
-    //   return responseHandler(res, 400, {}, "Amount limit is 0 to 20000");
-    // }
-
-    // let transactionId;
-
-    // console.log("transcation", transactionId);
-    // console.log("values", transactionId._id, user.fullName);
-    // const paymentUrl = await getUPILink(
-    //   transactionId._id,
-    //   amount,
-    //   user.fullName
-    // );
-    // console.log("paymenturl", paymentUrl);
-
-    // const accountObject = {
-    //   userId: user.id,
-    //   depositCash: account.depositCash + amount,
-    //   wallet: account.wallet + amount,
-    //   withdrawRequest: false,
-    // };
-
-    // updatedAccount = await accountController.updateAccountByUserId(
-    //   accountObject,
-    //   session
-    // );
-
-    // const history = new History();
-    // history.userId = user.id;
-    // history.historyText = "Chips Added Via UPI";
-    // history.createdAt = req.body.payload.createdAt;
-    // history.closingBalance = updatedAccount.wallet;
-    // history.amount = Number(amount);
-    // history.type = "buy";
-    // history.transactionId = transactionId._id;
-    // await history.save({ session });
-
-    return responseHandler(res, 200, paymentUrl, null);
+    return responseHandler(res, 200, updatedAccount, null);
   } catch (error) {
     console.log("error", error);
     throw error;
+  } finally {
+    session.endSession();
   }
 }
 

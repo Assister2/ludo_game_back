@@ -64,7 +64,7 @@ const challengesController = {
       throw error;
     }
   },
-  dataBaseUpdate: async (challengeId) => {
+  dataBaseUpdate: async (challengeId, socket) => {
     const session = await mongoose.startSession();
 
     try {
