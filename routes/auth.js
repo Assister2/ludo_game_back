@@ -131,14 +131,27 @@ router.post("/signup", async (req, res) => {
     };
 
     if (req.body.referCode) {
-      userData.referer = Number(req.body.referCode);
-      userData.wallet = 50;
+      const exitingRefer = await userController.existingReferCode(req.body.referCode);
+      if(exitingRefer){
+        userData.referer = Number(req.body.referCode);
+        userData.wallet = 50;
+      }else{
+        return responseHandler(
+          res,
+          400,
+          null,
+          "Refer User Not found"
+        );
+      }
+
+      
     }
 
     userData.otp = {
       code: generate(6),
       updatedAt: new Date(),
     };
+    console.log("signupdata",userData.otp.code)
    
 
     const otpSentSuccessfully = await sendText(
