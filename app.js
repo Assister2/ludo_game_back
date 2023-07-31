@@ -10,6 +10,7 @@ const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const transactionRouter = require("./routes/transactions");
+const payment = require("./routes/payment");
 const bodyParser = require("body-parser");
 const sessionAuthMiddleware = require("./middleware/session.js");
 const challengesRouter = require("./routes/challenge");
@@ -82,6 +83,7 @@ app.use(
 app.use(session(options));
 
 app.use("/api/auth", authRouter);
+app.use("/api/buychips", payment);
 app.use(sessionAuthMiddleware);
 app.use("/api/user", userRouter);
 app.use("/api/transaction", transactionRouter);
