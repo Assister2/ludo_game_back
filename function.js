@@ -113,7 +113,7 @@ const handleChallengeCancellation = async (
       historyWinner.roomCode = challenge.roomCode;
       historyWinner.type = "cancelled";
       await historyWinner.save({ session });
-      console.log("cehckkkhistoryhistoryWinner", historyWinner);
+      
       return;
     }
 
