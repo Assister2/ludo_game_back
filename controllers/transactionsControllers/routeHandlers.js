@@ -240,7 +240,7 @@ async function ConfirmPayment(req, res) {
     const data = req.body;
     console.log("dataaaaaaa", data);
     const { amount, status, upi_txn_id, id } = data;
-
+    const amountAsNumber = parseFloat(amount);
     
     const userTransaction =
       await transactionsController.existingTransactionsById(data.client_txn_id);
@@ -256,10 +256,11 @@ async function ConfirmPayment(req, res) {
     console.log("beforeupdate",account)
     const accountObject = {
       userId: userTransaction.userId,
-      depositCash: account.depositCash + amount,
-      wallet: account.wallet + amount,
+      depositCash: account.depositCash + amountAsNumber,
+      wallet: account.wallet + amountAsNumber,
       withdrawRequest: false,
     };
+    console.log("acountobject",accountObject)
 
     const updatedAccount = await accountController.updateAccountByUserId(
       accountObject,
@@ -272,7 +273,7 @@ async function ConfirmPayment(req, res) {
     history.historyText = "Chips Added Via UPI";
     history.createdAt = new Date();
     history.closingBalance = updatedAccount.wallet;
-    history.amount = Number(amount);
+    history.amount = Number(amountAsNumber);
     history.type = "buy";
     history.transactionId = userTransaction._id;
     console.log("history",history)
