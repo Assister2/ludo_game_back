@@ -228,68 +228,64 @@ async function handleGetWallet(req, res) {
   }
 }
 async function ConfirmPayment(req, res) {
+  // if (status !== "success") {
+  //   return responseHandler(res, 400, null, "request failed");
+  // }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     console.log("confirmpayment working");
     const data = req.body;
-    console.log("dataaaaaaa",data);
+    console.log("dataaaaaaa", data);
     const { amount, status, upi_txn_id, id } = data;
 
-    console.log("reqqqq", req);
-    // if (status !== "success") {
-    //   return responseHandler(res, 400, null, "request failed");
-    // }
+    
+    const userTransaction =
+      await transactionsController.existingTransactionsById(data.client_txn_id);
+    await transactionsController.updateTransactionById(
+      userTransaction._id,
+      upi_txn_id,
+      id,
+      session
+    );
+    const account = await accountController.getAccountByUserId(
+      userTransaction.userId
+    );
+    console.log("beforeupdate",account)
+    const accountObject = {
+      userId: userTransaction.userId,
+      depositCash: account.depositCash + amount,
+      wallet: account.wallet + amount,
+      withdrawRequest: false,
+    };
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    const updatedAccount = await accountController.updateAccountByUserId(
+      accountObject,
+      session
+    );
+    console.log("checkupdatedaccount",updatedAccount)
 
-    try {
-      const userTransaction =
-        await transactionsController.existingTransactionsById(
-          data.client_txn_id
-        );
-      await transactionsController.updateTransactionById(
-        userTransaction._id,
-        upi_txn_id,
-        id,
-        session
-      );
-      const account = await accountController.getAccountByUserId(
-        userTransaction.userId
-      );
-      const accountObject = {
-        userId: userTransaction.userId,
-        depositCash: account.depositCash + amount,
-        wallet: account.wallet + amount,
-        withdrawRequest: false,
-      };
+    const history = new History();
+    history.userId = userTransaction.userId;
+    history.historyText = "Chips Added Via UPI";
+    history.createdAt = new Date();
+    history.closingBalance = updatedAccount.wallet;
+    history.amount = Number(amount);
+    history.type = "buy";
+    history.transactionId = userTransaction._id;
+    console.log("history",history)
 
-      const updatedAccount = await accountController.updateAccountByUserId(
-        accountObject,
-        session
-      );
+    await history.save({ session });
 
-      const history = new History();
-      history.userId = userTransaction.userId;
-      history.historyText = "Chips Added Via UPI";
-      history.createdAt = new Date();
-      history.closingBalance = updatedAccount.wallet;
-      history.amount = Number(amount);
-      history.type = "buy";
-      history.transactionId = userTransaction._id;
+    await session.commitTransaction();
+    session.endSession();
 
-      await history.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
-
-      return responseHandler(res, 200, {}, null);
-    } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      console.log("error", error);
-      responseHandler(res, 400, null, error.message);
-    }
+    return responseHandler(res, 200, {}, null);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.log("error", error);
     responseHandler(res, 400, null, error.message);
   }
