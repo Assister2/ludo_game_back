@@ -181,7 +181,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
             ...userWallet._doc,
             wallet: userWallet.wallet + amount,
             winningCash: userWallet.winningCash + amount,
-            totalWin: userWallet.totalWin + challenge.amount,
+            totalWin: userWallet.wallet + challenge.amount,
           },
           session
         );
@@ -373,7 +373,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           ...userWallet._doc,
           wallet: userWallet.wallet + amount,
           winningCash: userWallet.winningCash + amount,
-          totalWin: userWallet.totalWin + challenge.amount - deduction,
+          totalWin: userWallet.wallet + challenge.amount - deduction,
         };
 
         // challengeObj.state = "resolved"
