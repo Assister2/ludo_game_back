@@ -18,17 +18,11 @@ const challengeSchema = new mongoose.Schema({
     type: Boolean,
     required: false,
     default: false,
-
   },
   state: {
     type: String,
     default: "open",
     //open requested playing hold cancelled resolved
-  },
-  status: {
-    type: Number,
-    default: 1,
-    //1 for exist and 0 for deleted
   },
   roomCode: {
     type: String,
@@ -108,10 +102,6 @@ const challengeSchema = new mongoose.Schema({
       default: "",
     },
   },
-  firstTime: {
-    type: Boolean,
-    default: true,
-  },
   createdAt: {
     type: Date,
     default: new Date(),
@@ -124,7 +114,7 @@ const challengeSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
-  locked: { type: Boolean, default: false },
+
 });
 
 const Challenge = mongoose.model("challenges", challengeSchema);

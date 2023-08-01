@@ -137,7 +137,6 @@ router.post("/signup", async (req, res) => {
       );
       if (exitingRefer) {
         userData.referer = Number(req.body.referCode);
-        userData.wallet = 50;
       } else {
         return responseHandler(res, 400, null, "Refer User Not found");
       }

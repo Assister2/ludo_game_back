@@ -244,7 +244,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       await userController.updateUserByUserId(
         {
           _id: user.id,
-          playing: false,
           noOfChallenges: 0,
         },
         session
@@ -434,12 +433,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           await historyWinner.save({ session });
           console.log("referhistory22", historyWinner);
         }
-
-        // let referUser = await userController.existingUserById({ id: challenge[winner]._id })
-        // if (referUser.referer) {
-        //     let referalAccount = await userController.existingUserByReferelId(referUser.referer)
-        //     await accountController.increaseRefererAccount({ userId: referalAccount._id, amount: (challenge.amount * 2) / 100 })
-        // }
       }
       if (challenge.results[winner].result == "cancelled") {
         challengeObj.state = "hold";
@@ -447,7 +440,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       await userController.updateUserByUserId(
         {
           _id: user.id,
-          playing: false,
           noOfChallenges: 0,
         },
         session
@@ -620,7 +612,6 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       await userController.updateUserByUserId(
         {
           _id: user.id,
-          playing: false,
           noOfChallenges: 0,
         },
         session

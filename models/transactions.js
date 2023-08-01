@@ -1,4 +1,3 @@
-const number = require("joi/lib/types/number");
 const mongoose = require("mongoose");
 const schema = mongoose.Schema;
 let transactionsSchema = new mongoose.Schema({

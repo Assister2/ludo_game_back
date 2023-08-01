@@ -23,11 +23,6 @@ let userSchema = new mongoose.Schema({
     required: false,
     default: new Date(),
   },
-  playing: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
   otpConfirmed: {
     type: Boolean,
     required: false,
@@ -54,60 +49,23 @@ let userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  referBallance: {
-    type: Number,
-    default: 0,
-  },
   referCode: {
     type: Number,
     default: null,
   },
   // total cash
-  wallet: {
-    type: Number,
-    default: 0,
-  },
   fake: {
     type: Boolean,
     default: false,
   },
   // winning cash
 
-  // depositCash
-  depositCash: {
-    type: Number,
-    default: 0,
-  },
-
-  winningCash: {
-    type: Number,
-    default: 0,
-  },
-
-  playerInfo: {
-    totalWin: {
-      type: Number,
-      default: 0,
-    },
-    totalLose: {
-      type: Number,
-      default: 0,
-    },
-    totalPenalty: {
-      type: Number,
-      default: 0,
-    },
-  },
+  
   noOfChallenges: {
     type: Number,
     default: 0,
   },
   isBlocked: {
-    type: Boolean,
-    default: false,
-    required: false,
-  },
-  hasActiveChallenge: {
     type: Boolean,
     default: false,
     required: false,

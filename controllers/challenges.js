@@ -48,22 +48,9 @@ const challengesController = {
      * 
 
             /**
- * deleteOpenChallengesCreator - to get all challenges
+
  * @returns {Promise<void>}
  */
-  deleteOpenChallengesCreator: async (creatorId, playerId) => {
-    try {
-      let challenge = await ChallengeModel.updateMany(
-        { creator: creatorId, state: "open" },
-        { $set: { status: 0 } },
-        { new: true }
-      );
-      return challenge;
-    } catch (error) {
-      console.log("error", error);
-      throw error;
-    }
-  },
   dataBaseUpdate: async (challengeId, socket) => {
     const session = await mongoose.startSession();
 
@@ -477,7 +464,7 @@ const challengesController = {
   updateChallengeById44: async (challengeId, playerId, session) => {
     try {
       let challenge = await ChallengeModel.findOneAndUpdate(
-        { _id: challengeId, state: "open", status: 1 },
+        { _id: challengeId, state: "open",  },
         { $set: { state: "requested", player: playerId } },
         { new: true, session }
       );
@@ -674,7 +661,7 @@ const challengesController = {
         (await ChallengeModel.find({
           creator: userId,
           state: { $in: ["open", "requested"] },
-          status: 1,
+          
         }).countDocuments()) === 3
       ) {
         return true;
@@ -696,7 +683,7 @@ const challengesController = {
       let challenge = await ChallengeModel.find({
         creator: data.userId,
         amount: data.amount,
-        status: 1,
+        
         state: { $in: ["open", "requested"] },
       });
       return challenge;
@@ -733,7 +720,6 @@ const challengesController = {
       let challenge = await ChallengeModel.find({
         $or: [{ creator: userId }, { player: userId }],
         state: { $in: ["open", "requested"] },
-        status: 1,
       });
       return challenge;
     } catch (error) {

@@ -385,13 +385,9 @@ function handleConnection(socket) {
           break;
 
         case "deleteOpenChallengesOfCreator":
-          // await challengesController.deleteOpenChallengesCreator(
-          //   data.payload.userId
-          // );
+          
           await challengesController.deleteOpenChallenges(data.payload.userId);
-          // await challengesController.cancelRequestedChallenges2(
-          //   data.payload.userId
-          // );
+          
           break;
         case "startGame":
           await startGame(data, socket);
