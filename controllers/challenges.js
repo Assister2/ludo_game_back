@@ -2,7 +2,7 @@ const ChallengeModel = require("../models/challenges");
 const User = require("../models/user");
 const Account = require("../models/accounts");
 const mongoose = require("mongoose");
-
+const indian_names = require("../commonImports/indian_names");
 const axios = require("axios");
 const History = require("../models/history");
 const TransactionsModel = require("../models/transactions");
@@ -62,21 +62,20 @@ const challengesController = {
         { new: true, session }
       );
       if (updatedChallenge) {
-        await ChallengeModel.updateMany(
+        await ChallengeModel.deleteMany(
           {
             creator: updatedChallenge.creator._id,
             state: { $in: ["open", "requested"] },
           },
-          { $set: { status: 0 } },
-          { new: true, session }
+          { session }
         );
-        await ChallengeModel.updateMany(
+        await ChallengeModel.deleteMany(
           {
             creator: updatedChallenge.player._id,
             state: { $in: ["open", "requested"] },
           },
-          { $set: { status: 0 } },
-          { new: true, session }
+
+          { session }
         );
         await ChallengeModel.updateMany(
           { player: updatedChallenge.creator._id, state: "requested" },
@@ -205,24 +204,6 @@ const challengesController = {
   },
 
   /**
-   * deleteRequestedChallenges - to get all challenges
-   * @returns {Promise<void>}
-   */
-  deleteRequestedChallenges: async (creatorId) => {
-    try {
-      let challenge = await ChallengeModel.updateMany(
-        { creator: creatorId, state: "requested" },
-        { $set: { status: 0 } },
-        { new: true }
-      );
-      return challenge;
-    } catch (error) {
-      console.log("error", error);
-      throw error;
-    }
-  },
-
-  /**
    *
    *                 /**
    * deleteRequestedChallenges - to get all challenges
@@ -275,7 +256,6 @@ const challengesController = {
   getAllChallenges: async (challengeObject) => {
     try {
       let challenge = await ChallengeModel.find({
-        status: 1,
         state: { $nin: ["resolved"] },
       }).populate("creator player", "username profileImage");
       return challenge;
@@ -361,15 +341,16 @@ const challengesController = {
     }
   },
   createFakeChallenges: async () => {
+    const getRandomNumber = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
     const getRandomMultipleOf50 = (min, max) => {
       const randomNum =
         getRandomNumber(Math.ceil(min / 50), Math.floor(max / 50)) * 50;
-      return randomNum >= min && randomNum <= max
-        ? randomNum
-        : getRandomMultipleOf50(min, max);
+      return randomNum <= max ? randomNum : getRandomMultipleOf50(min, max);
     };
-    const getRandomNumber = (min, max) =>
-      Math.floor(Math.random() * (max - min + 1)) + min;
+
     try {
       const numberOfChallenges = 50;
 
@@ -377,13 +358,19 @@ const challengesController = {
       const fakeUserIds = await User.find({ fake: true }).select("_id");
 
       const fakeChallenges = Array.from({ length: numberOfChallenges }, () => {
-        const randomCreatorIndex = getRandomNumber(0, fakeUserIds.length - 1);
-        const randomPlayerIndex = getRandomNumber(0, fakeUserIds.length - 1);
+        let randomCreatorIndex;
+        let randomPlayerIndex;
+
+        // Ensure the creator and player are different users
+        do {
+          randomCreatorIndex = getRandomNumber(0, fakeUserIds.length - 1);
+          randomPlayerIndex = getRandomNumber(0, fakeUserIds.length - 1);
+        } while (randomPlayerIndex === randomCreatorIndex);
 
         return {
           creator: fakeUserIds[randomCreatorIndex]._id, // Random creator ID from fake user IDs
           player: fakeUserIds[randomPlayerIndex]._id, // Random player ID from fake user IDs
-          amount: getRandomMultipleOf50(100, 500), // Random amount between 100 and 500
+          amount: getRandomMultipleOf50(50, 10000), // Random amount between 100 and 500
           state: "playing", // Set state to "playing"
           fake: true,
         };
@@ -396,35 +383,17 @@ const challengesController = {
       throw error;
     }
   },
+
   createFakeUsers: async () => {
     const getRandomNumber = (min, max) =>
       Math.floor(Math.random() * (max - min + 1)) + min;
 
     // Function to generate a random username
     const generateRandomUsername = () => {
-      const adjectives = [
-        "happy",
-        "sleepy",
-        "grumpy",
-        "silly",
-        "shiny",
-        "funny",
-        "clever",
-        "fierce",
-      ];
-      const nouns = [
-        "panda",
-        "tiger",
-        "lion",
-        "butterfly",
-        "zebra",
-        "unicorn",
-        "dolphin",
-        "dragon",
-      ];
-      const adjective = adjectives[getRandomNumber(0, adjectives.length - 1)];
-      const noun = nouns[getRandomNumber(0, nouns.length - 1)];
-      return `${adjective}_${noun}_${getRandomNumber(1000, 9999)}`;
+      const adjective =
+        indian_names[getRandomNumber(0, indian_names.length - 1)];
+
+      return `${adjective}_${getRandomNumber(1000, 9999)}`;
     };
 
     // Function to generate a random profile image from "1.svg" to "10.svg"
@@ -435,19 +404,20 @@ const challengesController = {
     try {
       const numberOfUsers = 100;
       const fakeUsers = Array.from({ length: numberOfUsers }, () => {
+        const fullName = "fakername";
         const username = generateRandomUsername(); // Generate a random username
         const profileImage = generateRandomProfileImage(); // Random profile image "1.svg" to "10.svg"
 
         return {
           username,
-          fullName: "John Doe", // You can set a default full name if needed
+          fullName,
           profileImage,
           fake: true, // Set fake to true
         };
       });
 
       await User.insertMany(fakeUsers);
-      console.log("Fake users created successfully!");
+      console.log("Fake users with Indian names created successfully!");
     } catch (error) {
       console.error("Error creating fake users:", error);
       throw error;
@@ -464,7 +434,7 @@ const challengesController = {
   updateChallengeById44: async (challengeId, playerId, session) => {
     try {
       let challenge = await ChallengeModel.findOneAndUpdate(
-        { _id: challengeId, state: "open",  },
+        { _id: challengeId, state: "open" },
         { $set: { state: "requested", player: playerId } },
         { new: true, session }
       );
@@ -661,7 +631,6 @@ const challengesController = {
         (await ChallengeModel.find({
           creator: userId,
           state: { $in: ["open", "requested"] },
-          
         }).countDocuments()) === 3
       ) {
         return true;
@@ -683,7 +652,7 @@ const challengesController = {
       let challenge = await ChallengeModel.find({
         creator: data.userId,
         amount: data.amount,
-        
+
         state: { $in: ["open", "requested"] },
       });
       return challenge;

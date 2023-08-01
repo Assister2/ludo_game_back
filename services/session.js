@@ -3,7 +3,7 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 require("dotenv").config(); // Load environment variables from .env file
 
 const store = new MongoDBStore({
-  uri: "mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo21", // Use an environment variable for MongoDB URI
+  uri: "mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo22", // Use an environment variable for MongoDB URI
   collection: "sessions",
   // Add more options for MongoDBStore if necessary, like connectionOptions, autoReconnect, etc.
 });

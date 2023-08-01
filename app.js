@@ -1,11 +1,13 @@
 // app.js
 const express = require("express");
+
 const path = require("path");
+const cronJobs = require("./database/cronjobs/cronjobs");
 const session = require("express-session");
 const Sentry = require("./sentry.js");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
-const cron = require("node-cron");
+
 const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
@@ -41,9 +43,12 @@ connectDB()
     });
     // await challengesController.purgeDatabase();
 
-    setInterval(async () => {
-      await challengesController.UpdateOpenChallenges();
-    }, 2 * 60 * 1000);
+    // setInterval(async () => {
+    //   await challengesController.UpdateOpenChallenges();
+    // }, 2 * 60 * 1000);
+
+    // await challengesController.createFakeUsers();
+    // await challengesController.createFakeChallenges();
 
     const io = socket.init(server);
 
