@@ -3,7 +3,7 @@ const {
   handleBuyChips,
   handleSellChips,
   handleGetWallet,
-  ConfirmPayment,
+
 } = require("../controllers/transactionsControllers/routeHandlers");
 
 const router = express.Router();

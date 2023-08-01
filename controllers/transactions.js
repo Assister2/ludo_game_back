@@ -6,10 +6,10 @@ const transactionsController = {
    * @param transactionObj - transactionObj that need to insert
    * @returns {Promise<void>}
    */
-  insertNewTransaction: async (transactionObj,session) => {
+  insertNewTransaction: async (transactionObj, session) => {
     try {
       let response = new TransactionsModel(transactionObj);
-      response = await response.save({session});
+      response = await response.save({ session });
       return response;
     } catch (error) {
       throw error;
@@ -32,7 +32,7 @@ const transactionsController = {
       throw error;
     }
   },
-  updateTransactionById: async (TransactionId) => {
+  updateTransactionById: async (TransactionId, upi_txn_id, id, session) => {
     try {
       const updatedTransaction = await TransactionsModel.findOneAndUpdate(
         {
@@ -40,9 +40,12 @@ const transactionsController = {
         },
         {
           status: 1,
+          upiId: upi_txn_id,
+          orderId: id,
         },
         {
-          new: true, // Return the updated document after the update
+          new: true,
+          session, // Return the updated document after the update
         }
       );
       return updatedTransaction;

@@ -13,8 +13,13 @@ let transactionsSchema = new mongoose.Schema({
   upiId: {
     type: String,
     default: "",
-    require: true,
+    
   },
+  orderId:{
+    type:String,
+    default:"",
+  },
+
   status: {
     type: Number, // 0 for failed 1 for success 2 for pending
     default: 0,
