@@ -403,7 +403,7 @@ function handleConnection(socket) {
       socket.send(JSON.stringify(challenges));
     });
     socket.on("close", (code, reason) => {
-      console.log("WebSocket connection closed:", code, reason);
+      console.log("WebSocket connection Closed:", code, reason);
       clearInterval(heartbeatInterval);
     });
   } catch (error) {
