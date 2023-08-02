@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const ChallengeModel = require("../models/challenges");
 const tempUser = require("../models/tempUser");
+const config = require('../helpers/config');
 const jwtToken = require("jsonwebtoken");
 const userController = {
   /**
@@ -175,7 +176,7 @@ const userController = {
           id: userData._id,
           phone: userData.phone,
         },
-        "234124qweASd"
+        config.TOKEN_SECRET
       );
 
       let tokenObject = {

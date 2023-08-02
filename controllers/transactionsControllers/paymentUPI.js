@@ -1,10 +1,11 @@
 const axios = require("axios");
+const config = require('../../helpers/config');
 const axiosConfig = axios.create(); // You may have other configurations here
 
 const getUPILink = async (transactionId, amount, User) => {
   try {
     const requestData = {
-      key: "dee5431c-c840-4a57-8ffd-09053db9a21e",
+      key: config.PAY_ON_UPI_SECRET,
       client_txn_id: transactionId, // Replace this with a unique transaction ID or use a library to generate it.
       amount: String(amount), // Convert amount to string
       p_info: "Buy Chips",

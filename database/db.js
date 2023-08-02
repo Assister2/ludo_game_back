@@ -1,10 +1,11 @@
 // db.js
 const mongoose = require("mongoose");
+const config = require('../helpers/config');
 require('dotenv').config();
 
 const connectDB = async () => {
   try {
-    await mongoose.connect("mongodb+srv://asim_ludo:asim_ludo123@cluster0.qqbzp.mongodb.net/ludo21", {
+    await mongoose.connect(config.DB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       useFindAndModify: false,
