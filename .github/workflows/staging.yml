@@ -1,7 +1,7 @@
 name: Build & Deploy
 on:
   push:
-    branches: [main]
+    branches: [staging]
 
 jobs:
   deploy:
@@ -22,19 +22,19 @@ jobs:
       - name: Build and push Docker image
         run: |
           docker buildx create --use
-          docker buildx build --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_PROD_REPO }} --file Dockerfile --push .
+          docker buildx build --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_STAG_REPO }} --file Dockerfile --push .
           docker buildx stop
         
       - name: Deploy Docker container to Droplet
         uses: appleboy/ssh-action@v0.1.2
         with:
-          host: ${{secrets.SSH_HOST}} # IP address of the server you wish to ssh
-          key: ${{secrets.SSH_KEY}} # Private or public key of the server
-          username: ${{secrets.SSH_USERNAME}}
+          host: ${{secrets.SSH_HOST_STAGING_BACKEND_LUDO}} # IP address of the server you wish to ssh
+          key: ${{secrets.SSH_KEY_STAGING_BACKEND_LUDO}} # Private or public key of the server
+          username: ${{secrets.SSH_USERNAME_STAGING_BACKEND_LUDO}}
           script: |
             docker stop $(docker ps -q)
             docker rm $(docker ps -aq)
             docker rmi $(docker images -q)
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_PROD_REPO }}
-            docker run -d -p 4001:4001 --name ${{ secrets.DOCKER_PROD_REPO }}-container --restart always ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_PROD_REPO }}
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_STAG_REPO }}
+            docker run -d -p 4001:4001 --name ${{ secrets.DOCKER_STAG_REPO }}-container --restart always ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_STAG_REPO }}
             echo 'Docker container deployed successfully'
