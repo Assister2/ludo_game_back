@@ -43,10 +43,6 @@ connectDB()
     });
     // await challengesController.purgeDatabase();
 
-    // setInterval(async () => {
-    //   await challengesController.UpdateOpenChallenges();
-    // }, 2 * 60 * 1000);
-
     // await challengesController.createFakeUsers();
     // await challengesController.createFakeChallenges();
 

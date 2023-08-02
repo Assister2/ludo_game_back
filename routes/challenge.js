@@ -10,7 +10,6 @@ const Router = express.Router();
 const { handleChallengeCancellation } = require("../function");
 const History = require("../models/history");
 
-
 const socket = require("../socket");
 const { handleChallengeUpdate } = require("../function");
 const axios = require("axios");
@@ -45,36 +44,7 @@ Router.get(
     } catch (error) {}
   }
 );
-// Router.post("/hold/:id", verifyToken, async (req, res) => {
-//   let user = req.user;
 
-//   let challenge = await challengesController.getChallengeById(req.params.id);
-//   let winner = user.id == challenge.creator._id ? "creator" : "player";
-
-//   let challengeObj = {
-//     ...challenge._doc,
-//     results: {
-//       ...challenge.results,
-//       [winner]: {
-//         result: "",
-//         timeover: true,
-//         updatedAt: new Date(),
-//       },
-//     },
-//     state: "hold",
-//   };
-
-//   await challenge.save();
-//   challenge = await challengesController.updateChallengeById(challengeObj);
-
-//   await userController.updateUserByUserId({
-//     _id: user.id,
-//     playing: false,
-//     noOfChallenges: 0,
-//   });
-
-//   return responseHandler(res, 200, challenge, null);
-// });
 Router.post("/win/:id", verifyToken, async (req, res) => {
   const session = await mongoose.startSession();
   try {
@@ -132,7 +102,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
             console.error(error);
           });
       }
-      // console.log("testtt", response);
 
       let challengeObj = {
         ...challenge._doc,
@@ -174,14 +143,15 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       }
       if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
-        amount = amount * 2 - (amount * 3) / 100;
+        let deduction = amount * 0.03;
+        let amountAfterDeduction = amount - deduction;
 
         const winnWall = await accountController.updateAccountByUserId(
           {
             ...userWallet._doc,
-            wallet: userWallet.wallet + amount,
-            winningCash: userWallet.winningCash + amount,
-            totalWin: userWallet.wallet + challenge.amount,
+            wallet: userWallet.wallet + amountAfterDeduction,
+            winningCash: userWallet.winningCash + amountAfterDeduction,
+            totalWin: userWallet.totalWin + amountAfterDeduction,
           },
           session
         );
@@ -204,9 +174,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         historyWinner.createdAt = req.body.createdAt;
         historyWinner.closingBalance = winnWall.wallet;
         historyWinner.roomCode = challenge.roomCode;
-        historyWinner.amount = Number(
-          challenge.amount - (challenge.amount * 3) / 100
-        );
+        historyWinner.amount = Number(amountAfterDeduction);
         historyWinner.type = "won";
         await historyWinner.save({ session });
 
@@ -300,14 +268,13 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       let winnerUserId = challenge[winner]._id;
       let looserUserId = challenge[looser]._id;
       let amount = Number(challenge.amount);
-      let deductedAmount = amount;
-      let deduction = 0;
       let userWallet = await accountController.getAccountByUserId(winnerUserId);
       let looserWallet = await accountController.getAccountByUserId(
         looserUserId
       );
 
-      amount = amount * 2 - (amount * 3) / 100;
+      let deduction = amount * 0.03;
+      let amountAfterDeduction = amount - deduction;
       const { roomCode } = challenge;
       let apiResult = null;
       if (!challenge.apiResult) {
@@ -367,12 +334,11 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       }
 
       if (challenge.results[winner].result == "win") {
-        let deduction = challenge.amount * 0.03;
         let wall = {
           ...userWallet._doc,
-          wallet: userWallet.wallet + amount,
-          winningCash: userWallet.winningCash + amount,
-          totalWin: userWallet.wallet + challenge.amount - deduction,
+          wallet: userWallet.wallet + amountAfterDeduction,
+          winningCash: userWallet.winningCash + amountAfterDeduction,
+          totalWin: userWallet.totalWin + amountAfterDeduction,
         };
 
         // challengeObj.state = "resolved"
@@ -394,9 +360,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         historyWinner.createdAt = req.body.createdAt;
         historyWinner.roomCode = challenge.roomCode;
         historyWinner.closingBalance = wall.wallet;
-        historyWinner.amount = Number(
-          challenge.amount - (challenge.amount * 3) / 100
-        );
+        historyWinner.amount = Number(amountAfterDeduction);
         historyWinner.type = "won";
         await historyWinner.save({ session });
 
@@ -411,7 +375,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
             referUser.referer
           );
 
-          const userWall = await accountController.increaseRefererAccount(
+          await accountController.increaseRefererAccount(
             {
               userId: referalAccount._id,
               amount: challenge.amount,
@@ -431,7 +395,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           historyWinner.amount = Number(challenge.amount * 0.02);
           historyWinner.type = "referal";
           await historyWinner.save({ session });
-          console.log("referhistory22", historyWinner);
         }
       }
       if (challenge.results[winner].result == "cancelled") {
@@ -550,14 +513,7 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
         challengeObj.state = "hold";
       }
       if (challenge.results[otherPlayer].result == "cancelled") {
-        // await accountController.updateAccountByUserId({
-        //   ...otherPlayer._doc,
-        //   wallet: otherPlayer.wallet + challenge.amount,
-        //   depositCash:
-        //     otherPlayer.depositCash + challenge.playerChips.depositCash,
-        //   winningCash:
-        //     otherPlayer.winningCash + challenge.playerChips.winningCash,
-        // });
+
 
         await handleChallengeCancellation(
           challengeObj,
@@ -568,47 +524,8 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
           otherPlayerWallet,
           session
         );
-        // let cancellerWallet1 = await accountController.getAccountByUserId(
-        //   challenge[canceller]._id
-        // );
-        // let otherPlayerWallet1 = await accountController.getAccountByUserId(
-        //   challenge[otherPlayer]._id
-        // );
-        // console.log("canceller", cancellerWallet1);
-        // console.log("otherPlayerWallet1", otherPlayerWallet1);
-        // let history = new History();
-        // history.userId = challenge[otherPlayer]._id;
-        // history.historyText = `Cancelled Against ${challenge[canceller].username}`;
-        // history.createdAt = req.body.createdAt;
-        // history.closingBalance = otherPlayerWallet1.wallet;
-        // history.amount = Number(challenge.amount);
-        // history.roomCode = challenge.roomCode;
-        // history.type = "cancelled";
-        // await history.save({ session });
-
-        // let historyWinner = new History();
-        // historyWinner.userId = challenge[canceller]._id;
-        // historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
-        // historyWinner.createdAt = req.body.createdAt;
-        // historyWinner.closingBalance = cancellerWallet1.wallet;
-        // historyWinner.amount = Number(challenge.amount);
-        // historyWinner.roomCode = challenge.roomCode;
-        // historyWinner.type = "cancelled";
-        // await historyWinner.save({ session });
-        // console.log("historyof", history);
-        // console.log("historyof2", historyWinner);
       }
 
-      // let historyWinner = new History();
-      // historyWinner.userId = challenge[canceller]._id;
-      // historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
-      // historyWinner.createdAt = req.body.createdAt;
-      // historyWinner.closingBalance = cancellerWallet.wallet;
-      // historyWinner.amount = Number(challenge.amount);
-      // historyWinner.roomCode = challenge.roomCode;
-      // historyWinner.type = "cancelled";
-      // await historyWinner.save();
-      // console.log("histtt", historyWinner);
       await userController.updateUserByUserId(
         {
           _id: user.id,

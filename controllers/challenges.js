@@ -104,7 +104,7 @@ const challengesController = {
           return;
         }
 
-        //decrease accounts of users
+
 
         let creatorChips = { winningCash: 0, depositCash: 0 };
         let playerChips = { winningCash: 0, depositCash: 0 };
@@ -173,7 +173,7 @@ const challengesController = {
           { $set: creatorAccount },
           { new: true, session }
         );
-        // throw new Error();
+
 
         await Account.findOneAndUpdate(
           { userId: playerAccount.userId },

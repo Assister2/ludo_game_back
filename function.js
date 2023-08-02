@@ -1,8 +1,7 @@
 const accountController = require("./controllers/accounts");
 const ChallengeModel = require("./models/challenges");
 const History = require("./models/history");
-const mongoose = require("mongoose");
-const moment = require("moment");
+
 
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
@@ -15,7 +14,8 @@ async function startGame(data, socket) {
   };
   try {
     const startGameChallenge = await challengesController.dataBaseUpdate(
-      data.payload.challengeId,socket
+      data.payload.challengeId,
+      socket
     );
     if (startGameChallenge.state == "playing") {
       if (startGameChallenge) {
@@ -113,7 +113,7 @@ const handleChallengeCancellation = async (
       historyWinner.roomCode = challenge.roomCode;
       historyWinner.type = "cancelled";
       await historyWinner.save({ session });
-      
+
       return;
     }
 
@@ -164,7 +164,7 @@ const handleChallengeUpdate = async (data) => {
         });
       }
     }
-  }, 1 * 60 * 1000); // 10 minutes delay
+  }, 4 * 60 * 1000); // it should run once only after 4 minutes only
 };
 
 const bothResultNotUpdated = async (challengeId) => {
@@ -182,13 +182,6 @@ const bothResultNotUpdated = async (challengeId) => {
           challenge.results.creator.result === "" &&
           challenge.results.player.result === ""
         ) {
-          // const createdAt = moment(challenge.createdAt); // Convert the createdAt value to a moment object or use any other date manipulation library
-
-          // // Compare the createdAt time with the current time
-          // const minutesPassed = moment().diff(createdAt, "minutes");
-
-          // if (minutesPassed > 1) {
-          // Challenge was created more than 3 minutes ago, perform update
           const updated = await ChallengeModel.findByIdAndUpdate(
             challenge._id,
             {
@@ -231,7 +224,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
       throw error;
     }
-  }, 2 * 60 * 1000); // 10 minutes delay
+  }, 20 * 60 * 1000); // 10 minutes delay
 };
 
 module.exports = {
