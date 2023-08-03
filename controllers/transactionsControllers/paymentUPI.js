@@ -12,7 +12,7 @@ const getUPILink = async (transactionId, amount, User) => {
       customer_name: User.fullName,
       customer_email: "emigotiking@gmail.com",
       customer_mobile: User.phone,
-      redirect_url: "https://www.gotiking.com/wallet",
+      redirect_url: "https://stage.gotiking.com/wallet",
       udf1: "user defined field 1 (max 25 char)",
       udf2: "user defined field 2 (max 25 char)",
       udf3: "user defined field 3 (max 25 char)",

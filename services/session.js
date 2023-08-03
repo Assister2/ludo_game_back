@@ -12,8 +12,7 @@ store.on("error", (error) => {
   console.error("MongoDBStore connection error:", error);
 });
 const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000;
-const maxAgeForSessionCookie =
-  process.env.SESSION_COOKIE_MAX_AGE || thirtyDaysInMilliseconds;
+const maxAgeForSessionCookie = thirtyDaysInMilliseconds;
 
 const options = {
   secret: config.SESSION_SECRET,
