@@ -1,6 +1,6 @@
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
-const config = require('../helpers/config');
+const config = require("../helpers/config");
 require("dotenv").config(); // Load environment variables from .env file
 
 const store = new MongoDBStore({
