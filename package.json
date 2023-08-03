@@ -7,7 +7,7 @@
     "startDockerBuild": "node ./built/index.js",
     "start": "nodemon node ./bin/www.js",
     "staging": "nodemon node ./built/index.js",
-    "build": "node -r dotenv/config ./node_modules/esbuild/bin/esbuild ./bin/wwww.js --platform=node --bundle --outfile=built/index.js && copy .env built"
+    "build": "node -r dotenv/config ./node_modules/esbuild/bin/esbuild app.js --platform=node --bundle --outfile=built/index.js && copy .env built"
 
 
 

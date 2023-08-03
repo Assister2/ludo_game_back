@@ -30,7 +30,7 @@ router.post("/login", async (req, res) => {
     const user = await userController.existingUser(phoneNumber);
 
     if (!user) {
-      return responseHandler(res, 400, null, "User not found");
+      return responseHandler(res, 400, null, "User not found staging");
     }
 
     if (user.isBlocked) {
