@@ -9,6 +9,8 @@ const allowedOrigins = [
     "https://gotiking.com",
     "https://www.gotiking.com",
     "https://stage.gotiking.com/",
+    "https://stage.gotiking.com",
+    "https://stage.gotiking.com",
     "https://www.stage.gotiking.com",
     "https://www.stage.gotiking.com/",
     "https://stage.gotiking.com/",
