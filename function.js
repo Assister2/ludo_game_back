@@ -2,7 +2,6 @@ const accountController = require("./controllers/accounts");
 const ChallengeModel = require("./models/challenges");
 const History = require("./models/history");
 
-
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
 
@@ -13,6 +12,7 @@ async function startGame(data, socket) {
     error: null,
   };
   try {
+
     const startGameChallenge = await challengesController.dataBaseUpdate(
       data.payload.challengeId,
       socket

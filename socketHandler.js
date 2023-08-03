@@ -17,7 +17,6 @@ dotenv.config();
 
 function handleConnection(socket) {
   const HEARTBEAT_INTERVAL = 30000;
-  // io.emit("Sent a message 4seconds after connection!");
   socket.on("getUserWallet", async (message) => {
     try {
       const data = JSON.parse(message);
