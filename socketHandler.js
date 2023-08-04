@@ -9,9 +9,6 @@ const {
 
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
-
-// 30 seconds
-
 // const { sendFCM } = require("./routes/notification");
 dotenv.config();
 
