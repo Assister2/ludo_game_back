@@ -6,6 +6,7 @@ const {
   responseHandler,
   History,
 } = require("../../commonImports/commonImports");
+const { generateHistory } = require("../../helperFunctions/helper");
 const getUPILink = require("./paymentUPI");
 const mongoose = require("mongoose");
 
@@ -192,17 +193,16 @@ async function handleSellChips(req, res) {
         transactionObject,
         session
       );
-
-      const history = new History();
-      history.userId = user.id;
-      history.historyText = "Withdrawal Chips Via UPI";
-      history.createdAt = new Date();
-      history.closingBalance = updatedAccount.wallet;
-      history.status = "pending";
-      history.amount = Number(amount);
-      history.type = "withdraw";
-      history.transactionId = transactionId._id;
-      await history.save({ session });
+      const historyObj = {
+        userId: user.id,
+        historyText: "Withdrawal Chips Via UPI",
+        closingBalance: updatedAccount.wallet,
+        amount: Number(amount),
+        status: "pending",
+        transactionId: transactionId._id,
+        type: "withdraw",
+      };
+      await generateHistory(historyObj, session);
     });
 
     return responseHandler(res, 200, updatedAccount, null);
@@ -237,12 +237,11 @@ async function ConfirmPayment(req, res) {
   session.startTransaction();
 
   try {
-    console.log("confirmpayment working");
     const data = req.body;
-    console.log("dataaaaaaa", data);
+
     const { amount, status, upi_txn_id, id } = data;
     const amountAsNumber = parseFloat(amount);
-    
+
     const userTransaction =
       await transactionsController.existingTransactionsById(data.client_txn_id);
     await transactionsController.updateTransactionById(
@@ -254,32 +253,28 @@ async function ConfirmPayment(req, res) {
     const account = await accountController.getAccountByUserId(
       userTransaction.userId
     );
-    console.log("beforeupdate",account)
+
     const accountObject = {
       userId: userTransaction.userId,
       depositCash: account.depositCash + amountAsNumber,
       wallet: account.wallet + amountAsNumber,
       withdrawRequest: false,
     };
-    console.log("acountobject",accountObject)
 
     const updatedAccount = await accountController.updateAccountByUserId(
       accountObject,
       session
     );
-    console.log("checkupdatedaccount",updatedAccount)
 
-    const history = new History();
-    history.userId = userTransaction.userId;
-    history.historyText = "Chips Added Via UPI";
-    history.createdAt = new Date();
-    history.closingBalance = updatedAccount.wallet;
-    history.amount = Number(amountAsNumber);
-    history.type = "buy";
-    history.transactionId = userTransaction._id;
-    console.log("history",history)
-
-    await history.save({ session });
+    const historyObj = {
+      userId: userTransaction.userId,
+      historyText: "Chips Added Via UPI",
+      closingBalance: updatedAccount.wallet,
+      amount: Number(amountAsNumber),
+      transactionId: transactionId._id,
+      type: "buy",
+    };
+    await generateHistory(historyObj, session);
 
     await session.commitTransaction();
     session.endSession();

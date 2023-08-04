@@ -159,27 +159,25 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
         let looserWallet23 = await accountController.getAccountByUserId(
           challenge[looser]._id
         );
-        let history = new History();
-        history.userId = challenge[looser]._id;
-        history.historyText = `Lost Against ${challenge[winner].username}`;
-        history.createdAt = req.body.createdAt;
-        history.roomCode = challenge.roomCode;
-        history.closingBalance = looserWallet23.wallet;
-        history.amount = Number(challenge.amount);
-        history.type = "lost";
-        await history.save({ session });
+        const historyObj = {
+          userId: challenge[looser]._id,
+          historyText: `Lost Against ${challenge[winner].username}`,
+          roomCode: challenge.roomCode,
+          closingBalance: looserWallet23.wallet,
+          amount: Number(challenge.amount),
+          type: "lost",
+        };
+        await generateHistory(historyObj, session);
 
-        let historyWinner = new History();
-        historyWinner.userId = challenge[winner]._id;
-        historyWinner.historyText = `Won Against ${challenge[looser].username}`;
-        historyWinner.createdAt = req.body.createdAt;
-        historyWinner.closingBalance = winnWall.wallet;
-        historyWinner.roomCode = challenge.roomCode;
-        historyWinner.amount = Number(
-          challenge.amount - (challenge.amount * 3) / 100
-        );
-        historyWinner.type = "won";
-        await historyWinner.save({ session });
+        const winnerObj = {
+          userId: challenge[winner]._id,
+          historyText: `Won Against ${challenge[looser].username}`,
+          roomCode: challenge.roomCode,
+          closingBalance: winnWall.wallet,
+          amount: Number(challenge.amount - (challenge.amount * 3) / 100),
+          type: "won",
+        };
+        await generateHistory(winnerObj, session);
 
         let referUser = await userController.existingUserById({
           id: challenge[winner]._id,
@@ -198,15 +196,15 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
             session
           );
 
-          let historyWinner = new History();
-          historyWinner.userId = referalAccount.id;
-          historyWinner.historyText = `referal from ${challenge[winner].username}`;
-          historyWinner.createdAt = req.body.createdAt;
-          historyWinner.roomCode = challenge.roomCode;
-          historyWinner.closingBalance = userWall.wallet;
-          historyWinner.amount = Number(challenge.amount * 0.02);
-          historyWinner.type = "referal";
-          await historyWinner.save({ session });
+          const historyObj = {
+            userId: userWall.userId,
+            historyText: `referal from ${challenge[winner].username}`,
+            roomCode: challenge.roomCode,
+            closingBalance: userWall.wallet,
+            amount: Number(challenge.amount * 0.02),
+            type: "referal",
+          };
+          await generateHistory(historyObj, session);
         }
       }
       if (challenge.results[looser].result == "cancelled") {
@@ -349,27 +347,25 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         // challengeObj.state = "resolved"
         challengeObj.state = "resolved";
 
-        let history = new History();
-        history.userId = challenge[looser]._id;
-        history.historyText = `Lost Against ${challenge[winner].username}`;
-        history.createdAt = req.body.createdAt;
-        history.roomCode = challenge.roomCode;
-        history.closingBalance = looserWallet.wallet;
-        history.amount = Number(challenge.amount);
-        history.type = "lost";
-        await history.save({ session });
+        const historyObj = {
+          userId: challenge[looser]._id,
+          historyText: `Lost Against ${challenge[winner].username}`,
+          roomCode: challenge.roomCode,
+          closingBalance: looserWallet.wallet,
+          amount: Number(challenge.amount),
+          type: "lost",
+        };
+        await generateHistory(historyObj, session);
 
-        let historyWinner = new History();
-        historyWinner.userId = challenge[winner]._id;
-        historyWinner.historyText = `Won Against ${challenge[looser].username}`;
-        historyWinner.createdAt = req.body.createdAt;
-        historyWinner.roomCode = challenge.roomCode;
-        historyWinner.closingBalance = wall.wallet;
-        historyWinner.amount = Number(
-          challenge.amount - (challenge.amount * 3) / 100
-        );
-        historyWinner.type = "won";
-        await historyWinner.save({ session });
+        const winnerObj = {
+          userId: challenge[winner]._id,
+          historyText: `Won Against ${challenge[looser].username}`,
+          roomCode: challenge.roomCode,
+          closingBalance: wall.wallet,
+          amount: Number(challenge.amount - (challenge.amount * 3) / 100),
+          type: "won",
+        };
+        await generateHistory(winnerObj, session);
 
         await accountController.updateAccountByUserId(wall, session);
 
@@ -382,26 +378,24 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
             referUser.referer
           );
 
-          await accountController.increaseRefererAccount(
-            {
-              userId: referalAccount._id,
-              amount: challenge.amount,
-            },
-            session
-          );
-          const referalAccount22 = await accountController.getAccountByUserId(
-            referalAccount._id
-          );
+          const updatedReferAccount =
+            await accountController.increaseRefererAccount(
+              {
+                userId: referalAccount._id,
+                amount: challenge.amount,
+              },
+              session
+            );
 
-          let historyWinner = new History();
-          historyWinner.userId = referalAccount.id;
-          historyWinner.historyText = `referal from ${challenge[winner].username}`;
-          historyWinner.createdAt = req.body.createdAt;
-          historyWinner.roomCode = challenge.roomCode;
-          historyWinner.closingBalance = referalAccount22.wallet;
-          historyWinner.amount = Number(challenge.amount * 0.02);
-          historyWinner.type = "referal";
-          await historyWinner.save({ session });
+          const historyObj = {
+            userId: updatedReferAccount.userId,
+            historyText: `referal from ${challenge[winner].username}`,
+            roomCode: challenge.roomCode,
+            closingBalance: updatedReferAccount.wallet,
+            amount: Number(challenge.amount * 0.02),
+            type: "referal",
+          };
+          await generateHistory(historyObj, session);
         }
       }
       if (challenge.results[winner].result == "cancelled") {
