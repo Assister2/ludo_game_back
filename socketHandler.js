@@ -60,7 +60,6 @@ function handleConnection(socket) {
 
       return socket.send(JSON.stringify(response));
     }
-    // Parse the incoming message as JSON
   });
   //todo:game
   socket.on("ludogame", async (message) => {
@@ -381,9 +380,8 @@ function handleConnection(socket) {
           break;
 
         case "deleteOpenChallengesOfCreator":
-          
           await challengesController.deleteOpenChallenges(data.payload.userId);
-          
+
           break;
         case "startGame":
           await startGame(data, socket);
