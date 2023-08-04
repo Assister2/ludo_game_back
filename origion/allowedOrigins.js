@@ -5,6 +5,8 @@ const allowedOrigins = [
     "https://push.gotiking.com",
     "https://push.gotiking.com/",
     "https://push.gotiking.com",
+    "https://test.gotiking.com/",
+    "https://test.gotiking.com",
     "https://gotiking.com/",
     "https://gotiking.com",
     "https://www.gotiking.com",
