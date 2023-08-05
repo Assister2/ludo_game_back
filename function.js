@@ -13,23 +13,21 @@ async function startGame(data, socket) {
     error: null,
   };
   try {
-    const startGameChallenge = await challengesController.dataBaseUpdate(
+    const startGameChallenge = await challengesController.startGameChallenge(
       data.payload.challengeId,
       socket
     );
-    if (startGameChallenge.state == "playing") {
-      if (startGameChallenge) {
-        response = {
-          ...response,
-          status: 200,
-          error: null,
-          data: null,
-          challengeRedirect: true,
-          challengeId: startGameChallenge._id,
-        };
+    if (startGameChallenge.state === "playing") {
+      response = {
+        ...response,
+        status: 200,
+        error: null,
+        data: null,
+        challengeRedirect: true,
+        challengeId: startGameChallenge._id,
+      };
 
-        return socket.send(JSON.stringify(response));
-      }
+      return socket.send(JSON.stringify(response));
     } else {
       response = {
         status: 400,

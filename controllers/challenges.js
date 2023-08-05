@@ -9,7 +9,7 @@ const TransactionsModel = require("../models/transactions");
 
 const moment = require("moment");
 const tempUser = require("../models/tempUser");
-const { Transaction } = require("mongodb-core/lib/transactions");
+const { balanceMinus } = require("../helperFunctions/helper");
 const challengesController = {
   /**
    * createChallenge - challengeObject that need to be insert.
@@ -51,7 +51,7 @@ const challengesController = {
 
  * @returns {Promise<void>}
  */
-  dataBaseUpdate: async (challengeId, socket) => {
+  startGameChallenge: async (challengeId, socket) => {
     const session = await mongoose.startSession();
 
     try {
@@ -87,108 +87,19 @@ const challengesController = {
           { $set: { state: "open", player: null } },
           { new: true, session }
         );
-        const creator = await User.findOneAndUpdate(
-          { _id: updatedChallenge.creator._id, noOfChallenges: 0 },
-          { $set: { noOfChallenges: 1 } },
-          { new: true, session }
-        );
-        const player = await User.findOneAndUpdate(
-          { _id: updatedChallenge.player._id, noOfChallenges: 0 },
-          { $set: { noOfChallenges: 1 } },
-          { new: true, session }
-        );
-
-        if (!creator && !player) {
-          await session.abortTransaction();
-          session.endSession();
-          return;
-        }
-
-
-
-        let creatorChips = { winningCash: 0, depositCash: 0 };
-        let playerChips = { winningCash: 0, depositCash: 0 };
         var config = {
           method: "get",
           url: "  http://128.199.28.12:3000/ludoking/roomcode",
           headers: {},
         };
-        let roomCodeResponse = await axios(config);
-        const roomCode = roomCodeResponse.data;
+        let { data } = await axios(config);
+        const roomCode = data;
         updatedChallenge = await ChallengeModel.findOneAndUpdate(
           { _id: challengeId, state: "playing" },
           { $set: { roomCode: roomCode } },
           { new: true, session }
         );
-
-        let playerAccount = await Account.findOne({
-          userId: updatedChallenge.player._id,
-        });
-        let creatorAccount = await Account.findOne({
-          userId: updatedChallenge.creator._id,
-        });
-        if (playerAccount.depositCash >= updatedChallenge.amount) {
-          playerAccount.depositCash -= updatedChallenge.amount;
-          playerAccount.wallet -= updatedChallenge.amount;
-          playerChips.depositCash = updatedChallenge.amount;
-        } else if (playerAccount.depositCash < updatedChallenge.amount) {
-          const remaining = updatedChallenge.amount - playerAccount.depositCash;
-          if (playerAccount.winningCash < remaining) {
-            throw new Error("Insufficient balance for Player");
-          } else {
-            playerChips = {
-              depositCash: playerAccount.depositCash,
-              winningCash: remaining,
-            };
-            playerAccount.depositCash = 0;
-            playerAccount.winningCash -= remaining;
-            playerAccount.wallet -= updatedChallenge.amount;
-          }
-        }
-
-        if (creatorAccount.depositCash >= updatedChallenge.amount) {
-          creatorAccount.depositCash -= updatedChallenge.amount;
-          creatorAccount.wallet -= updatedChallenge.amount;
-          creatorChips.depositCash = updatedChallenge.amount;
-        } else if (creatorAccount.depositCash < updatedChallenge.amount) {
-          const remaining =
-            updatedChallenge.amount - creatorAccount.depositCash;
-
-          if (creatorAccount.winningCash < remaining) {
-            throw new Error("Insufficient balance for creator");
-          } else {
-            creatorChips = {
-              depositCash: creatorAccount.depositCash,
-              winningCash: remaining,
-            };
-            creatorAccount.depositCash = 0;
-            creatorAccount.winningCash -= remaining;
-            creatorAccount.wallet -= updatedChallenge.amount;
-          }
-        }
-
-        await Account.findOneAndUpdate(
-          { userId: creatorAccount.userId },
-          { $set: creatorAccount },
-          { new: true, session }
-        );
-
-
-        await Account.findOneAndUpdate(
-          { userId: playerAccount.userId },
-          { $set: playerAccount },
-          { new: true, session }
-        );
-        if (playerChips != null || creatorChips != null) {
-          await challengesController.updateChallengeById(
-            {
-              _id: updatedChallenge._id,
-              creatorChips: creatorChips,
-              playerChips: playerChips,
-            },
-            session
-          );
-        }
+        await balanceMinus(updatedChallenge, session);
       }
       await session.commitTransaction();
       return updatedChallenge;
