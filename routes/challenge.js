@@ -15,6 +15,7 @@ const { handleChallengeUpdate } = require("../function");
 const axios = require("axios");
 // const { MongoClient } = mongodb;
 const userController = require("../controllers/user");
+const { generateHistory } = require("../helperFunctions/helper");
 
 Router.get(
   "/getChallengeByChallengeId/:challengeId",
