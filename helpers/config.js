@@ -1,6 +1,7 @@
 require("dotenv").config();
 const config = {
   NODE_ENV: process.env.NODE_ENV,
+  NODE_APP_SENTRY_DSN_PROD: process.env.NODE_APP_SENTRY_DSN_PROD,
   EMAIL: process.env.EMAIL,
   PASSWORD: process.env.PASSWORD,
   DB_URI: process.env.DB_URI,

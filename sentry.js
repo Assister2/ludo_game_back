@@ -1,10 +1,9 @@
 const Sentry = require("@sentry/node");
-// or use es6 import statements
-// import * as Sentry from '@sentry/node';
-// if (process.env.NODE_ENV === "production") {
-if (process.env.NODE_ENV === "production") {
+const config = require("./helpers/config");
+
+if (config.NODE_ENV === "production" || config.NODE_ENV === "staging") {
   Sentry.init({
-    dsn: "https://5b3b721540504a4991d0983d138df582@o4505511314456576.ingest.sentry.io/4505511339032576",
+    dsn: config.NODE_APP_SENTRY_DSN_PROD || "",
 
     // Set tracesSampleRate to 1.0 to capture 100%
     // of transactions for performance monitoring.

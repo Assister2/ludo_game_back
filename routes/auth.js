@@ -149,7 +149,7 @@ router.post("/signup", async (req, res) => {
       code: generate(6),
       updatedAt: new Date(),
     };
-
+    console.log("userotp",userData.otp.code);
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone

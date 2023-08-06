@@ -2,7 +2,7 @@
 const express = require("express");
 
 const path = require("path");
-const cronJobs = require("./database/cronjobs/cronjobs");
+
 const session = require("express-session");
 const Sentry = require("./sentry.js");
 const cookieParser = require("cookie-parser");
@@ -11,6 +11,7 @@ const userSockets = require("./allSocketConnection");
 const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
+const testRouter = require("./routes/test.js");
 const transactionRouter = require("./routes/transactions");
 const payment = require("./routes/payment");
 const bodyParser = require("body-parser");
@@ -19,7 +20,7 @@ const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
 const options = require("./services/session.js");
 const connectDB = require("./database/db");
-const challengesController = require("./controllers/challenges");
+
 const socket = require("./socket");
 const handleConnection = require("./socketHandler.js");
 let connectedSocketsCount = 0;
@@ -95,7 +96,7 @@ app.use(
 );
 
 app.use(session(options));
-
+app.use("/api/test", testRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/buychips", payment);
 app.use(sessionAuthMiddleware);
