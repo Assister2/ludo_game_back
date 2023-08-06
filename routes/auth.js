@@ -213,7 +213,7 @@ router.post("/confirmOTP", async (req, res) => {
 
     // If the provided OTP is not the masterotp, then proceed with regular OTP verification
 
-    const OTP_EXPIRATION_MINUTES = 1; // Change this to 1 minute
+    const OTP_EXPIRATION_MINUTES = 2; // Change this to 1 minute
     const date = new Date();
     const otpExpirationTime = new Date(
       date.getTime() - OTP_EXPIRATION_MINUTES * 60 * 1000
@@ -264,7 +264,7 @@ router.post("/OTP", async (req, res) => {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
 
-    const OTP_EXPIRATION_MINUTES = 1; // Change this to 1 minute
+    const OTP_EXPIRATION_MINUTES = 2; // Change this to 1 minute
     const date = new Date();
     const otpExpirationTime = new Date(
       date.getTime() - OTP_EXPIRATION_MINUTES * 60 * 1000
