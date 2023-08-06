@@ -75,7 +75,6 @@ router.post("/login", async (req, res) => {
     if (!otpSentSuccessfully.return) {
       return responseHandler(res, 400, null, "Error sending OTP");
     } else {
-      await sessionHelper.removeAllUserSessions(req.sessionStore, user._id);
       await userController.updateUserByPhoneNumber(user);
       return responseHandler(res, 200, "OTP Sent", user);
     }
@@ -86,7 +85,6 @@ router.post("/login", async (req, res) => {
 
 router.get("/logout", async (req, res) => {
   try {
-    // socketOnLogout(user.id);
     const userId = req.query.userId;
     await socketOnLogout(userId);
     if (!req.session.user) {
@@ -149,7 +147,7 @@ router.post("/signup", async (req, res) => {
       code: generate(6),
       updatedAt: new Date(),
     };
-    console.log("userotp",userData.otp.code);
+    console.log("userotp", userData.otp.code);
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
@@ -233,9 +231,7 @@ router.post("/confirmOTP", async (req, res) => {
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);
     await userController.issueToken(user);
-
-    const io = socket.get();
-    io.emit("getUserProfile", { data: null });
+    await sessionHelper.removeAllUserSessions(req.sessionStore, user._id);
 
     req.session.user = { _id: user._id, username: user.username };
 
