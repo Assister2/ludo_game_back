@@ -44,81 +44,32 @@ async function socketOnLogout(userId) {
   }
 }
 
-async function balanceMinus(updatedChallenge, session) {
-  try {
-    let creatorChips = { winningCash: 0, depositCash: 0 };
-    let playerChips = { winningCash: 0, depositCash: 0 };
-    let playerAccount = await Account.findOne({
-      userId: updatedChallenge.player._id,
-    });
-    let creatorAccount = await Account.findOne({
-      userId: updatedChallenge.creator._id,
-    });
-    if (playerAccount.depositCash >= updatedChallenge.amount) {
-      playerAccount.depositCash -= updatedChallenge.amount;
-      playerAccount.wallet -= updatedChallenge.amount;
-      playerChips.depositCash = updatedChallenge.amount;
-    } else if (playerAccount.depositCash < updatedChallenge.amount) {
-      const remaining = updatedChallenge.amount - playerAccount.depositCash;
-      if (playerAccount.winningCash < remaining) {
-        throw new Error("Insufficient balance for Player");
-      } else {
-        playerChips = {
-          depositCash: playerAccount.depositCash,
-          winningCash: remaining,
-        };
-        playerAccount.depositCash = 0;
-        playerAccount.winningCash -= remaining;
-        playerAccount.wallet -= updatedChallenge.amount;
-      }
+async function calculateChips(account, amount) {
+  const chips = { winningCash: 0, depositCash: 0 };
+
+  if (account.depositCash >= amount) {
+    account.depositCash -= amount;
+    account.wallet -= amount;
+    chips.depositCash = amount;
+  } else {
+    const remaining = amount - account.depositCash;
+    if (account.winningCash < remaining) {
+      throw new Error(`Insufficient balance for ${account.userId}`);
+    } else {
+      chips.depositCash = account.depositCash;
+      chips.winningCash = remaining;
+      account.depositCash = 0;
+      account.winningCash -= remaining;
+      account.wallet -= amount;
     }
-
-    if (creatorAccount.depositCash >= updatedChallenge.amount) {
-      creatorAccount.depositCash -= updatedChallenge.amount;
-      creatorAccount.wallet -= updatedChallenge.amount;
-      creatorChips.depositCash = updatedChallenge.amount;
-    } else if (creatorAccount.depositCash < updatedChallenge.amount) {
-      const remaining = updatedChallenge.amount - creatorAccount.depositCash;
-      if (creatorAccount.winningCash < remaining) {
-        throw new Error("Insufficient balance for creator");
-      } else {
-        creatorChips = {
-          depositCash: creatorAccount.depositCash,
-          winningCash: remaining,
-        };
-        creatorAccount.depositCash = 0;
-        creatorAccount.winningCash -= remaining;
-        creatorAccount.wallet -= updatedChallenge.amount;
-      }
-    }
-
-    await Account.findOneAndUpdate(
-      { userId: creatorAccount.userId },
-      { $set: creatorAccount },
-      { new: true, session }
-    );
-
-    await Account.findOneAndUpdate(
-      { userId: playerAccount.userId },
-      { $set: playerAccount },
-      { new: true, session }
-    );
-    await challengesController.updateChallengeById(
-      {
-        _id: updatedChallenge._id,
-        creatorChips: creatorChips,
-        playerChips: playerChips,
-      },
-      session
-    );
-  } catch (error) {
-    console.error("StartGame ", error);
-    throw error;
   }
+
+  return chips.depositCash !== 0 || chips.winningCash !== 0 ? chips : null;
 }
 
 module.exports = {
   generateHistory,
-  balanceMinus,
+
+  calculateChips,
   socketOnLogout,
 };

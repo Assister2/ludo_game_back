@@ -9,7 +9,16 @@ const TransactionsModel = require("../models/transactions");
 
 const moment = require("moment");
 const tempUser = require("../models/tempUser");
-const { balanceMinus } = require("../helperFunctions/helper");
+const { calculateChips } = require("../helperFunctions/helper");
+const updateAccountAndChips = async (account, chips, session) => {
+  if (chips) {
+    await Account.findOneAndUpdate(
+      { userId: account.userId },
+      { $set: account },
+      { new: true, session }
+    );
+  }
+};
 const challengesController = {
   /**
    * createChallenge - challengeObject that need to be insert.
@@ -99,7 +108,35 @@ const challengesController = {
           { $set: { roomCode: roomCode } },
           { new: true, session }
         );
-        await balanceMinus(updatedChallenge, session);
+        let playerAccount = await Account.findOne({
+          userId: updatedChallenge.player._id,
+        });
+        let creatorAccount = await Account.findOne({
+          userId: updatedChallenge.creator._id,
+        });
+        let playerChips = calculateChips(
+          playerAccount,
+          updatedChallenge.amount
+        );
+
+        let creatorChips = calculateChips(
+          creatorAccount,
+          updatedChallenge.amount
+        );
+
+        await updateAccountAndChips(playerAccount, playerChips, session);
+        await updateAccountAndChips(creatorAccount, creatorChips, session);
+
+        if (playerChips != null || creatorChips != null) {
+          await challengesController.updateChallengeById(
+            {
+              _id: updatedChallenge._id,
+              creatorChips: creatorChips,
+              playerChips: playerChips,
+            },
+            session
+          );
+        }
       }
       await session.commitTransaction();
       return updatedChallenge;
@@ -119,6 +156,7 @@ const challengesController = {
    * deleteRequestedChallenges - to get all challenges
    * @returns {Promise<void>}
    */
+
   deleteOpenChallenges: async (creatorId) => {
     const session = await mongoose.startSession();
     try {
