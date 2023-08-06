@@ -27,7 +27,7 @@ const publicVapidKey =
 let theHeader = new Headers();
 theHeader.append("Content-Type", "application/json");
 messaging.getToken({ vapidKey: publicVapidKey }).then((token) => {
-  console.log(token);
+
   if (!localStorage.getItem("tokenSent")) {
     const body = {
       sitename: location.hostname,

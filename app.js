@@ -7,7 +7,7 @@ const session = require("express-session");
 const Sentry = require("./sentry.js");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
-
+const userSockets = require("./allSocketConnection");
 const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
@@ -49,6 +49,13 @@ connectDB()
     const io = socket.init(server);
 
     io.on("connection", (socket) => {
+      if (userSockets.has(socket.user.id)) {
+        const previousSocket = userSockets.get(socket.user.id);
+        previousSocket.disconnect();
+        userSockets.delete(socket.user.id);
+      }
+      userSockets.set(socket.user.id, socket);
+
       connectedSocketsCount++;
       console.log(
         `Socket connected! Total connections: ${connectedSocketsCount}`
@@ -59,6 +66,12 @@ connectDB()
         console.log(
           `Socket disconnected! Total connections: ${connectedSocketsCount}`
         );
+        for (const [userId, userSocket] of userSockets.entries()) {
+          if (userSocket === socket) {
+            userSockets.delete(userId);
+            break;
+          }
+        }
       });
     });
   })

@@ -1,5 +1,7 @@
 const History = require("../models/history");
 const Account = require("../models/accounts");
+const userSockets = require("../allSocketConnection");
+const challengesController = require("../controllers/challenges");
 
 async function generateHistory(historyObj, session) {
   try {
@@ -26,6 +28,19 @@ async function generateHistory(historyObj, session) {
   } catch (error) {
     console.error("Error creating History", error);
     throw error;
+  }
+}
+async function socketOnLogout(userId) {
+  try {
+    const userIdString = userId.toString();
+    if (userSockets.has(userIdString)) {
+      const previousSocket = userSockets.get(userIdString);
+      previousSocket.disconnect();
+      userSockets.delete(userIdString);
+      console.log(`Socket connection closed for user ID: ${userId}`);
+    }
+  } catch (error) {
+    console.error("Error disconnecting socket:", error);
   }
 }
 
@@ -64,7 +79,6 @@ async function balanceMinus(updatedChallenge, session) {
       creatorChips.depositCash = updatedChallenge.amount;
     } else if (creatorAccount.depositCash < updatedChallenge.amount) {
       const remaining = updatedChallenge.amount - creatorAccount.depositCash;
-
       if (creatorAccount.winningCash < remaining) {
         throw new Error("Insufficient balance for creator");
       } else {
@@ -89,6 +103,14 @@ async function balanceMinus(updatedChallenge, session) {
       { $set: playerAccount },
       { new: true, session }
     );
+    await challengesController.updateChallengeById(
+      {
+        _id: updatedChallenge._id,
+        creatorChips: creatorChips,
+        playerChips: playerChips,
+      },
+      session
+    );
   } catch (error) {
     console.error("StartGame ", error);
     throw error;
@@ -98,4 +120,5 @@ async function balanceMinus(updatedChallenge, session) {
 module.exports = {
   generateHistory,
   balanceMinus,
+  socketOnLogout,
 };

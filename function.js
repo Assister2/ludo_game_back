@@ -1,6 +1,7 @@
 const accountController = require("./controllers/accounts");
 const ChallengeModel = require("./models/challenges");
 const History = require("./models/history");
+const userSockets = require("./allSocketConnection");
 
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
@@ -26,7 +27,10 @@ async function startGame(data, socket) {
         challengeRedirect: true,
         challengeId: startGameChallenge._id,
       };
-
+      const targetSocket = userSockets.get(
+        startGameChallenge.player.toString()
+      );
+      targetSocket.send(JSON.stringify(response));
       return socket.send(JSON.stringify(response));
     } else {
       response = {
@@ -175,7 +179,6 @@ const bothResultNotUpdated = async (challengeId) => {
         let creatorId = challenge.creator._id;
         let playerId = challenge.player._id;
 
-        // Iterate through the challenges
         if (
           challenge.results.creator.result === "" &&
           challenge.results.player.result === ""
@@ -222,7 +225,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
       throw error;
     }
-  }, 20 * 60 * 1000); // 10 minutes delay
+  }, 20 * 60 * 1000); // 20 minutes delay
 };
 
 module.exports = {
