@@ -18,14 +18,14 @@ const bodyParser = require("body-parser");
 const sessionAuthMiddleware = require("./middleware/session.js");
 const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
-const options = require("./services/session.js");
+const {options} = require("./services/session.js");
 const connectDB = require("./database/db");
 
 const socket = require("./socket");
 const handleConnection = require("./socketHandler.js");
 let connectedSocketsCount = 0;
 const app = express();
-// app.set("trust proxy", 1);
+app.set("trust proxy", 1);
 const allowedOrigins = require("./origion/allowedOrigins.js");
 const challengesController = require("./controllers/challenges.js");
 

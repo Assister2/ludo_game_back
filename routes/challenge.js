@@ -134,14 +134,14 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       };
       if (challenge.results[looser].result == "") {
         await handleChallengeUpdate(data);
-        io.emit(
-          "showTimer",
-          JSON.stringify({
-            showTimer: true,
-            challengeId: req.params.id,
-            userId: req.user,
-          })
-        );
+        // io.emit(
+        //   "showTimer",
+        //   JSON.stringify({
+        //     showTimer: true,
+        //     challengeId: req.params.id,
+        //     userId: req.user,
+        //   })
+        // );
       }
       if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
@@ -315,14 +315,14 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       //if 2nd user result is empty
       if (challenge.results[winner].result == "") {
         handleChallengeUpdate(data);
-        io.emit(
-          "showTimer",
-          JSON.stringify({
-            showTimer: true,
-            challengeId: req.params.id,
-            userId: req.user,
-          })
-        );
+        // io.emit(
+        //   "showTimer",
+        //   JSON.stringify({
+        //     showTimer: true,
+        //     challengeId: req.params.id,
+        //     userId: req.user,
+        //   })
+        // );
       }
       if (challenge.results[winner].result == "lost") {
         await handleChallengeCancellation(
@@ -499,14 +499,14 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
 
       if (challenge.results[otherPlayer].result == "") {
         handleChallengeUpdate(data);
-        io.emit(
-          "showTimer",
-          JSON.stringify({
-            showTimer: true,
-            challengeId: req.params.id,
-            userId: req.user,
-          })
-        );
+        // io.emit(
+        //   "showTimer",
+        //   JSON.stringify({
+        //     showTimer: true,
+        //     challengeId: req.params.id,
+        //     userId: req.user,
+        //   })
+        // );
       }
       if (challenge.results[otherPlayer].result == "lost") {
         challengeObj.state = "hold";

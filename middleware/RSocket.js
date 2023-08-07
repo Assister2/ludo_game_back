@@ -13,9 +13,6 @@ const authSocketMiddleware = (socket, next) => {
   }
 
   if (userSockets.has(socket.user.id)) {
-    const previousSocket = userSockets.get(socket.user.id);
-    previousSocket.emit("logout", {});
-    previousSocket.disconnect();
     userSockets.delete(socket.user.id);
   }
   userSockets.set(socket.user.id, socket);
