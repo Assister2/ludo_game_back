@@ -4,10 +4,11 @@ const userSockets = require("../allSocketConnection");
 
 async function removeAllUserSessions(sessionStore, userId) {
   try {
-    console.log("workingtimee");
+    console.log("workingtimee", typeof userId, userId);
     const sessions = await new Promise((resolve, reject) => {
       sessionStore.all((err, sessions) => {
         if (err) {
+          console.log("session", err);
           reject(err);
         } else {
           resolve(sessions);
@@ -21,13 +22,12 @@ async function removeAllUserSessions(sessionStore, userId) {
         session.session.user._id &&
         session.session.user._id.equals(userId)
     );
-    if (activeSessions.length > 0) {
-      if (userSockets.has(userId.toString())) {
-        const lastSocketConn = userSockets.get(userId.toString());
-        lastSocketConn.emit("logout", {});
-        lastSocketConn.disconnect();
-        userSockets.delete(userId.toString());
-      }
+
+    if (userSockets.has(userId.toString())) {
+      const lastSocketConn = userSockets.get(userId.toString());
+      lastSocketConn.emit("logout", {});
+      lastSocketConn.disconnect();
+      userSockets.delete(userId.toString());
     }
 
     const sessionDestroyPromises = activeSessions.map((session) => {
@@ -42,7 +42,6 @@ async function removeAllUserSessions(sessionStore, userId) {
         });
       });
     });
-
     await Promise.all(sessionDestroyPromises);
   } catch (error) {
     console.error("Error removing user sessions:", error);
