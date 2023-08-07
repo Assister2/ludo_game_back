@@ -154,7 +154,7 @@ function handleConnection(socket) {
               return socket.emit("ludogame", JSON.stringify(response));
             }
           } catch (error) {
-            console.log("error.message3", error.message);
+            console.log("error.message45", error.message);
             response = {
               ...response,
               status: 400,

@@ -18,7 +18,7 @@ const bodyParser = require("body-parser");
 const sessionAuthMiddleware = require("./middleware/session.js");
 const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
-const {options} = require("./services/session.js");
+const { options } = require("./services/session.js");
 const connectDB = require("./database/db");
 
 const socket = require("./socket");
@@ -44,7 +44,6 @@ connectDB()
       console.log("Application and socket are running on port 4001");
     });
     // await challengesController.purgeDatabase();
-
     // await challengesController.createFakeUsers();
     // await challengesController.createFakeChallenges();
 

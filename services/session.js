@@ -26,7 +26,6 @@ const options = {
   },
 };
 
-// Conditionally set secure and domain options based on NODE_ENV
 if (config.NODE_ENV === "production" || config.NODE_ENV === "staging") {
   options.cookie.secure = true; // Use an environment variable to conditionally enable secure cookie
   options.cookie.domain = ".gotiking.com"; // Use an environment variable for the cookie domain or leave it undefined
