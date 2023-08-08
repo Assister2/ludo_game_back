@@ -9,7 +9,10 @@ const TransactionsModel = require("../models/transactions");
 
 const moment = require("moment");
 const tempUser = require("../models/tempUser");
-const { calculateChips } = require("../helperFunctions/helper");
+const {
+  calculateChips,
+  generateHistory,
+} = require("../helperFunctions/helper");
 const updateAccountAndChips = async (account, chips, session) => {
   if (chips) {
     await Account.findOneAndUpdate(
@@ -60,7 +63,7 @@ const challengesController = {
 
  * @returns {Promise<void>}
  */
-  startGameChallenge: async (challengeId, socket) => {
+  startGameChallenge: async (challengeId, socket, userID) => {
     const session = await mongoose.startSession();
 
     try {
@@ -109,7 +112,7 @@ const challengesController = {
           { _id: challengeId, state: "playing" },
           { $set: { roomCode: roomCode } },
           { new: true, session }
-        );
+        ).populate("creator player", "username");
 
         let playerAccount = await Account.findOne({
           userId: updatedChallenge.player._id,
@@ -156,18 +159,41 @@ const challengesController = {
             creatorAccount.wallet -= updatedChallenge.amount;
           }
         }
+        let winner =
+          userID == updatedChallenge.creator._id ? "creator" : "player";
+        let looser =
+          userID != updatedChallenge.creator._id ? "creator" : "player";
 
-        await Account.findOneAndUpdate(
+        const creatorBalance = await Account.findOneAndUpdate(
           { userId: creatorAccount.userId },
           { $set: creatorAccount },
           { new: true, session }
         );
+        const creatorHistory = {
+          userId: creatorBalance.userId,
+          historyText: `Started Game with ${updatedChallenge[looser].username}`,
+          roomCode: updatedChallenge.roomCode,
+          closingBalance: creatorBalance.wallet,
+          amount: Number(updatedChallenge.amount),
+          type: "Game",
+        };
+        await generateHistory(creatorHistory, session);
 
-        await Account.findOneAndUpdate(
+        const playerBalance = await Account.findOneAndUpdate(
           { userId: playerAccount.userId },
           { $set: playerAccount },
           { new: true, session }
         );
+        const historyObj = {
+          userId: playerBalance.userId,
+          historyText: `Started Game with${updatedChallenge[winner].username}`,
+          roomCode: updatedChallenge.roomCode,
+          closingBalance: playerBalance.wallet,
+          amount: Number(updatedChallenge.amount),
+          type: "Game",
+        };
+
+        await generateHistory(historyObj, session);
         if (playerChips != null || creatorChips != null) {
           await challengesController.updateChallengeById(
             {

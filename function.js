@@ -16,7 +16,8 @@ async function startGame(data, socket) {
   try {
     const startGameChallenge = await challengesController.startGameChallenge(
       data.payload.challengeId,
-      socket
+      socket,
+      data.payload.userId
     );
     if (startGameChallenge.state === "playing") {
       response = {

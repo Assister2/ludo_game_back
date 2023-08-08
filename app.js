@@ -1,13 +1,10 @@
 // app.js
 const express = require("express");
-
 const path = require("path");
-
 const session = require("express-session");
 const Sentry = require("./sentry.js");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
-const userSockets = require("./allSocketConnection");
 const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
@@ -20,7 +17,6 @@ const challengesRouter = require("./routes/challenge");
 const historyRouter = require("./routes/history");
 const { options } = require("./services/session.js");
 const connectDB = require("./database/db");
-
 const socket = require("./socket");
 const handleConnection = require("./socketHandler.js");
 let connectedSocketsCount = 0;

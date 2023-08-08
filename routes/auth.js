@@ -226,7 +226,6 @@ router.post("/confirmOTP", async (req, res) => {
     if (user.otp.updatedAt < otpExpirationTime) {
       return responseHandler(res, 400, null, "OTP is expired");
     }
-
     if (user.otp.code != providedOTP && config.NODE_ENV === "production") {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
