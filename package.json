@@ -5,12 +5,9 @@
   "scripts": {
     "startDocker": "node ./bin/www.js",
     "startDockerBuild": "node ./built/index.js",
-    "start": "nodemon node ./bin/www.js",
+    "start": "nodemon app.js",
     "staging": "nodemon node ./built/index.js",
     "build": "node -r dotenv/config ./node_modules/esbuild/bin/esbuild app.js --platform=node --bundle --outfile=built/index.js && copy .env built"
-
-
-
   },
   "dependencies": {
     "@sentry/node": "^7.57.0",
@@ -37,6 +34,7 @@
     "morgan": "~1.9.1",
     "node-cron": "^3.0.2",
     "node-fetch": "^2.3.0",
+    "redis": "^4.6.7",
     "socket.io": "^4.5.4",
     "unirest": "^0.6.0",
     "urlencode": "^1.1.0",

@@ -1,7 +1,8 @@
 const jwt = require("jsonwebtoken");
-const config = require('../helpers/config');
+const config = require("../helpers/config");
+const { client } = require("../allSocketConnection");
 
-const authSocketMiddleware = (socket, next) => {
+const authSocketMiddleware = async (socket, next) => {
   // since you are sending the token with the query
   const token = socket.handshake.auth?.token;
   try {
@@ -10,6 +11,13 @@ const authSocketMiddleware = (socket, next) => {
   } catch (err) {
     return next(new Error("NOT AUTHORIZED"));
   }
+  const userId = socket.user.id;
+  const previousSocketId = await client.get(userId);
+  if (previousSocketId) {
+    client.del(userId);
+  }
+  await client.set(userId, socket.id);
+
   next();
 };
 

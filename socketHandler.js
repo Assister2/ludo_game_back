@@ -9,9 +9,6 @@ const {
 
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
-
-// 30 seconds
-
 // const { sendFCM } = require("./routes/notification");
 dotenv.config();
 
@@ -63,7 +60,6 @@ function handleConnection(socket) {
 
       return socket.send(JSON.stringify(response));
     }
-    // Parse the incoming message as JSON
   });
   //todo:game
   socket.on("ludogame", async (message) => {
@@ -158,7 +154,7 @@ function handleConnection(socket) {
               return socket.emit("ludogame", JSON.stringify(response));
             }
           } catch (error) {
-            console.log("error.message3", error.message);
+            console.log("error.message45", error.message);
             response = {
               ...response,
               status: 400,
@@ -384,9 +380,8 @@ function handleConnection(socket) {
           break;
 
         case "deleteOpenChallengesOfCreator":
-          
           await challengesController.deleteOpenChallenges(data.payload.userId);
-          
+
           break;
         case "startGame":
           await startGame(data, socket);

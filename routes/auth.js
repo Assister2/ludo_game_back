@@ -3,6 +3,8 @@ var express = require("express");
 const accountController = require("../controllers/accounts");
 const socket = require("../socket");
 var router = express.Router();
+const config = require("../helpers/config");
+const { store } = require("../services/session");
 const mongoose = require("mongoose");
 const auth = require("../controllers/auth");
 const userController = require("../controllers/user");
@@ -14,8 +16,8 @@ const {
   randomIntFromInterval,
 } = require("../helpers");
 const sendText = require("../helpers/sendSMS");
-
 const checkUserName = require("../services");
+const { socketOnLogout } = require("../helperFunctions/helper");
 // const { _app } = require("../firebaseInit");
 
 // Assuming you have imported all the required modules and functions
@@ -30,7 +32,7 @@ router.post("/login", async (req, res) => {
     const user = await userController.existingUser(phoneNumber);
 
     if (!user) {
-      return responseHandler(res, 400, null, "User not found staging");
+      return responseHandler(res, 400, null, "User not found");
     }
 
     if (user.isBlocked) {
@@ -47,17 +49,18 @@ router.post("/login", async (req, res) => {
     const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
     const MAX_OTP_REQUESTS_PER_HOUR = 2;
     const ONE_HOUR_IN_SECONDS = 3600;
-    console.log("loginreqq", seconds, ONE_HOUR_IN_SECONDS);
-    console.log("loginreqq", user.otp.count);
-    if (
-      seconds <= ONE_HOUR_IN_SECONDS &&
-      user.otp.count >= MAX_OTP_REQUESTS_PER_HOUR
-    ) {
+
+    // Reset OTP count if more than an hour has passed
+    if (seconds >= ONE_HOUR_IN_SECONDS) {
+      user.otp.count = 1;
+    }
+
+    if (user.otp.count > MAX_OTP_REQUESTS_PER_HOUR) {
       return responseHandler(
         res,
         400,
         null,
-        "Can Request For 5 OTP In One hour Maximum"
+        "Can Request For 2 OTP In One hour Maximum"
       );
     }
 
@@ -70,11 +73,9 @@ router.post("/login", async (req, res) => {
 
     const otpSentSuccessfully = await sendText(user.otp.code, user.phone);
 
-    if (otpSentSuccessfully.return === false) {
+    if (!otpSentSuccessfully.return) {
       return responseHandler(res, 400, null, "Error sending OTP");
     } else {
-      await sessionHelper.removeAllUserSessions(req.sessionStore, user._id);
-
       await userController.updateUserByPhoneNumber(user);
 
       return responseHandler(res, 200, "OTP Sent", user);
@@ -84,11 +85,15 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/logout", async (req, res) => {
+router.get("/logout", async (req, res) => {
   try {
+    const userId = req.query.userId;
+    // await socketOnLogout(userId);
     if (!req.session.user) {
       return responseHandler(res, 400, null, "User not logged in");
     }
+    const deleteId = true;
+    await sessionHelper.removeAllUserSessions(store, userId, deleteId);
     req.session.destroy((err) => {
       if (err) {
         console.error("Error destroying session:", err);
@@ -146,8 +151,7 @@ router.post("/signup", async (req, res) => {
       code: generate(6),
       updatedAt: new Date(),
     };
-    console.log("signupdata", userData.otp.code);
-
+    console.log("userotp", userData.otp.code);
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
@@ -198,25 +202,22 @@ router.post("/confirmOTP", async (req, res) => {
     }
 
     // Check if the provided OTP is the masterotp (e.g., "808042")
-    const MASTER_OTP = "808042";
-    if (providedOTP === MASTER_OTP) {
-      // Log in the user without checking the regular OTP
-      user.otp.count = 0;
-      user.otpConfirmed = true;
-      await userController.updateUserByPhoneNumber(user);
-      await userController.issueToken(user);
+    // const MASTER_OTP = "808042";
+    // if (providedOTP === MASTER_OTP) {
+    //   // Log in the user without checking the regular OTP
+    //   user.otp.count = 0;
+    //   user.otpConfirmed = true;
+    //   await userController.updateUserByPhoneNumber(user);
+    //   await userController.issueToken(user);
 
-      const io = socket.get();
-      io.emit("getUserProfile", { data: null });
+    //   req.session.user = { _id: user._id, username: user.username };
 
-      req.session.user = { _id: user._id, username: user.username };
-
-      return responseHandler(res, 200, user, null);
-    }
+    //   return responseHandler(res, 200, user, null);
+    // }
 
     // If the provided OTP is not the masterotp, then proceed with regular OTP verification
 
-    const OTP_EXPIRATION_MINUTES = 2;
+    const OTP_EXPIRATION_MINUTES = 2; // Change this to 1 minute
     const date = new Date();
     const otpExpirationTime = new Date(
       date.getTime() - OTP_EXPIRATION_MINUTES * 60 * 1000
@@ -225,18 +226,15 @@ router.post("/confirmOTP", async (req, res) => {
     if (user.otp.updatedAt < otpExpirationTime) {
       return responseHandler(res, 400, null, "OTP is expired");
     }
-
-    if (user.otp.code != providedOTP) {
+    if (user.otp.code != providedOTP && config.NODE_ENV === "production") {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
-
+    const deleteId = false;
+    await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
     user.otp.count = 0;
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);
     await userController.issueToken(user);
-
-    const io = socket.get();
-    io.emit("getUserProfile", { data: null });
 
     req.session.user = { _id: user._id, username: user.username };
 
@@ -269,7 +267,7 @@ router.post("/OTP", async (req, res) => {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
 
-    const OTP_EXPIRATION_MINUTES = 2;
+    const OTP_EXPIRATION_MINUTES = 2; // Change this to 1 minute
     const date = new Date();
     const otpExpirationTime = new Date(
       date.getTime() - OTP_EXPIRATION_MINUTES * 60 * 1000
@@ -279,7 +277,7 @@ router.post("/OTP", async (req, res) => {
       return responseHandler(res, 400, null, "OTP is expired");
     }
 
-    if (user.otp.code != providedOTP) {
+    if (user.otp.code != providedOTP && config.NODE_ENV === "production") {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
 

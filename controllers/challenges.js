@@ -9,7 +9,19 @@ const TransactionsModel = require("../models/transactions");
 
 const moment = require("moment");
 const tempUser = require("../models/tempUser");
-const { Transaction } = require("mongodb-core/lib/transactions");
+const {
+  calculateChips,
+  generateHistory,
+} = require("../helperFunctions/helper");
+const updateAccountAndChips = async (account, chips, session) => {
+  if (chips) {
+    await Account.findOneAndUpdate(
+      { userId: account.userId },
+      { $set: account },
+      { new: true, session }
+    );
+  }
+};
 const challengesController = {
   /**
    * createChallenge - challengeObject that need to be insert.
@@ -51,7 +63,7 @@ const challengesController = {
 
  * @returns {Promise<void>}
  */
-  dataBaseUpdate: async (challengeId, socket) => {
+  startGameChallenge: async (challengeId, socket, userID) => {
     const session = await mongoose.startSession();
 
     try {
@@ -87,25 +99,6 @@ const challengesController = {
           { $set: { state: "open", player: null } },
           { new: true, session }
         );
-        const creator = await User.findOneAndUpdate(
-          { _id: updatedChallenge.creator._id, noOfChallenges: 0 },
-          { $set: { noOfChallenges: 1 } },
-          { new: true, session }
-        );
-        const player = await User.findOneAndUpdate(
-          { _id: updatedChallenge.player._id, noOfChallenges: 0 },
-          { $set: { noOfChallenges: 1 } },
-          { new: true, session }
-        );
-
-        if (!creator && !player) {
-          await session.abortTransaction();
-          session.endSession();
-          return;
-        }
-
-
-
         let creatorChips = { winningCash: 0, depositCash: 0 };
         let playerChips = { winningCash: 0, depositCash: 0 };
         var config = {
@@ -119,7 +112,7 @@ const challengesController = {
           { _id: challengeId, state: "playing" },
           { $set: { roomCode: roomCode } },
           { new: true, session }
-        );
+        ).populate("creator player", "username");
 
         let playerAccount = await Account.findOne({
           userId: updatedChallenge.player._id,
@@ -166,19 +159,41 @@ const challengesController = {
             creatorAccount.wallet -= updatedChallenge.amount;
           }
         }
+        let winner =
+          userID == updatedChallenge.creator._id ? "creator" : "player";
+        let looser =
+          userID != updatedChallenge.creator._id ? "creator" : "player";
 
-        await Account.findOneAndUpdate(
+        const creatorBalance = await Account.findOneAndUpdate(
           { userId: creatorAccount.userId },
           { $set: creatorAccount },
           { new: true, session }
         );
+        const creatorHistory = {
+          userId: creatorBalance.userId,
+          historyText: `Started Game with ${updatedChallenge[looser].username}`,
+          roomCode: updatedChallenge.roomCode,
+          closingBalance: creatorBalance.wallet,
+          amount: Number(updatedChallenge.amount),
+          type: "Game",
+        };
+        await generateHistory(creatorHistory, session);
 
-
-        await Account.findOneAndUpdate(
+        const playerBalance = await Account.findOneAndUpdate(
           { userId: playerAccount.userId },
           { $set: playerAccount },
           { new: true, session }
         );
+        const historyObj = {
+          userId: playerBalance.userId,
+          historyText: `Started Game with${updatedChallenge[winner].username}`,
+          roomCode: updatedChallenge.roomCode,
+          closingBalance: playerBalance.wallet,
+          amount: Number(updatedChallenge.amount),
+          type: "Game",
+        };
+
+        await generateHistory(historyObj, session);
         if (playerChips != null || creatorChips != null) {
           await challengesController.updateChallengeById(
             {
@@ -208,6 +223,7 @@ const challengesController = {
    * deleteRequestedChallenges - to get all challenges
    * @returns {Promise<void>}
    */
+
   deleteOpenChallenges: async (creatorId) => {
     const session = await mongoose.startSession();
     try {

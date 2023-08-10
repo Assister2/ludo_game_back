@@ -1,9 +1,11 @@
 const accountController = require("./controllers/accounts");
 const ChallengeModel = require("./models/challenges");
 const History = require("./models/history");
-
+const { client } = require("./allSocketConnection");
+const socketConn = require("./socket");
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
+const { generateHistory } = require("./helperFunctions/helper");
 
 async function startGame(data, socket) {
   let response = {
@@ -12,24 +14,32 @@ async function startGame(data, socket) {
     error: null,
   };
   try {
-
-    const startGameChallenge = await challengesController.dataBaseUpdate(
+    const startGameChallenge = await challengesController.startGameChallenge(
       data.payload.challengeId,
-      socket
+      socket,
+      data.payload.userId
     );
-    if (startGameChallenge.state == "playing") {
-      if (startGameChallenge) {
-        response = {
-          ...response,
-          status: 200,
-          error: null,
-          data: null,
-          challengeRedirect: true,
-          challengeId: startGameChallenge._id,
-        };
+    if (startGameChallenge.state === "playing") {
+      response = {
+        ...response,
+        status: 200,
+        error: null,
+        data: null,
+        challengeRedirect: true,
+        challengeId: startGameChallenge._id,
+      };
 
-        return socket.send(JSON.stringify(response));
+      const targetSocketId = await client.get(
+        startGameChallenge.player._id.toString()
+      );
+      const io = socketConn.get();
+
+      if (targetSocketId) {
+        const playerSocket = await io.sockets.sockets.get(targetSocketId);
+        playerSocket.send(JSON.stringify(response));
       }
+
+      return socket.send(JSON.stringify(response));
     } else {
       response = {
         status: 400,
@@ -80,15 +90,15 @@ const handleChallengeCancellation = async (
         },
         session
       );
-      let history = new History();
-      history.userId = challenge.creator._id;
-      history.historyText = `Cancelled Against ${challenge[canceller].username}`;
-      history.createdAt = new Date();
-      history.closingBalance = playerWallet.wallet;
-      history.amount = Number(challenge.amount);
-      history.roomCode = challenge.roomCode;
-      history.type = "cancelled";
-      await history.save({ session });
+      const historyObj = {
+        userId: challenge.creator._id,
+        historyText: `Cancelled Against ${challenge[canceller].username}`,
+        closingBalance: playerWallet.wallet,
+        amount: Number(challenge.amount),
+        roomCode: challenge.roomCode,
+        type: "cancelled",
+      };
+      await generateHistory(historyObj, session);
 
       return;
     }
@@ -104,15 +114,15 @@ const handleChallengeCancellation = async (
         },
         session
       );
-      let historyWinner = new History();
-      historyWinner.userId = challenge.player._id;
-      historyWinner.historyText = `Cancelled Against ${challenge[otherPlayer].username}`;
-      historyWinner.createdAt = new Date();
-      historyWinner.closingBalance = playerWallet.wallet;
-      historyWinner.amount = Number(challenge.amount);
-      historyWinner.roomCode = challenge.roomCode;
-      historyWinner.type = "cancelled";
-      await historyWinner.save({ session });
+      const historyObj = {
+        userId: challenge.player._id,
+        historyText: `Cancelled Against ${challenge[otherPlayer].username}`,
+        closingBalance: playerWallet.wallet,
+        amount: Number(challenge.amount),
+        roomCode: challenge.roomCode,
+        type: "cancelled",
+      };
+      await generateHistory(historyObj, session);
 
       return;
     }
@@ -177,7 +187,6 @@ const bothResultNotUpdated = async (challengeId) => {
         let creatorId = challenge.creator._id;
         let playerId = challenge.player._id;
 
-        // Iterate through the challenges
         if (
           challenge.results.creator.result === "" &&
           challenge.results.player.result === ""
@@ -224,7 +233,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
       throw error;
     }
-  }, 20 * 60 * 1000); // 10 minutes delay
+  }, 20 * 60 * 1000); // 20 minutes delay
 };
 
 module.exports = {

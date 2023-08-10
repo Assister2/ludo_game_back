@@ -1,10 +1,14 @@
 // sessionHelper.js
 
-async function removeAllUserSessions(sessionStore, userId) {
+const { client } = require("../allSocketConnection");
+const socket = require("../socket");
+async function removeAllUserSessions(sessionStore, userId, deleteId) {
   try {
+    const io = socket.get();
     const sessions = await new Promise((resolve, reject) => {
       sessionStore.all((err, sessions) => {
         if (err) {
+          console.log("session", err);
           reject(err);
         } else {
           resolve(sessions);
@@ -18,6 +22,19 @@ async function removeAllUserSessions(sessionStore, userId) {
         session.session.user._id &&
         session.session.user._id.equals(userId)
     );
+    const lastSocket = await client.get(userId.toString());
+
+    if (lastSocket) {
+      const previousSocket = await io.sockets.sockets.get(lastSocket);
+
+      if (previousSocket) {
+        previousSocket.emit("logout", {});
+        previousSocket.disconnect(true);
+      }
+      // if (deleteId) {
+      client.del(userId.toString());
+      // }
+    }
 
     const sessionDestroyPromises = activeSessions.map((session) => {
       return new Promise((resolve, reject) => {
@@ -31,7 +48,6 @@ async function removeAllUserSessions(sessionStore, userId) {
         });
       });
     });
-
     await Promise.all(sessionDestroyPromises);
   } catch (error) {
     console.error("Error removing user sessions:", error);

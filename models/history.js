@@ -4,42 +4,43 @@ let historySchema = new mongoose.Schema({
   userId: {
     type: schema.Types.ObjectId,
     ref: "users",
+    required: true,
   },
   type: {
     type: String, //0 for buy and 1 for sell
-    default: "",
+    required: true,
   },
   status: {
     type: String,
-    default: "",
+    default: null,
   },
   roomCode: {
     type: String,
-    default: "",
+    default: null,
   },
   upiId: {
     type: String,
-    default: "",
+    default: null,
   },
   amount: {
     type: Number,
-    default: 0,
+    required: true,
   },
   historyText: {
     type: String,
-    default: "",
+    required: true,
   },
   closingBalance: {
     type: Number,
-    default: 0,
+    required: true,
   },
   createdAt: {
     type: Date,
-    default: "",
+    required: true,
   },
   transactionId: {
     type: String,
-    default: "",
+    default: null,
   },
 });
 

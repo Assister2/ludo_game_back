@@ -1,7 +1,7 @@
 const User = require("../models/user");
 const ChallengeModel = require("../models/challenges");
 const tempUser = require("../models/tempUser");
-const config = require('../helpers/config');
+const config = require("../helpers/config");
 const jwtToken = require("jsonwebtoken");
 const userController = {
   /**
