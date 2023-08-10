@@ -31,9 +31,9 @@ async function removeAllUserSessions(sessionStore, userId, deleteId) {
         previousSocket.emit("logout", {});
         previousSocket.disconnect(true);
       }
-      if (deleteId) {
-        client.del(userId.toString());
-      }
+      // if (deleteId) {
+      client.del(userId.toString());
+      // }
     }
 
     const sessionDestroyPromises = activeSessions.map((session) => {
