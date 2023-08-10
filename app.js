@@ -34,7 +34,7 @@ app.use(
   })
 );
 const server = app.listen(4001, () => {
-  console.log("Application and socket are running on port 4001");
+  console.log("Application and socket are running on produciton port 4001");
 });
 
 const io = socket.init(server);

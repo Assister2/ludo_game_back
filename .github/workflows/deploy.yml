@@ -15,9 +15,6 @@ jobs:
           username: ${{secrets.SSH_USERNAME}} #Private or public key of the server
          
           script: |
-            docker stop $(docker ps -q)
-            docker rm $(docker ps -aq)
-            docker rmi $(docker images -q)
             rm -rf backend_ludo
             rm -rf new
             pm2 kill
