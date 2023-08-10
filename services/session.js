@@ -4,7 +4,7 @@ const config = require("../helpers/config");
 require("dotenv").config(); // Load environment variables from .env file
 
 const store = new MongoDBStore({
-  uri: config.DB_URI, // Use an environment variable for MongoDB URI
+  uri: config.DB_URI,
   collection: "sessions",
   // Add more options for MongoDBStore if necessary, like connectionOptions, autoReconnect, etc.
 });
