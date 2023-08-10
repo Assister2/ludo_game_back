@@ -21,6 +21,7 @@ const sendText = async (text, phoneNumber) => {
   if (config.NODE_ENV === "production") {
     response = await fetch(url, options);
     const json = await response.json();
+    return json;
   } else {
     return (response = { return: true });
   }
