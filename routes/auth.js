@@ -16,7 +16,6 @@ const {
   randomIntFromInterval,
 } = require("../helpers");
 const sendText = require("../helpers/sendSMS");
-
 const checkUserName = require("../services");
 const { socketOnLogout } = require("../helperFunctions/helper");
 // const { _app } = require("../firebaseInit");
@@ -89,11 +88,12 @@ router.post("/login", async (req, res) => {
 router.get("/logout", async (req, res) => {
   try {
     const userId = req.query.userId;
-    await socketOnLogout(userId);
+    // await socketOnLogout(userId);
     if (!req.session.user) {
       return responseHandler(res, 400, null, "User not logged in");
     }
-    await sessionHelper.removeAllUserSessions(store, userId);
+    const deleteId = true;
+    await sessionHelper.removeAllUserSessions(store, userId, deleteId);
     req.session.destroy((err) => {
       if (err) {
         console.error("Error destroying session:", err);
@@ -229,7 +229,8 @@ router.post("/confirmOTP", async (req, res) => {
     if (user.otp.code != providedOTP && config.NODE_ENV === "production") {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
-    await sessionHelper.removeAllUserSessions(store, user._id);
+    const deleteId = false;
+    await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
     user.otp.count = 0;
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);

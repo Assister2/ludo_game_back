@@ -1,4 +1,16 @@
-// userSockets.js
-const userSockets = new Map();
+const redis = require("redis");
+const { promisify } = require("util");
 
-module.exports = userSockets;
+const client = redis.createClient();
+
+(async () => {
+  await client.connect();
+})();
+
+client.on("error", (error) => {
+  console.error("Redis Error:", error);
+});
+client.on("connect", (error) => {
+  console.error("redisconnected:");
+})
+module.exports = { client };

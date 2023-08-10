@@ -1,8 +1,8 @@
 const accountController = require("./controllers/accounts");
 const ChallengeModel = require("./models/challenges");
 const History = require("./models/history");
-const userSockets = require("./allSocketConnection");
-
+const { client } = require("./allSocketConnection");
+const socketConn = require("./socket");
 const challengesController = require("./controllers/challenges");
 const userController = require("./controllers/user");
 const { generateHistory } = require("./helperFunctions/helper");
@@ -28,10 +28,17 @@ async function startGame(data, socket) {
         challengeRedirect: true,
         challengeId: startGameChallenge._id,
       };
-      const targetSocket = userSockets.get(
-        startGameChallenge.player.toString()
+
+      const targetSocketId = await client.get(
+        startGameChallenge.player._id.toString()
       );
-      targetSocket.send(JSON.stringify(response));
+      const io = socketConn.get();
+
+      if (targetSocketId) {
+        const playerSocket = await io.sockets.sockets.get(targetSocketId);
+        playerSocket.send(JSON.stringify(response));
+      }
+
       return socket.send(JSON.stringify(response));
     } else {
       response = {

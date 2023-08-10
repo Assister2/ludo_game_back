@@ -175,7 +175,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           historyText: `Won Against ${challenge[looser].username}`,
           roomCode: challenge.roomCode,
           closingBalance: winnWall.wallet,
-          amount: Number(challenge.amount - (challenge.amount * 3) / 100),
+          amount: Number(amount),
           type: "won",
         };
         await generateHistory(winnerObj, session);
@@ -353,7 +353,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           historyText: `Lost Against ${challenge[winner].username}`,
           roomCode: challenge.roomCode,
           closingBalance: looserWallet.wallet,
-          amount: Number(challenge.amount),
+          amount: Number(amount),
           type: "lost",
         };
         await generateHistory(historyObj, session);
