@@ -60,7 +60,7 @@ async function handleBuyChips(req, res) {
       throw error;
     }
   }
-  if (config.NODE_ENV === "staging"||config.NODE_ENV === "localhost") {
+  if (config.NODE_ENV === "staging" || config.NODE_ENV === "localhost") {
     try {
       if (!req.body.payload) {
         return responseHandler(res, 400, null, "Fields are missing232");
@@ -270,7 +270,7 @@ async function ConfirmPayment(req, res) {
       historyText: "Chips Added Via UPI",
       closingBalance: updatedAccount.wallet,
       amount: Number(amountAsNumber),
-      transactionId: transactionId._id,
+      transactionId: userTransaction._id,
       type: "buy",
     };
     await generateHistory(historyObj, session);
