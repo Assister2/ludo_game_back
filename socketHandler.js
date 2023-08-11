@@ -391,7 +391,6 @@ function handleConnection(socket) {
           break;
       }
 
-      // });
       let challenges = await challengesController.getAllChallenges();
 
       socket.send(JSON.stringify(challenges));
