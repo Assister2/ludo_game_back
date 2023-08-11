@@ -1,4 +1,3 @@
-// app.js
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
@@ -11,7 +10,6 @@ const userRouter = require("./routes/user");
 const testRouter = require("./routes/test.js");
 const transactionRouter = require("./routes/transactions");
 const payment = require("./routes/payment");
-
 const bodyParser = require("body-parser");
 const sessionAuthMiddleware = require("./middleware/session.js");
 const challengesRouter = require("./routes/challenge");
