@@ -5,9 +5,7 @@ cron.schedule("*/2 * * * *", async () => {
   try {
     await challengesController.UpdateOpenChallenges();
 
-    console.log(
-      "Cron job: challengesController.UpdateOpenChallenges() executed successfully."
-    );
+    console.log("open challenges delete by cronjosbs");
   } catch (error) {
     console.error("Error executing cron job:", error);
   }

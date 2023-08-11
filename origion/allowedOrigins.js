@@ -17,7 +17,9 @@ const allowedOrigins = [
   "https://www.stage.gotiking.com/",
   "https://stage.gotiking.com/",
   "http://localhost:3000",
+  "http://localhost:3002",
   "https://localhost:3000",
+  "https://localhost:3002",
   // Add more origins as needed
 ];
 
