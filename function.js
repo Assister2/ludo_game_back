@@ -186,7 +186,6 @@ const bothResultNotUpdated = async (challengeId) => {
       if (challenge) {
         let creatorId = challenge.creator._id;
         let playerId = challenge.player._id;
-
         if (
           challenge.results.creator.result === "" &&
           challenge.results.player.result === ""
@@ -233,7 +232,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
       throw error;
     }
-  }, 20 * 60 * 1000); // 20 minutes delay
+  }, 1 * 30 * 1000); // 20 minutes delay
 };
 
 module.exports = {
