@@ -297,6 +297,7 @@ const challengesController = {
     try {
       const challenges = await ChallengeModel.find({
         state: "open",
+        fake: false,
       });
       challenges;
 
