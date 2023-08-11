@@ -232,7 +232,7 @@ const bothResultNotUpdated = async (challengeId) => {
 
       throw error;
     }
-  }, 1 * 30 * 1000); // 20 minutes delay
+  }, 20 * 60 * 1000); // 20 minutes delay
 };
 
 module.exports = {
