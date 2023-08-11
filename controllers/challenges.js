@@ -186,7 +186,7 @@ const challengesController = {
         );
         const historyObj = {
           userId: playerBalance.userId,
-          historyText: `Started Game with${updatedChallenge[winner].username}`,
+          historyText: `Started Game with ${updatedChallenge[winner].username}`,
           roomCode: updatedChallenge.roomCode,
           closingBalance: playerBalance.wallet,
           amount: Number(updatedChallenge.amount),
