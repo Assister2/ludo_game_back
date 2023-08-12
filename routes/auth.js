@@ -307,7 +307,7 @@ router.post("/OTP", async (req, res) => {
       );
       const historyObj = {
         userId: finalUser.id,
-        historyText: `Sign Up Bonus ${userAccount.depositCash}`,
+        historyText: `Sign Up Bonus added`,
         closingBalance: userAccount.wallet,
         amount: Number(userAccount.depositCash),
         type: "buy",
