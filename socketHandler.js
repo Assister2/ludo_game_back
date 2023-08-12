@@ -259,7 +259,7 @@ function handleConnection(socket) {
           };
           challenge = await challengesController.createChallenge(challenge);
 
-          const challengeMessage = `@${data.username} Set a Challenge\n[Amount] - Rs. ${data.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
+          const challengeMessage = `@${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
           bot.sendMessageToGroup(groupId, challengeMessage);
 
           if (!challenge) {
