@@ -6,17 +6,17 @@ const {
 
   bothResultNotUpdated,
 } = require("./function.js");
-
+const config = require("./helpers/config");
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 // const { sendFCM } = require("./routes/notification");
 dotenv.config();
-
+const botToken = config.BOT_TOKEN;
+const groupId = config.TELEGRAM_GROUPID;
+const bot = new TelegramBotHandler(botToken);
 function handleConnection(socket) {
   const HEARTBEAT_INTERVAL = 30000;
-  const groupId = -1001757142490;
-  const botToken = "6585130867:AAEkKT3AQidz9EeN2MRLiVocrdGwHqRzbLo";
-  const bot = new TelegramBotHandler(botToken);
+
   socket.on("getUserWallet", async (message) => {
     try {
       const data = JSON.parse(message);
@@ -258,8 +258,8 @@ function handleConnection(socket) {
             createdAt: new Date(),
           };
           challenge = await challengesController.createChallenge(challenge);
-
-          const challengeMessage = `@${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
+          socket.send(JSON.stringify({ status: "enabled" }));
+          const challengeMessage = `${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
           bot.sendMessageToGroup(groupId, challengeMessage);
 
           if (!challenge) {
