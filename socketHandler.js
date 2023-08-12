@@ -10,10 +10,11 @@ const config = require("./helpers/config");
 const accountController = require("./controllers/accounts");
 const challengesController = require("./controllers/challenges");
 // const { sendFCM } = require("./routes/notification");
+let bot = null;
 dotenv.config();
-const botToken = config.BOT_TOKEN;
-const groupId = config.TELEGRAM_GROUPID;
-const bot = new TelegramBotHandler(botToken);
+if (config.NODE_ENV === "production") {
+  bot = new TelegramBotHandler(config.BOT_TOKEN);
+}
 function handleConnection(socket) {
   const HEARTBEAT_INTERVAL = 30000;
 
@@ -259,8 +260,10 @@ function handleConnection(socket) {
           };
           challenge = await challengesController.createChallenge(challenge);
           socket.send(JSON.stringify({ status: "enabled" }));
-          const challengeMessage = `${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
-          bot.sendMessageToGroup(groupId, challengeMessage);
+          if (config.NODE_ENV === "production") {
+            const challengeMessage = `${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
+            bot.sendMessageToGroup(config.TELEGRAM_GROUPID, challengeMessage);
+          }
 
           if (!challenge) {
             response = {

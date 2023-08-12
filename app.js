@@ -20,7 +20,7 @@ const { options } = require("./services/session.js");
 const connectDB = require("./database/db");
 const socket = require("./socket");
 const handleConnection = require("./socketHandler.js");
-// require("./database/cronjobs/cronjobs.js");
+require("./database/cronjobs/cronjobs.js");
 const app = express();
 app.set("trust proxy", 1);
 const allowedOrigins = require("./origion/allowedOrigins.js");
