@@ -17,7 +17,10 @@ const {
 } = require("../helpers");
 const sendText = require("../helpers/sendSMS");
 const checkUserName = require("../services");
-const { socketOnLogout } = require("../helperFunctions/helper");
+const {
+  socketOnLogout,
+  generateHistory,
+} = require("../helperFunctions/helper");
 // const { _app } = require("../firebaseInit");
 
 // Assuming you have imported all the required modules and functions
@@ -295,8 +298,21 @@ router.post("/OTP", async (req, res) => {
 
       const accountObject = {
         userId: finalUser.id,
+        depositCash: 10,
+        wallet: 10,
       };
-      await accountController.insertAccount(accountObject, session);
+      const userAccount = await accountController.insertAccount(
+        accountObject,
+        session
+      );
+      const historyObj = {
+        userId: finalUser.id,
+        historyText: `Sign Up Bonus ${userAccount.depositCash}`,
+        closingBalance: userAccount.wallet,
+        amount: Number(userAccount.depositCash),
+        type: "buy",
+      };
+      await generateHistory(historyObj, session);
 
       if (user.referer) {
         await userController.increasenoOfrefer(user.referer, session);
