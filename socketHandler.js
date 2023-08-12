@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-
+const TelegramBotHandler = require("./telegrambots/telegramBot");
 const {
   startGame,
 
@@ -14,6 +14,9 @@ dotenv.config();
 
 function handleConnection(socket) {
   const HEARTBEAT_INTERVAL = 30000;
+  const groupId = -1001757142490;
+  const botToken = "6585130867:AAEkKT3AQidz9EeN2MRLiVocrdGwHqRzbLo";
+  const bot = new TelegramBotHandler(botToken);
   socket.on("getUserWallet", async (message) => {
     try {
       const data = JSON.parse(message);
@@ -254,9 +257,11 @@ function handleConnection(socket) {
             // roomCode: roomCodeResponse.data,
             createdAt: new Date(),
           };
-
           challenge = await challengesController.createChallenge(challenge);
-          socket.send(JSON.stringify({ status: "enabled" }));
+
+          const challengeMessage = `@${data.username} Set a Challenge\n[Amount] - Rs. ${data.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
+          bot.sendMessageToGroup(groupId, challengeMessage);
+
           if (!challenge) {
             response = {
               ...response,
