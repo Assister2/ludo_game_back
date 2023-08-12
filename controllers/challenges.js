@@ -74,6 +74,16 @@ const challengesController = {
         { new: true, session }
       );
       if (updatedChallenge) {
+        await User.findOneAndUpdate(
+          { _id: updatedChallenge.creator._id },
+          { $set: { noOfChallenges: 1 } },
+          { new: true }
+        );
+        await User.findOneAndUpdate(
+          { _id: updatedChallenge.player._id },
+          { $set: { noOfChallenges: 1 } },
+          { new: true }
+        );
         await ChallengeModel.deleteMany(
           {
             creator: updatedChallenge.creator._id,

@@ -2,6 +2,8 @@ require("dotenv").config();
 const config = {
   NODE_ENV: process.env.NODE_ENV,
   SMS_KEY: process.env.SMS_KEY,
+  TELEGRAM_GROUPID: process.env.TELEGRAM_GROUPID,
+  BOT_TOKEN: process.env.BOT_TOKEN,
   NODE_APP_SENTRY_DSN_PROD: process.env.NODE_APP_SENTRY_DSN_PROD,
   EMAIL: process.env.EMAIL,
   PASSWORD: process.env.PASSWORD,

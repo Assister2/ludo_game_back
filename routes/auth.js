@@ -17,7 +17,10 @@ const {
 } = require("../helpers");
 const sendText = require("../helpers/sendSMS");
 const checkUserName = require("../services");
-const { socketOnLogout } = require("../helperFunctions/helper");
+const {
+  socketOnLogout,
+  generateHistory,
+} = require("../helperFunctions/helper");
 // const { _app } = require("../firebaseInit");
 
 // Assuming you have imported all the required modules and functions
@@ -47,7 +50,7 @@ router.post("/login", async (req, res) => {
     const currentDate = new Date();
     const lastUpdateDate = user.otp.updatedAt;
     const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
-    const MAX_OTP_REQUESTS_PER_HOUR = 2;
+    const MAX_OTP_REQUESTS_PER_HOUR = 5;
     const ONE_HOUR_IN_SECONDS = 3600;
 
     // Reset OTP count if more than an hour has passed
@@ -60,7 +63,7 @@ router.post("/login", async (req, res) => {
         res,
         400,
         null,
-        "Can Request For 2 OTP In One hour Maximum"
+        "Can Request For 5 OTP In One hour Maximum"
       );
     }
 
@@ -295,8 +298,21 @@ router.post("/OTP", async (req, res) => {
 
       const accountObject = {
         userId: finalUser.id,
+        depositCash: 10,
+        wallet: 10,
       };
-      await accountController.insertAccount(accountObject, session);
+      const userAccount = await accountController.insertAccount(
+        accountObject,
+        session
+      );
+      const historyObj = {
+        userId: finalUser.id,
+        historyText: `Sign Up Bonus added`,
+        closingBalance: userAccount.wallet,
+        amount: Number(userAccount.depositCash),
+        type: "buy",
+      };
+      await generateHistory(historyObj, session);
 
       if (user.referer) {
         await userController.increasenoOfrefer(user.referer, session);

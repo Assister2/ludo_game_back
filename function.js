@@ -186,7 +186,6 @@ const bothResultNotUpdated = async (challengeId) => {
       if (challenge) {
         let creatorId = challenge.creator._id;
         let playerId = challenge.player._id;
-
         if (
           challenge.results.creator.result === "" &&
           challenge.results.player.result === ""
