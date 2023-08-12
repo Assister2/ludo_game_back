@@ -47,7 +47,7 @@ router.post("/login", async (req, res) => {
     const currentDate = new Date();
     const lastUpdateDate = user.otp.updatedAt;
     const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
-    const MAX_OTP_REQUESTS_PER_HOUR = 2;
+    const MAX_OTP_REQUESTS_PER_HOUR = 5;
     const ONE_HOUR_IN_SECONDS = 3600;
 
     // Reset OTP count if more than an hour has passed
@@ -60,7 +60,7 @@ router.post("/login", async (req, res) => {
         res,
         400,
         null,
-        "Can Request For 2 OTP In One hour Maximum"
+        "Can Request For 5 OTP In One hour Maximum"
       );
     }
 
