@@ -215,6 +215,18 @@ const userController = {
       throw error;
     }
   },
+  updateTempUserByPhoneNumber: async (userData) => {
+    try {
+      let user = await tempUser.findOneAndUpdate(
+        { phone: userData.phone },
+        { $set: userData },
+        { new: true }
+      );
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  },
   convertTempToUser: async (userData) => {
     try {
       let user = await User.findOneAndUpdate(

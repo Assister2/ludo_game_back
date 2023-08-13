@@ -169,7 +169,7 @@ router.post("/signup", async (req, res) => {
 
     try {
       await userController.deleteExistingTempUser(req.body.phone, session);
-      const newUser = await userController.tempInsertUser(userData, session);
+      await userController.tempInsertUser(userData, session);
 
       await session.commitTransaction();
       session.endSession();
@@ -317,21 +317,6 @@ router.post("/OTP", async (req, res) => {
       if (user.referer) {
         await userController.increasenoOfrefer(user.referer, session);
       }
-
-      // try {
-      //   await _app
-      //     .messaging()
-      //     .subscribeToTopic(token, topic)
-      //     .then((resp) => {
-      //       console.log(resp);
-      //     })
-      //     .catch((err) => {
-      //       console.log(err);
-      //     });
-      // } catch (err) {
-      //   console.log("fcm", err);
-      // }
-
       await session.commitTransaction();
       session.endSession();
 
@@ -352,13 +337,18 @@ router.post("/resendOTP", async (req, res) => {
     if (!req.body.hasOwnProperty("phone")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
-
+    let user = null;
     const phoneNumber = req.body.phone;
-    const user = await userController.existingUser(phoneNumber);
+    const register = req.body.register;
+    if (register) {
+      user = await userController.existingTempUser(phoneNumber);
+    } else {
+      user = await userController.existingUser(phoneNumber);
+    }
+
     if (!user) {
       return responseHandler(res, 400, null, "User not found");
     }
-    // User already exists, proceed with resending the OTP
     const otpResendLimit = 5;
     const otpResendLimitDuration = 3600; // in seconds (1 hour)
     const currentDate = new Date();
@@ -387,7 +377,11 @@ router.post("/resendOTP", async (req, res) => {
     if (!otpSentSuccessfully.return) {
       return responseHandler(res, 400, null, "Error sending OTP");
     } else {
-      await userController.updateUserByPhoneNumber(user);
+      if (register) {
+        await userController.updateTempUserByPhoneNumber(user);
+      } else {
+        await userController.updateUserByPhoneNumber(user);
+      }
 
       return responseHandler(res, 200, "OTP Sent", user);
     }
@@ -396,17 +390,5 @@ router.post("/resendOTP", async (req, res) => {
     responseHandler(res, 400, null, error.message);
   }
 });
-
-// Helper function to update user's OTP information
-function updateOTPInfo(user, newOTP) {
-  return {
-    ...user,
-    otp: {
-      code: newOTP,
-      updatedAt: new Date(),
-      count: user.otp.count + 1,
-    },
-  };
-}
 
 module.exports = router;
