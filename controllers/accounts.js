@@ -36,6 +36,23 @@ const accountController = {
 
   updateAccountByUserId: async (accountObject, session) => {
     try {
+      if (accountObject.wallet !== undefined) {
+        accountObject.wallet = parseFloat(accountObject.wallet.toFixed(2));
+      }
+      if (accountObject.winningCash !== undefined) {
+        accountObject.winningCash = parseFloat(
+          accountObject.winningCash.toFixed(2)
+        );
+      }
+      if (accountObject.depositingCash !== undefined) {
+        accountObject.depositingCash = parseFloat(
+          accountObject.depositingCash.toFixed(2)
+        );
+      }
+      if (accountObject.totalWin !== undefined) {
+        accountObject.totalWin = parseFloat(accountObject.totalWin.toFixed(2));
+      }
+
       let account = await Account.findOneAndUpdate(
         { userId: accountObject.userId },
         { $set: accountObject },
