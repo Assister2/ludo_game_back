@@ -92,7 +92,7 @@ const handleChallengeCancellation = async (
       );
       const historyObj = {
         userId: challenge.creator._id,
-        historyText: `Cancelled Against ${challenge[canceller].username}`,
+        historyText: `Cancelled Against ${challenge.player.username}`,
         closingBalance: playerWallet.wallet,
         amount: Number(challenge.amount),
         roomCode: challenge.roomCode,
@@ -116,7 +116,7 @@ const handleChallengeCancellation = async (
       );
       const historyObj = {
         userId: challenge.player._id,
-        historyText: `Cancelled Against ${challenge[otherPlayer].username}`,
+        historyText: `Cancelled Against ${challenge.creator.username}`,
         closingBalance: playerWallet.wallet,
         amount: Number(challenge.amount),
         roomCode: challenge.roomCode,

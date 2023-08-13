@@ -10,7 +10,7 @@ const Router = express.Router();
 const { handleChallengeCancellation } = require("../function");
 const History = require("../models/history");
 
-const socket = require("../socket");
+
 const { handleChallengeUpdate } = require("../function");
 const axios = require("axios");
 // const { MongoClient } = mongodb;
@@ -50,7 +50,7 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    const io = socket.get();
+
     if (!req.params.hasOwnProperty("id")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
@@ -257,7 +257,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       if (challenge.results[looser].result !== "") {
         return responseHandler(res, 400, null, "result already updatedd");
       }
-      const io = socket.get();
+
 
       if (challenge.results[looser].result !== "") {
         return responseHandler(
@@ -451,8 +451,6 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       if (challenge.results[canceller].result !== "") {
         return responseHandler(res, 400, null, "result already updatedd");
       }
-
-      const io = socket.get();
 
       let cancellerWallet = await accountController.getAccountByUserId(
         challenge[canceller]._id

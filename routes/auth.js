@@ -355,48 +355,44 @@ router.post("/resendOTP", async (req, res) => {
 
     const phoneNumber = req.body.phone;
     const user = await userController.existingUser(phoneNumber);
+    if (!user) {
+      return responseHandler(res, 400, null, "User not found");
+    }
+    // User already exists, proceed with resending the OTP
+    const otpResendLimit = 5;
+    const otpResendLimitDuration = 3600; // in seconds (1 hour)
+    const currentDate = new Date();
+    const lastUpdateDate = user.otp.updatedAt;
+    const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
 
-    if (user) {
-      // User already exists, proceed with resending the OTP
-      const otpResendLimit = 5;
-      const otpResendLimitDuration = 3600; // in seconds (1 hour)
-      const currentDate = new Date();
-      const lastUpdateDate = user.otp.updatedAt;
-      const seconds = (currentDate.getTime() - lastUpdateDate.getTime()) / 1000;
+    if (seconds <= otpResendLimitDuration && user.otp.count >= otpResendLimit) {
+      return responseHandler(
+        res,
+        400,
+        null,
+        "Can Request For 5 OTP In One hour Maximum"
+      );
+    }
 
-      if (
-        seconds <= otpResendLimitDuration &&
-        user.otp.count >= otpResendLimit
-      ) {
-        return responseHandler(
-          res,
-          400,
-          null,
-          "Can Request For 5 OTP In One hour Maximum"
-        );
-      }
+    // Generate a new OTP and update the user's OTP information
+    const OTP_CODE_LENGTH = 6;
+    user.otp = {
+      code: generate(OTP_CODE_LENGTH),
+      updatedAt: new Date(),
+      count: user.otp.count + 1,
+    };
 
-      // Generate a new OTP and update the user's OTP information
-      const newOTP = generate(6);
-      const updatedUser = updateOTPInfo(user, newOTP);
+    let otpSentSuccessfully = await sendText(user.otp.code, user.phone);
 
-      let textRes = await sendText(newOTP, user.phone);
-      // textRes.return = true;
-
-      if (textRes.return === false) {
-        return responseHandler(res, 400, null, textRes.message);
-      } else {
-        await userController.updateUserByPhoneNumber(updatedUser);
-        return responseHandler(res, 200, "OTP Sent", null);
-      }
+    if (!otpSentSuccessfully.return) {
+      return responseHandler(res, 400, null, "Error sending OTP");
     } else {
-      // User does not exist, generate a new OTP for registration flow
-      const newOTP = generate(6);
-      // Perform registration-related tasks if needed
+      await userController.updateUserByPhoneNumber(user);
 
-      return responseHandler(res, 200, "OTP Sent", null);
+      return responseHandler(res, 200, "OTP Sent", user);
     }
   } catch (error) {
+    console.log("error", error);
     responseHandler(res, 400, null, error.message);
   }
 });

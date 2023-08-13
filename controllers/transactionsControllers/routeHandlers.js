@@ -93,7 +93,6 @@ async function handleBuyChips(req, res) {
           userId: user.id,
           depositCash: account.depositCash + amount,
           wallet: account.wallet + amount,
-          withdrawRequest: false,
         };
 
         transactionId = await transactionsController.insertNewTransaction(
@@ -228,9 +227,7 @@ async function handleGetWallet(req, res) {
   }
 }
 async function ConfirmPayment(req, res) {
-  // if (status !== "success") {
-  //   return responseHandler(res, 400, null, "request failed");
-  // }
+ 
 
   const session = await mongoose.startSession();
   session.startTransaction();
