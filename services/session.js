@@ -6,7 +6,6 @@ require("dotenv").config(); // Load environment variables from .env file
 const store = new MongoDBStore({
   uri: config.DB_URI,
   collection: "sessions",
-  // Add more options for MongoDBStore if necessary, like connectionOptions, autoReconnect, etc.
 });
 store.on("error", (error) => {
   console.error("MongoDBStore connection error:", error);
