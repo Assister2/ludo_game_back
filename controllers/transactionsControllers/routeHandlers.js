@@ -60,7 +60,7 @@ async function handleBuyChips(req, res) {
       throw error;
     }
   }
-  if (config.NODE_ENV === "staging" || config.NODE_ENV === "localhost") {
+  if (config.NODE_ENV === "test" || config.NODE_ENV === "localhost") {
     try {
       if (!req.body.payload) {
         return responseHandler(res, 400, null, "Fields are missing232");
@@ -232,12 +232,12 @@ async function ConfirmPayment(req, res) {
 
   try {
     const data = req.body;
-    console.log("data", data);
+
     const { amount, status, upi_txn_id, id } = data;
-    console.log("amountt", amount, typeof amount);
     const amountAsNumber = parseFloat(amount);
-    const userdata = JSON.parse(req.body);
-    console.log("userdata", typeof userdata.amount);
+    if (status === "failure") {
+      return responseHandler(res, 200, {}, null);
+    }
     const userTransaction =
       await transactionsController.existingTransactionsById(data.client_txn_id);
     await transactionsController.updateTransactionById(
