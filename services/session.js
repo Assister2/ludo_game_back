@@ -21,12 +21,12 @@ const options = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: false,
+    httpOnly: true,
     maxAge: parseInt(maxAgeForSessionCookie),
   },
 };
 
-if (config.NODE_ENV === "production" || config.NODE_ENV === "staging") {
+if (config.NODE_ENV === "production") {
   options.cookie.secure = true; // Use an environment variable to conditionally enable secure cookie
   options.cookie.domain = ".gotiking.com"; // Use an environment variable for the cookie domain or leave it undefined
 }
