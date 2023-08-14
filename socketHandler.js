@@ -5,6 +5,7 @@ const {
   startGame,
 
   bothResultNotUpdated,
+  validateAmount,
 } = require("./function.js");
 const config = require("./helpers/config");
 const accountController = require("./controllers/accounts");
@@ -200,6 +201,15 @@ function handleConnection(socket) {
 
       switch (data.type) {
         case "create":
+          const isValidAmount = validateAmount(data.payload.amount);
+          if (!isValidAmount) {
+            const response = {
+              status: 400,
+              error: "Invalid amount",
+              data: null,
+            };
+            return socket.send(JSON.stringify(response));
+          }
           let userWallet = await accountController.getAccountByUserId(
             data.payload.userId
           );
