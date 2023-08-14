@@ -258,7 +258,6 @@ async function ConfirmPayment(req, res) {
       userId: userTransaction.userId,
       depositCash: account.depositCash + amountAsNumber,
       wallet: account.wallet + amountAsNumber,
-      withdrawRequest: false,
     };
 
     const updatedAccount = await accountController.updateAccountByUserId(

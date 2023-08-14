@@ -63,7 +63,7 @@ app.use(
 );
 
 app.use(session(options));
-app.use("/api/test", testRouter);
+
 app.use("/api/auth", authRouter);
 app.use("/api/buychips", payment);
 app.use(sessionAuthMiddleware);
