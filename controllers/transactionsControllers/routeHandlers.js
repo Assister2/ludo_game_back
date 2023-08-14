@@ -40,7 +40,6 @@ async function handleBuyChips(req, res) {
         transactionObject,
         session
       );
-      console.log("userByid", User);
       const paymentUrl = await getUPILink(Transaction._id, amount, User);
       const { status, data } = paymentUrl;
       if (!status) {
@@ -234,12 +233,14 @@ async function ConfirmPayment(req, res) {
     const data = req.body;
 
     const { amount, status, upi_txn_id, id } = data;
-    const amountAsNumber = parseFloat(amount);
     if (status === "failure") {
-      return responseHandler(res, 200, {}, null);
+      return responseHandler(res, 400, {}, null);
     }
     const userTransaction =
       await transactionsController.existingTransactionsById(data.client_txn_id);
+    if (!userTransaction) {
+      return responseHandler(res, 400, {}, "transaction not found");
+    }
     await transactionsController.updateTransactionById(
       userTransaction._id,
       upi_txn_id,
@@ -252,8 +253,8 @@ async function ConfirmPayment(req, res) {
 
     const accountObject = {
       userId: userTransaction.userId,
-      depositCash: account.depositCash + amountAsNumber,
-      wallet: account.wallet + amountAsNumber,
+      depositCash: account.depositCash + userTransaction.amount,
+      wallet: account.wallet + userTransaction.amount,
     };
 
     const updatedAccount = await accountController.updateAccountByUserId(
@@ -265,7 +266,7 @@ async function ConfirmPayment(req, res) {
       userId: userTransaction.userId,
       historyText: "Chips Added Via UPI",
       closingBalance: updatedAccount.wallet,
-      amount: Number(amountAsNumber),
+      amount: Number(userTransaction.amount),
       transactionId: userTransaction._id,
       type: "buy",
     };
