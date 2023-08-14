@@ -21,7 +21,7 @@ const options = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true,
+    httpOnly: false,
     maxAge: parseInt(maxAgeForSessionCookie),
   },
 };
