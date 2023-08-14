@@ -10,7 +10,6 @@ const Router = express.Router();
 const { handleChallengeCancellation } = require("../function");
 const History = require("../models/history");
 
-
 const { handleChallengeUpdate } = require("../function");
 const axios = require("axios");
 // const { MongoClient } = mongodb;
@@ -258,7 +257,6 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
         return responseHandler(res, 400, null, "result already updatedd");
       }
 
-
       if (challenge.results[looser].result !== "") {
         return responseHandler(
           res,
@@ -363,7 +361,7 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
           historyText: `Won Against ${challenge[looser].username}`,
           roomCode: challenge.roomCode,
           closingBalance: wall.wallet,
-          amount: Number(challenge.amount - (challenge.amount * 3) / 100),
+          amount: Number(challenge.amount * 2 - (challenge.amount * 3) / 100),
           type: "won",
         };
         await generateHistory(winnerObj, session);

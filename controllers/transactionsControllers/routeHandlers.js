@@ -180,7 +180,7 @@ async function handleSellChips(req, res) {
       const transactionObject = {
         amount: amount,
         type: 1, //type 1 is for selling
-        status: 0, // withdrawal request pending 0=pending 1=success
+        status: 2, // 0 for failed 1 for success and 2 for pending
         userId: user.id,
         upiId: upiId,
         withdrawRequest: true,
