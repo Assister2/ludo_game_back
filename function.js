@@ -235,8 +235,25 @@ const bothResultNotUpdated = async (challengeId) => {
   }, 20 * 60 * 1000); // 20 minutes delay
 };
 
+const validateAmount = (amount) => {
+  if (amount < 20 || amount > 10000) {
+    return false;
+  }
+
+  if (amount < 50 && amount % 10 !== 0) {
+    return false;
+  }
+
+  if (amount >= 50 && amount % 50 !== 0) {
+    return false;
+  }
+
+  return true;
+};
+
 module.exports = {
   startGame,
+  validateAmount,
   cancelChallenge,
   bothResultNotUpdated,
   handleChallengeCancellation,
