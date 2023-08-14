@@ -13,7 +13,6 @@ const config = require("../../helpers/config");
 async function handleBuyChips(req, res) {
   const session = await mongoose.startSession();
   if (config.NODE_ENV === "production") {
-    return responseHandler(res, 400, {}, "site is down for maintenance");
 
     try {
       session.startTransaction();
@@ -236,10 +235,15 @@ async function ConfirmPayment(req, res) {
     const data = req.body;
 
     const { amount, status, upi_txn_id, id } = data;
-    const amountAsNumber = parseFloat(amount);
-
+    if (status === "failure") {
+      return responseHandler(res, 400, {}, null);
+    }
     const userTransaction =
       await transactionsController.existingTransactionsById(data.client_txn_id);
+    if (!userTransaction) {
+      return responseHandler(res, 400, {}, null);
+    }
+    const amountAsNumber = userTransaction.amount;
     await transactionsController.updateTransactionById(
       userTransaction._id,
       upi_txn_id,
