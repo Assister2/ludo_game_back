@@ -379,7 +379,6 @@ function handleConnection(socket) {
             throw error;
           }
 
-          // Implement your read operation here
           break;
         case "cancel":
           await challengesController.updateChallengeById23(
