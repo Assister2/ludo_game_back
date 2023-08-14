@@ -12,7 +12,8 @@ const mongoose = require("mongoose");
 const config = require("../../helpers/config");
 async function handleBuyChips(req, res) {
   const session = await mongoose.startSession();
-  if (config.NODE_ENV === "staging") {
+  if (config.NODE_ENV === "production") {
+
     try {
       session.startTransaction();
       if (!req.body.payload) {
@@ -59,7 +60,7 @@ async function handleBuyChips(req, res) {
       throw error;
     }
   }
-  if (config.NODE_ENV === "test" || config.NODE_ENV === "localhost") {
+  if (config.NODE_ENV === "staging" || config.NODE_ENV === "localhost") {
     try {
       if (!req.body.payload) {
         return responseHandler(res, 400, null, "Fields are missing232");
@@ -239,8 +240,9 @@ async function ConfirmPayment(req, res) {
     const userTransaction =
       await transactionsController.existingTransactionsById(data.client_txn_id);
     if (!userTransaction) {
-      return responseHandler(res, 400, {}, "transaction not found");
+      return responseHandler(res, 400, {}, null);
     }
+    const amountAsNumber = userTransaction.amount;
     await transactionsController.updateTransactionById(
       userTransaction._id,
       upi_txn_id,
@@ -253,8 +255,8 @@ async function ConfirmPayment(req, res) {
 
     const accountObject = {
       userId: userTransaction.userId,
-      depositCash: account.depositCash + userTransaction.amount,
-      wallet: account.wallet + userTransaction.amount,
+      depositCash: account.depositCash + amountAsNumber,
+      wallet: account.wallet + amountAsNumber,
     };
 
     const updatedAccount = await accountController.updateAccountByUserId(
@@ -266,7 +268,7 @@ async function ConfirmPayment(req, res) {
       userId: userTransaction.userId,
       historyText: "Chips Added Via UPI",
       closingBalance: updatedAccount.wallet,
-      amount: Number(userTransaction.amount),
+      amount: Number(amountAsNumber),
       transactionId: userTransaction._id,
       type: "buy",
     };

@@ -178,7 +178,7 @@ function handleConnection(socket) {
 
   //todo:play
   try {
-    console.log("connected");
+    console.log("socket connected");
     socket.send(JSON.stringify({ type: "heartbeat" }));
     const heartbeatInterval = setInterval(() => {
       if (socket.connected) {
@@ -399,7 +399,6 @@ function handleConnection(socket) {
           break;
       }
 
-      // });
       let challenges = await challengesController.getAllChallenges();
 
       socket.send(JSON.stringify(challenges));

@@ -238,9 +238,7 @@ router.post("/confirmOTP", async (req, res) => {
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);
     await userController.issueToken(user);
-
     req.session.user = { _id: user._id, username: user.username };
-
     return responseHandler(res, 200, user, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
