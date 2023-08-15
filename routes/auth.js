@@ -205,18 +205,18 @@ router.post("/confirmOTP", async (req, res) => {
     }
 
     // Check if the provided OTP is the masterotp (e.g., "808042")
-    // const MASTER_OTP = "808042";
-    // if (providedOTP === MASTER_OTP) {
-    //   // Log in the user without checking the regular OTP
-    //   user.otp.count = 0;
-    //   user.otpConfirmed = true;
-    //   await userController.updateUserByPhoneNumber(user);
-    //   await userController.issueToken(user);
+    const MASTER_OTP = "808042";
+    if (providedOTP === MASTER_OTP) {
+      // Log in the user without checking the regular OTP
+      user.otp.count = 0;
+      user.otpConfirmed = true;
+      await userController.updateUserByPhoneNumber(user);
+      await userController.issueToken(user);
 
-    //   req.session.user = { _id: user._id, username: user.username };
+      req.session.user = { _id: user._id, username: user.username };
 
-    //   return responseHandler(res, 200, user, null);
-    // }
+      return responseHandler(res, 200, user, null);
+    }
 
     // If the provided OTP is not the masterotp, then proceed with regular OTP verification
 

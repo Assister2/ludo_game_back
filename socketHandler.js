@@ -201,6 +201,14 @@ function handleConnection(socket) {
 
       switch (data.type) {
         case "create":
+          return socket.send(
+            JSON.stringify({
+              status: 400,
+              error: "site is under maintenance,we will back soon",
+              data: null,
+            })
+          );
+          break;
           const isValidAmount = validateAmount(data.payload.amount);
           if (!isValidAmount) {
             const response = {
