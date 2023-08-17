@@ -178,81 +178,166 @@ function handleConnection(socket) {
   });
 
   //todo:play
-  try {
-    console.log("socket connected");
-    socket.send(JSON.stringify({ type: "heartbeat" }));
-    const heartbeatInterval = setInterval(() => {
-      if (socket.connected) {
-        socket.send(JSON.stringify({ type: "heartbeat" }));
-      } else {
-        clearInterval(heartbeatInterval);
-      }
-    }, HEARTBEAT_INTERVAL);
 
-    socket.on("message", async (message) => {
-      const data = JSON.parse(message);
+  console.log("socket connected");
+  socket.send(JSON.stringify({ type: "heartbeat" }));
+  const heartbeatInterval = setInterval(() => {
+    if (socket.connected) {
+      socket.send(JSON.stringify({ type: "heartbeat" }));
+    } else {
+      clearInterval(heartbeatInterval);
+    }
+  }, HEARTBEAT_INTERVAL);
 
-      let userId = "";
-      let response = {
-        status: 200,
-        data: null,
-        error: null,
-      };
+  socket.on("message", async (message) => {
+    const data = JSON.parse(message);
+    let response = {
+      status: 200,
+      data: null,
+      error: null,
+    };
 
-      switch (data.type) {
-        case "create":
-          const isValidAmount = validateAmount(data.payload.amount);
-          if (!isValidAmount) {
-            const response = {
+    switch (data.type) {
+      case "create":
+        const isValidAmount = validateAmount(data.payload.amount);
+        if (!isValidAmount) {
+          const response = {
+            status: 400,
+            error: "Invalid amount",
+            data: null,
+          };
+          return socket.send(JSON.stringify(response));
+        }
+        let userWallet = await accountController.getAccountByUserId(
+          data.payload.userId
+        );
+        if (userWallet.wallet - data.payload.amount < 0) {
+          response = {
+            ...response,
+            status: 400,
+            error: "You dont have enough chips",
+            data: null,
+          };
+          return socket.send(JSON.stringify(response));
+        }
+        let checkChallenge = await challengesController.checkChallengeLimit(
+          data.payload.userId
+        );
+        if (checkChallenge) {
+          response = {
+            ...response,
+            status: 400,
+            error: "You can Set Maximum 3 Challenges at Once",
+            data: null,
+          };
+          return socket.send(JSON.stringify(response));
+        }
+        let sameAmountChallenge =
+          await challengesController.checkSameAmountChallenge({
+            userId: data.payload.userId,
+            amount: data.payload.amount,
+          });
+        if (sameAmountChallenge.length > 0) {
+          response = {
+            ...response,
+            status: 400,
+            error: "Same Amount Challenge already exist",
+            data: null,
+          };
+
+          return socket.send(JSON.stringify(response));
+        }
+        let checkPlayingOrHold = await challengesController.checkPlayingOrHold(
+          data.payload.userId
+        );
+
+        if (!checkPlayingOrHold) {
+          response = {
+            ...response,
+            status: 400,
+            error: "Update Your Result In Previous Match First",
+            data: null,
+          };
+          return socket.send(JSON.stringify(response));
+        }
+
+        let challenge = {
+          creator: data.payload.userId,
+          amount: data.payload.amount,
+          // roomCode: roomCodeResponse.data,
+          createdAt: new Date(),
+        };
+        challenge = await challengesController.createChallenge(challenge);
+        socket.send(JSON.stringify({ status: "enabled" }));
+        if (config.NODE_ENV === "production") {
+          const challengeMessage = `${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
+          bot.sendMessageToGroup(config.TELEGRAM_GROUPID, challengeMessage);
+        }
+
+        if (!challenge) {
+          response = {
+            ...response,
+            status: 400,
+            error: "challenge not created2",
+            data: null,
+          };
+          return socket.send(JSON.stringify(response));
+        }
+
+        break;
+      case "play":
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+          let currentChallenge =
+            await challengesController.getOpenChallengeByChallengeId(
+              data.payload.challengeId
+            );
+
+          if (!currentChallenge) {
+            response = {
+              ...response,
               status: 400,
-              error: "Invalid amount",
+              error: "Request Cancelled",
               data: null,
             };
             return socket.send(JSON.stringify(response));
           }
-          let userWallet = await accountController.getAccountByUserId(
+
+          let playerWallet = await accountController.getAccountByUserId(
             data.payload.userId
           );
-          if (userWallet.wallet - data.payload.amount < 0) {
-            response = {
-              ...response,
-              status: 400,
-              error: "You dont have enough chips",
-              data: null,
-            };
-            return socket.send(JSON.stringify(response));
-          }
-          let checkChallenge = await challengesController.checkChallengeLimit(
-            data.payload.userId
-          );
-          if (checkChallenge) {
-            response = {
-              ...response,
-              status: 400,
-              error: "You can Set Maximum 3 Challenges at Once",
-              data: null,
-            };
-            return socket.send(JSON.stringify(response));
-          }
-          let sameAmountChallenge =
-            await challengesController.checkSameAmountChallenge({
-              userId: data.payload.userId,
-              amount: data.payload.amount,
-            });
-          if (sameAmountChallenge.length > 0) {
-            response = {
-              ...response,
-              status: 400,
-              error: "Same Amount Challenge already exist",
-              data: null,
-            };
 
+          if (playerWallet.wallet - currentChallenge.amount < 0) {
+            response = {
+              ...response,
+              status: 400,
+              error: "You don't have enough chips",
+              data: null,
+            };
             return socket.send(JSON.stringify(response));
           }
-          let checkPlayingOrHold =
+
+          let checkRequestedChallenges =
+            await challengesController.checkAlreadyRequestedGame(
+              data.payload.userId
+            );
+
+          if (checkRequestedChallenges.length > 0) {
+            response = {
+              ...response,
+              status: 400,
+              error: "You have already requested a game",
+              data: null,
+            };
+            return socket.send(JSON.stringify(response));
+          }
+
+          let checkPlayingOrHoldGame =
             await challengesController.checkPlayingOrHold(data.payload.userId);
 
-          if (!checkPlayingOrHold) {
+          if (!checkPlayingOrHoldGame) {
             response = {
               ...response,
               status: 400,
@@ -262,163 +347,71 @@ function handleConnection(socket) {
             return socket.send(JSON.stringify(response));
           }
 
-          let challenge = {
-            creator: data.payload.userId,
-            amount: data.payload.amount,
-            // roomCode: roomCodeResponse.data,
-            createdAt: new Date(),
-          };
-          challenge = await challengesController.createChallenge(challenge);
-          socket.send(JSON.stringify({ status: "enabled" }));
-          if (config.NODE_ENV === "production") {
-            const challengeMessage = `${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
-            bot.sendMessageToGroup(config.TELEGRAM_GROUPID, challengeMessage);
-          }
+          currentChallenge = await challengesController.updateChallengeById44(
+            currentChallenge._id,
+            data.payload.userId,
+            session
+          );
 
-          if (!challenge) {
+          await session.commitTransaction();
+          session.endSession();
+
+          let challenges = await challengesController.getAllChallenges();
+          socket.send(JSON.stringify(challenges));
+
+          if (!currentChallenge) {
             response = {
               ...response,
               status: 400,
-              error: "challenge not created2",
+              error: "Challenge not created",
               data: null,
             };
             return socket.send(JSON.stringify(response));
           }
 
-          break;
-        case "play":
-          const session = await mongoose.startSession();
-          session.startTransaction();
-
-          try {
-            let currentChallenge =
-              await challengesController.getOpenChallengeByChallengeId(
-                data.payload.challengeId
-              );
-
-            if (!currentChallenge) {
-              response = {
-                ...response,
-                status: 400,
-                error: "Request Cancelled",
-                data: null,
-              };
-              return socket.send(JSON.stringify(response));
-            }
-
-            let playerWallet = await accountController.getAccountByUserId(
-              data.payload.userId
-            );
-
-            if (playerWallet.wallet - currentChallenge.amount < 0) {
-              response = {
-                ...response,
-                status: 400,
-                error: "You don't have enough chips",
-                data: null,
-              };
-              return socket.send(JSON.stringify(response));
-            }
-
-            let checkRequestedChallenges =
-              await challengesController.checkAlreadyRequestedGame(
-                data.payload.userId
-              );
-
-            if (checkRequestedChallenges.length > 0) {
-              response = {
-                ...response,
-                status: 400,
-                error: "You have already requested a game",
-                data: null,
-              };
-              return socket.send(JSON.stringify(response));
-            }
-
-            let checkPlayingOrHoldGame =
-              await challengesController.checkPlayingOrHold(
-                data.payload.userId
-              );
-
-            if (!checkPlayingOrHoldGame) {
-              response = {
-                ...response,
-                status: 400,
-                error: "Update Your Result In Previous Match First",
-                data: null,
-              };
-              return socket.send(JSON.stringify(response));
-            }
-
-            currentChallenge = await challengesController.updateChallengeById44(
-              currentChallenge._id,
-              data.payload.userId,
-              session
-            );
-
-            await session.commitTransaction();
-            session.endSession();
-
-            let challenges = await challengesController.getAllChallenges();
-            socket.send(JSON.stringify(challenges));
-
-            if (!currentChallenge) {
-              response = {
-                ...response,
-                status: 400,
-                error: "Challenge not created",
-                data: null,
-              };
-              return socket.send(JSON.stringify(response));
-            }
-
-            socket.send(JSON.stringify({ status: "enabled" }));
-          } catch (error) {
-            await session.abortTransaction();
-            session.endSession();
-            throw error;
-          }
-
-          // Implement your read operation here
-          break;
-        case "cancel":
-          await challengesController.updateChallengeById23(
-            data.payload.challengeId
-          );
           socket.send(JSON.stringify({ status: "enabled" }));
+        } catch (error) {
+          await session.abortTransaction();
+          session.endSession();
+          throw error;
+        }
 
-          break;
-        case "delete":
-          await challengesController.updateDeleteChallengeById(
-            data.payload.challengeId
-          );
+        // Implement your read operation here
+        break;
+      case "cancel":
+        await challengesController.updateChallengeById23(
+          data.payload.challengeId
+        );
+        socket.send(JSON.stringify({ status: "enabled" }));
 
-          socket.send(JSON.stringify({ status: "enabled" }));
+        break;
+      case "delete":
+        await challengesController.updateDeleteChallengeById(
+          data.payload.challengeId
+        );
 
-          break;
+        socket.send(JSON.stringify({ status: "enabled" }));
 
-        case "deleteOpenChallengesOfCreator":
-          await challengesController.deleteOpenChallenges(data.payload.userId);
+        break;
 
-          break;
-        case "startGame":
-          await startGame(data, socket);
-          socket.send(JSON.stringify({ status: "enabled" }));
+      case "deleteOpenChallengesOfCreator":
+        await challengesController.deleteOpenChallenges(data.payload.userId);
 
-          await bothResultNotUpdated(data.payload.challengeId);
-          break;
-      }
+        break;
+      case "startGame":
+        await startGame(data, socket);
+        socket.send(JSON.stringify({ status: "enabled" }));
 
-      let challenges = await challengesController.getAllChallenges();
+        await bothResultNotUpdated(data.payload.challengeId);
+        break;
+    }
+    let challenges = await challengesController.getAllChallenges();
 
-      socket.send(JSON.stringify(challenges));
-    });
-    socket.on("close", (code, reason) => {
-      console.log("WebSocket connection Closed:", code, reason);
-      clearInterval(heartbeatInterval);
-    });
-  } catch (error) {
-    console.log("error", error);
-  }
+    socket.send(JSON.stringify(challenges));
+  });
+  socket.on("close", (code, reason) => {
+    console.log("WebSocket connection Closed:", code, reason);
+    clearInterval(heartbeatInterval);
+  });
 }
 module.exports = handleConnection;

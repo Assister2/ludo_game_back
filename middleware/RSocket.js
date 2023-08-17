@@ -11,12 +11,6 @@ const authSocketMiddleware = async (socket, next) => {
   } catch (err) {
     return next(new Error("NOT AUTHORIZED"));
   }
-  const userId = socket.user.id;
-  const previousSocketId = await client.get(userId);
-  if (previousSocketId) {
-    client.del(userId);
-  }
-  await client.set(userId, socket.id);
 
   next();
 };

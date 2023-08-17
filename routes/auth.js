@@ -239,6 +239,7 @@ router.post("/confirmOTP", async (req, res) => {
     await userController.updateUserByPhoneNumber(user);
     await userController.issueToken(user);
     req.session.user = { _id: user._id, username: user.username };
+    res.cookie("sid", req.sessionID);
     return responseHandler(res, 200, user, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
@@ -293,7 +294,6 @@ router.post("/OTP", async (req, res) => {
       await userController.deleteUser(user._id, session);
       await userController.issueToken(finalUser, session);
       req.session.user = { _id: finalUser._id, username: user.username };
-
       const accountObject = {
         userId: finalUser.id,
         depositCash: 10,
@@ -317,7 +317,7 @@ router.post("/OTP", async (req, res) => {
       }
       await session.commitTransaction();
       session.endSession();
-
+      res.cookie("sid", req.sessionID);
       return responseHandler(res, 200, finalUser, null);
     } catch (error) {
       await session.abortTransaction();

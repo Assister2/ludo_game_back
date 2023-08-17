@@ -8,6 +8,7 @@ const cors = require("cors");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const testRouter = require("./routes/test.js");
+const { client } = require("./allSocketConnection");
 const transactionRouter = require("./routes/transactions");
 const payment = require("./routes/payment");
 const bodyParser = require("body-parser");
@@ -23,7 +24,6 @@ const app = express();
 app.set("trust proxy", 1);
 const allowedOrigins = require("./origion/allowedOrigins.js");
 const challengesController = require("./controllers/challenges.js");
-
 app.use(
   cors({
     credentials: true,
@@ -39,10 +39,18 @@ const io = socket.init(server);
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.errorHandler());
 connectDB().then(async () => {
-  // await challengesController.purgeDatabase();
-  // await challengesController.createFakeUsers();
-  // await challengesController.createFakeChallenges();
   io.on("connection", async (socket) => {
+    const userId = socket.user.id;
+
+    const previousSocketId = await client.get(userId);
+    if (previousSocketId) {
+      const previousSocket = await io.sockets.sockets.get(previousSocketId);
+      if (previousSocket) {
+        previousSocket.disconnect();
+        client.del(userId);
+      }
+    }
+    await client.set(userId, socket.id);
     handleConnection(socket);
   });
 });

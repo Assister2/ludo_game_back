@@ -6,6 +6,7 @@ const indian_names = require("../commonImports/indian_names");
 const axios = require("axios");
 const History = require("../models/history");
 const TransactionsModel = require("../models/transactions");
+const config = require("../helpers/config");
 
 const moment = require("moment");
 const tempUser = require("../models/tempUser");
@@ -291,12 +292,17 @@ const challengesController = {
   },
   purgeDatabase: async (challengeObject) => {
     try {
-      await ChallengeModel.deleteMany();
-      await User.deleteMany();
-      await Account.deleteMany();
-      await tempUser.deleteMany();
-      await TransactionsModel.deleteMany();
-      await History.deleteMany();
+      if (config.NODE_ENV !== "production") {
+        await ChallengeModel.deleteMany();
+        await User.deleteMany();
+        await Account.deleteMany();
+        await tempUser.deleteMany();
+        await TransactionsModel.deleteMany();
+        await History.deleteMany();
+      }else{
+        throw new Error("Cannot delete production database")
+      }
+
       console.log("database deleted");
     } catch (error) {
       console.log("error", error);
@@ -367,6 +373,7 @@ const challengesController = {
     }
   },
   createFakeChallenges: async () => {
+    await ChallengeModel.deleteMany({ fake: true });
     const getRandomNumber = (min, max) => {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     };
@@ -411,6 +418,7 @@ const challengesController = {
   },
 
   createFakeUsers: async () => {
+    await User.deleteMany({ fake: true });
     const getRandomNumber = (min, max) =>
       Math.floor(Math.random() * (max - min + 1)) + min;
 
