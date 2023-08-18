@@ -13,7 +13,7 @@ const config = require("../../helpers/config");
 async function handleBuyChips(req, res) {
   const session = await mongoose.startSession();
   if (config.NODE_ENV === "production") {
-
+    return responseHandler(res, 400, {}, {});
     try {
       session.startTransaction();
       if (!req.body.payload) {
