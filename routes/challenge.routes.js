@@ -14,7 +14,10 @@ const { handleChallengeUpdate } = require("../function");
 const axios = require("axios");
 // const { MongoClient } = mongodb;
 const userController = require("../controllers/user");
-const { generateHistory } = require("../helperFunctions/helper");
+const {
+  generateHistory,
+  getRoomResults,
+} = require("../helperFunctions/helper");
 
 Router.get(
   "/getChallengeByChallengeId/:challengeId",
@@ -70,12 +73,11 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
           res,
           400,
           null,
-          `${winner} result already updatedd`
+          `${winner} result already updated`
         );
       }
       let amount = Number(challenge.amount);
       let userWallet = await accountController.getAccountByUserId(user.id);
-      console.log("winner---------");
       const image = req.body.image;
 
       let file = image;
@@ -91,19 +93,14 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       const { roomCode } = challenge;
       let apiResult = null;
       if (!challenge.apiResult) {
-        axios
-          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
-          .then((response) => {
-            const data = response.data;
+        getRoomResults(roomCode)
+          .then((data) => {
             apiResult = data;
           })
           .catch((error) => {
-            // Handle the error case
-            console.error(error);
+            throw error;
           });
       }
-      // console.log("testtt", response);
-
       let challengeObj = {
         ...challenge._doc,
         results: {
@@ -133,14 +130,6 @@ Router.post("/win/:id", verifyToken, async (req, res) => {
       };
       if (challenge.results[looser].result == "") {
         await handleChallengeUpdate(data);
-        // io.emit(
-        //   "showTimer",
-        //   JSON.stringify({
-        //     showTimer: true,
-        //     challengeId: req.params.id,
-        //     userId: req.user,
-        //   })
-        // );
       }
       if (challenge.results[looser].result == "lost") {
         challengeObj.state = "resolved";
@@ -279,15 +268,12 @@ Router.post("/loose/:id", verifyToken, async (req, res) => {
       const { roomCode } = challenge;
       let apiResult = null;
       if (!challenge.apiResult) {
-        axios
-          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
-          .then((response) => {
-            const data = response.data;
+        getRoomResults(roomCode)
+          .then((data) => {
             apiResult = data;
           })
           .catch((error) => {
-            // Handle the error case
-            console.error(error);
+            throw error;
           });
       }
       let challengeObj = {
@@ -459,15 +445,12 @@ Router.post("/cancel/:id", verifyToken, async (req, res) => {
       const { roomCode } = challenge;
       let apiResult = null;
       if (!challenge.apiResult) {
-        await axios
-          .get(`http://128.199.28.12:3000/ludoking/results/${roomCode}`)
-          .then((response) => {
-            const data = response.data;
+        getRoomResults(roomCode)
+          .then((data) => {
             apiResult = data;
           })
           .catch((error) => {
-            // Handle the error case
-            console.error(error);
+            throw error;
           });
       }
 

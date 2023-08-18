@@ -13,16 +13,9 @@ const tempUser = require("../models/tempUser");
 const {
   calculateChips,
   generateHistory,
+  getRoomCode,
 } = require("../helperFunctions/helper");
-const updateAccountAndChips = async (account, chips, session) => {
-  if (chips) {
-    await Account.findOneAndUpdate(
-      { userId: account.userId },
-      { $set: account },
-      { new: true, session }
-    );
-  }
-};
+
 const challengesController = {
   /**
    * createChallenge - challengeObject that need to be insert.
@@ -112,13 +105,7 @@ const challengesController = {
         );
         let creatorChips = { winningCash: 0, depositCash: 0 };
         let playerChips = { winningCash: 0, depositCash: 0 };
-        var config = {
-          method: "get",
-          url: "  http://128.199.28.12:3000/ludoking/roomcode",
-          headers: {},
-        };
-        let roomCodeResponse = await axios(config);
-        const roomCode = roomCodeResponse.data;
+        const roomCode = await getRoomCode();
         updatedChallenge = await ChallengeModel.findOneAndUpdate(
           { _id: challengeId, state: "playing" },
           { $set: { roomCode: roomCode } },
@@ -220,7 +207,6 @@ const challengesController = {
       return updatedChallenge;
     } catch (error) {
       await session.abortTransaction();
-      console.log("error2323", error);
       throw error;
     } finally {
       socket.send(JSON.stringify({ status: "enabled" }));
@@ -299,8 +285,8 @@ const challengesController = {
         await tempUser.deleteMany();
         await TransactionsModel.deleteMany();
         await History.deleteMany();
-      }else{
-        throw new Error("Cannot delete production database")
+      } else {
+        throw new Error("Cannot delete production database");
       }
 
       console.log("database deleted");

@@ -2,7 +2,7 @@ const History = require("../models/history");
 const Account = require("../models/accounts");
 const userSockets = require("../allSocketConnection");
 const challengesController = require("../controllers/challenges");
-
+const axios = require("axios");
 async function generateHistory(historyObj, session) {
   try {
     const history = new History();
@@ -30,7 +30,7 @@ async function generateHistory(historyObj, session) {
     throw error;
   }
 }
-async function socketOnLogout(userId) {
+function socketOnLogout(userId) {
   try {
     const userIdString = userId.toString();
     if (userSockets.has(userIdString)) {
@@ -44,7 +44,7 @@ async function socketOnLogout(userId) {
   }
 }
 
-async function calculateChips(account, amount) {
+function calculateChips(account, amount) {
   const chips = { winningCash: 0, depositCash: 0 };
 
   if (account.depositCash >= amount) {
@@ -66,10 +66,36 @@ async function calculateChips(account, amount) {
 
   return chips.depositCash !== 0 || chips.winningCash !== 0 ? chips : null;
 }
+async function getRoomResults(roomCode) {
+  try {
+    const response = await axios.get(
+      `http://128.199.28.12:3000/ludoking/results/${roomCode}`
+    );
+    const data = response.data;
+    return data;
+  } catch (error) {
 
+    throw error;
+  }
+}
+async function getRoomCode() {
+  try {
+    const roomCodeResponse = await axios.get(
+      `http://128.199.28.12:3000/ludoking/roomcode`
+    );
+    const roomCode = roomCodeResponse.data;
+    if (!roomCode) {
+      throw new Error("Room code not found");
+    }
+    return roomCode;
+  } catch (error) {
+    throw error; // Throw the error to be handled by the caller
+  }
+}
 module.exports = {
   generateHistory,
-
+  getRoomResults,
+  getRoomCode,
   calculateChips,
   socketOnLogout,
 };
