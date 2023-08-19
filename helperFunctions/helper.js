@@ -74,7 +74,6 @@ async function getRoomResults(roomCode) {
     const data = response.data;
     return data;
   } catch (error) {
-
     throw error;
   }
 }
@@ -92,10 +91,18 @@ async function getRoomCode() {
     throw error; // Throw the error to be handled by the caller
   }
 }
+function commissionDeduction(amount) {
+  // Convert amount to a number if it's not already
+  var numericAmount = Number(amount);
+
+  var newAmount = numericAmount * 2 - (numericAmount * 3) / 100;
+  return newAmount;
+}
 module.exports = {
   generateHistory,
   getRoomResults,
   getRoomCode,
   calculateChips,
+  commissionDeduction,
   socketOnLogout,
 };

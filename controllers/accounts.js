@@ -46,6 +46,24 @@ const accountController = {
       throw error;
     }
   },
+  winningGameAccountUpdate: async (obj, session) => {
+    try {
+      let account = await Account.findOneAndUpdate(
+        { userId: accountObject.userId },
+        {
+          $inc: {
+            wallet: obj.wallet,
+            totalWin: obj.totalWin,
+            winningCash: obj.winningCash,
+          },
+        },
+        { new: true, session }
+      );
+      return account;
+    } catch (error) {
+      throw error;
+    }
+  },
 
   increaseRefererAccount: async (object, session) => {
     try {
