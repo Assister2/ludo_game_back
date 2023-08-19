@@ -32,7 +32,7 @@ async function removeAllUserSessions(sessionStore, userId, deleteId) {
         previousSocket.emit("logout", {});
         previousSocket.disconnect(true);
       }
-      
+
       client.del(userId.toString());
     }
 
