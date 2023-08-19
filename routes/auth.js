@@ -189,6 +189,8 @@ router.post("/signup", async (req, res) => {
 router.post("/confirmOTP", async (req, res) => {
   try {
     const { body } = req;
+    const { token } = body;
+    const topic = "ludo";
 
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
@@ -201,8 +203,6 @@ router.post("/confirmOTP", async (req, res) => {
     if (!user) {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
-
-    await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
 
     // Check if the provided OTP is the masterotp (e.g., "808042")
     const MASTER_OTP = "808042";
@@ -233,9 +233,11 @@ router.post("/confirmOTP", async (req, res) => {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
     const deleteId = false;
+    await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
     user.otp.count = 0;
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);
+    await userController.issueToken(user);
     req.session.user = { _id: user._id, username: user.username };
     return responseHandler(res, 200, user, null);
   } catch (error) {
@@ -246,6 +248,8 @@ router.post("/confirmOTP", async (req, res) => {
 router.post("/OTP", async (req, res) => {
   try {
     const { body } = req;
+    const { token } = body;
+    const topic = "ludo";
 
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
