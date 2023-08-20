@@ -1,14 +1,28 @@
 const session = require("express-session");
-const MongoDBStore = require("connect-mongodb-session")(session);
+const RedisStore = require('connect-redis').default;
+const redis = require('redis');
 const config = require("../helpers/config");
 require("dotenv").config(); // Load environment variables from .env file
 
-const store = new MongoDBStore({
-  uri: config.DB_URI,
-  collection: "sessions",
+const redisClient = redis.createClient();
+
+(async () => {
+  await redisClient.connect();
+})();
+
+redisClient.on("error", (error) => {
+  console.error("Redis session Error:", error);
 });
+redisClient.on("connect", (error) => {
+  console.error("redis session connected:");
+})
+
+const store = new RedisStore({
+  client: redisClient,
+});
+
 store.on("error", (error) => {
-  console.error("MongoDBStore connection error:", error);
+  console.error("RedisStore connection error:", error);
 });
 const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000;
 const maxAgeForSessionCookie = thirtyDaysInMilliseconds;
