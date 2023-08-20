@@ -62,16 +62,15 @@ async function startGame(data, socket) {
 }
 
 const handleChallengeCancellation = async (
-  challengeObj,
   challenge,
-  canceller,
-  otherPlayer,
+  currentUserIs,
+  otherPlayerIs,
   cancellerWallet,
   otherPlayerWallet,
   session
 ) => {
-  challengeObj.state = "resolved";
-  // const session = (await startSession()).startTransaction();
+  challenge.state = "resolved";
+
   const updateWalletAndCash = async (
     challenge,
     player,
@@ -137,9 +136,14 @@ const handleChallengeCancellation = async (
     );
   };
 
-  await updateWalletAndCash(challenge, canceller, cancellerWallet, session);
+  await updateWalletAndCash(challenge, currentUserIs, cancellerWallet, session);
 
-  await updateWalletAndCash(challenge, otherPlayer, otherPlayerWallet, session);
+  await updateWalletAndCash(
+    challenge,
+    otherPlayerIs,
+    otherPlayerWallet,
+    session
+  );
 };
 const cancelChallenge = async (socket, challengeId, userId) => {
   await challengesController.updateChallengeById23(challengeId);

@@ -29,7 +29,7 @@ async function handleWin(req, res) {
   session.startTransaction();
 
   try {
-    const challenge = await challengesController.getPlayingChallengeById(id);
+    var challenge = await challengesController.getPlayingChallengeById(id);
 
     if (!challenge) {
       return responseHandler(res, 400, null, "result already updated");
@@ -41,7 +41,7 @@ async function handleWin(req, res) {
     const otherPlayerIs =
       user.id != challenge.creator._id ? "creator" : "player";
 
-    if (challenge.results[currentUserIs]) {
+    if (challenge.results[currentUserIs].result) {
       return responseHandler(
         res,
         400,
@@ -108,7 +108,6 @@ async function handleWin(req, res) {
         ),
         accountController.getAccountByUserId(challenge[otherPlayerIs]._id),
       ]);
-
       const historyObjects = [
         {
           userId: challenge[otherPlayerIs]._id,
@@ -177,6 +176,7 @@ async function handleWin(req, res) {
       challenge,
       session
     );
+    console.log("final challenge: ", challenge);
 
     await session.commitTransaction();
     return responseHandler(res, 200, challenge, null);
@@ -190,132 +190,119 @@ async function handleWin(req, res) {
 
 async function handleLost(req, res) {
   const session = await mongoose.startSession();
-  session.startTransaction();
+
   try {
-    if (!req.params.hasOwnProperty("id")) {
+    session.startTransaction();
+
+    const { id } = req.params;
+    if (!id) {
       return responseHandler(res, 400, null, "Fields are missing");
-    } else {
-      let challenge = await challengesController.getPlayingChallengeById(
-        req.params.id
+    }
+
+    var challenge = await challengesController.getPlayingChallengeById(id);
+    if (!challenge) {
+      return responseHandler(res, 400, null, "result already updated");
+    }
+
+    const user = req.user;
+    const currentUserIs =
+      user.id == challenge.creator._id ? "creator" : "player";
+    const otherPlayerIs =
+      user.id != challenge.creator._id ? "creator" : "player";
+    if (challenge.results[currentUserIs].result) {
+      return responseHandler(
+        res,
+        400,
+        null,
+        "You have already submitted the result"
       );
-      if (!challenge) {
-        return responseHandler(res, 400, null, "result already updated");
-      }
-      let user = req.user;
-      let looser = user.id == challenge.creator._id ? "creator" : "player";
-      let winner = user.id != challenge.creator._id ? "creator" : "player";
+    }
 
-      if (challenge.results[looser].result !== "") {
-        return responseHandler(res, 400, null, "result already updatedd");
-      }
+    const amount = commissionDeduction(challenge.amount);
+    const { roomCode } = challenge;
 
-      if (challenge.results[looser].result !== "") {
-        return responseHandler(
-          res,
-          400,
-          null,
-          "You have already submitted the result"
-        );
-      }
-      let winnerUserId = challenge[winner]._id;
-      let looserUserId = challenge[looser]._id;
-      let amount = Number(challenge.amount);
-      let deductedAmount = amount;
-      let deduction = 0;
-      let userWallet = await accountController.getAccountByUserId(winnerUserId);
-      let looserWallet = await accountController.getAccountByUserId(
-        looserUserId
-      );
+    const apiResult = !challenge.apiResult
+      ? await getRoomResults(roomCode)
+      : null;
 
-      amount = amount * 2 - (amount * 3) / 100;
-      const { roomCode } = challenge;
-      let apiResult = null;
-      if (!challenge.apiResult) {
-        getRoomResults(roomCode)
-          .then((data) => {
-            apiResult = data;
-          })
-          .catch((error) => {
-            throw error;
-          });
-      }
-      let challengeObj = {
-        ...challenge._doc,
-        results: {
-          [looser]: { result: "lost", updatedAt: new Date() },
+    const updatedResults = {
+      [currentUserIs]: { result: "lost", updatedAt: new Date() },
+      [otherPlayerIs]: {
+        result: challenge.results[otherPlayerIs].result,
+        updatedAt: challenge.results[otherPlayerIs].updatedAt,
+      },
+    };
 
-          [winner]: {
-            result: challenge.results[winner].result,
-            updatedAt: challenge.results[winner].updatedAt,
+    if (apiResult !== null) {
+      challenge.apiResult = apiResult;
+    }
+
+    if (challenge.results[otherPlayerIs].result === "") {
+      const data = {
+        challengeId: id,
+        userId: challenge[otherPlayerIs]._id,
+        otherPlayer: otherPlayerIs,
+      };
+      await handleChallengeUpdate(data);
+    }
+
+    if (
+      challenge.results[otherPlayerIs].result === "cancelled" ||
+      challenge.results[otherPlayerIs].result === "lost"
+    ) {
+      challenge.state = "hold";
+    }
+
+    if (challenge.results[otherPlayerIs].result === "win") {
+      challenge.state = "resolved";
+      const deduction = calculateDeduction(challenge.amount);
+
+      const [updatedUserWallet, looserWallet] = await Promise.all([
+        accountController.winningGameAccountUpdate(
+          {
+            userId: challenge[otherPlayerIs]._id,
+            wallet: amount,
+            winningCash: amount,
+            totalWin: deduction,
           },
-        },
-      };
-      if (apiResult !== null) {
-        challengeObj.apiResult = apiResult;
-      }
-      let data = {
-        challengeId: req.params.id,
-        userId: challenge[winner]._id,
-        otherPlayer: winner,
-      };
-      if (challenge.results[winner].result == "") {
-        handleChallengeUpdate(data);
-      }
-      if (challenge.results[winner].result == "lost") {
-        await handleChallengeCancellation(
-          challengeObj,
-          challenge,
-          looser,
-          winner,
-          looserWallet,
-          userWallet,
           session
-        );
-      }
+        ),
+        accountController.getAccountByUserId(challenge[currentUserIs]._id),
+      ]);
 
-      if (challenge.results[winner].result == "win") {
-        let deduction = challenge.amount * 0.03;
-        let wall = {
-          ...userWallet._doc,
-          wallet: userWallet.wallet + amount,
-          winningCash: userWallet.winningCash + amount,
-          totalWin: userWallet.totalWin + challenge.amount - deduction,
-        };
-
-        // challengeObj.state = "resolved"
-        challengeObj.state = "resolved";
-
-        const historyObj = {
-          userId: challenge[looser]._id,
-          historyText: `Lost Against ${challenge[winner].username}`,
+      const historyObjects = [
+        {
+          userId: challenge[currentUserIs]._id,
+          historyText: `Lost Against ${challenge[otherPlayerIs].username}`,
           roomCode: challenge.roomCode,
           closingBalance: looserWallet.wallet,
           amount: Number(amount),
           type: "lost",
-        };
-        await generateHistory(historyObj, session);
-
-        const winnerObj = {
-          userId: challenge[winner]._id,
-          historyText: `Won Against ${challenge[looser].username}`,
+        },
+        {
+          userId: challenge[otherPlayerIs]._id,
+          historyText: `Won Against ${challenge[currentUserIs].username}`,
           roomCode: challenge.roomCode,
-          closingBalance: wall.wallet,
-          amount: Number(challenge.amount * 2 - (challenge.amount * 3) / 100),
+          closingBalance: updatedUserWallet.wallet,
+          amount: Number(amount),
           type: "won",
-        };
-        await generateHistory(winnerObj, session);
+        },
+      ];
 
-        await accountController.updateAccountByUserId(wall, session);
+      await Promise.all(
+        historyObjects.map((history) => generateHistory(history, session))
+      );
 
-        let referUser = await userController.existingUserById({
-          id: challenge[winner]._id,
-        });
+      const referUser = await userController.existingUserById({
+        id: challenge[otherPlayerIs]._id,
+      });
 
-        if (referUser.referer) {
-          let referalAccount = await userController.existingUserByReferelId(
-            referUser.referer
-          );
+      if (referUser.referer) {
+        const referalAccount = await userController.existingUserByReferelId(
+          referUser.referer
+        );
 
+        if (referalAccount) {
           const updatedReferAccount =
             await accountController.increaseRefererAccount(
               {
@@ -325,154 +312,141 @@ async function handleLost(req, res) {
               session
             );
 
-          const historyObj = {
+          const referralHistory = {
             userId: updatedReferAccount.userId,
-            historyText: `referal from ${challenge[winner].username}`,
+            historyText: `Referral from ${challenge[otherPlayerIs].username}`,
             roomCode: challenge.roomCode,
             closingBalance: updatedReferAccount.wallet,
             amount: Number(challenge.amount * 0.02),
-            type: "referal",
+            type: "referral",
           };
-          await generateHistory(historyObj, session);
+          await generateHistory(referralHistory, session);
         }
       }
-      if (challenge.results[winner].result == "cancelled") {
-        challengeObj.state = "hold";
-      }
-      await userController.updateUserByUserId(
-        {
-          _id: user.id,
-          noOfChallenges: 0,
-        },
-        session
-      );
-      challenge = await challengesController.updateChallengeById(
-        challengeObj,
-        session
-      );
-      await session.commitTransaction();
-      session.endSession();
-
-      return responseHandler(res, 200, challenge, null);
     }
+
+    await userController.updateUserByUserId(
+      {
+        _id: user.id,
+        noOfChallenges: 0,
+      },
+      session
+    );
+
+    challenge.results = updatedResults;
+    challenge = await challengesController.updateChallengeById(
+      challenge,
+      session
+    );
+
+    await session.commitTransaction();
+    return responseHandler(res, 200, challenge, null);
   } catch (error) {
     await session.abortTransaction();
-
-    console.log("error", error);
-    return responseHandler(res, 400, null, error.message);
+    throw error;
   } finally {
     session.endSession();
   }
 }
+
 async function handleCancel(req, res) {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
-    if (!req.params.hasOwnProperty("id")) {
-      return responseHandler(res, 400, null, "Fields are missing");
+    const { id } = req.params;
+    var challenge = await challengesController.getPlayingChallengeById(id);
+    if (!challenge) {
+      return responseHandler(res, 400, null, "result already updated");
     }
-    if (!req.body.hasOwnProperty("cancellationReason")) {
-      return responseHandler(res, 400, null, "Fields are missing");
-    } else {
-      let challenge = await challengesController.getPlayingChallengeById(
-        req.params.id
-      );
-      if (!challenge) {
-        return responseHandler(res, 400, null, "result already updated");
-      }
-      let user = req.user;
-      let canceller = user.id == challenge.creator._id ? "creator" : "player";
-      let otherPlayer = user.id != challenge.creator._id ? "creator" : "player";
 
-      if (challenge.results[canceller].result !== "") {
-        return responseHandler(res, 400, null, "result already updatedd");
-      }
+    const user = req.user;
+    const currentUserIs =
+      user.id == challenge.creator._id ? "creator" : "player";
+    const otherPlayerIs =
+      user.id != challenge.creator._id ? "creator" : "player";
+    if (challenge.results[currentUserIs].result) {
+      return responseHandler(res, 400, null, "result already updatedd");
+    }
 
-      let cancellerWallet = await accountController.getAccountByUserId(
-        challenge[canceller]._id
-      );
-      let otherPlayerWallet = await accountController.getAccountByUserId(
-        challenge[otherPlayer]._id
-      );
-      const { roomCode } = challenge;
-      let apiResult = null;
-      if (!challenge.apiResult) {
-        getRoomResults(roomCode)
-          .then((data) => {
-            apiResult = data;
-          })
-          .catch((error) => {
-            throw error;
-          });
-      }
+    const cancellerWallet = await accountController.getAccountByUserId(
+      challenge[currentUserIs]._id
+    );
+    const otherPlayerWallet = await accountController.getAccountByUserId(
+      challenge[otherPlayerIs]._id
+    );
 
-      let challengeObj = {
-        ...challenge._doc,
-        results: {
-          [canceller]: { result: "cancelled", updatedAt: new Date() },
+    const { roomCode } = challenge;
+    let apiResult = null;
+    if (!challenge.apiResult) {
+      apiResult = await getRoomResults(roomCode);
+    }
 
-          [otherPlayer]: {
-            result: challenge.results[otherPlayer].result,
-            updatedAt: challenge.results[otherPlayer].updatedAt,
-          },
-        },
+    challenge.results = {
+      [currentUserIs]: { result: "cancelled", updatedAt: new Date() },
+      [otherPlayerIs]: {
+        result: challenge.results[otherPlayerIs].result,
+        updatedAt: challenge.results[otherPlayerIs].updatedAt,
+      },
+    };
 
-        cancellationReasons: { [canceller]: req.body.cancellationReason },
+    challenge.cancellationReasons = {
+      [currentUserIs]: req.body.cancellationReason,
+    };
+
+    if (apiResult !== null) {
+      challenge.apiResult = apiResult;
+    }
+
+    if (challenge.results[otherPlayerIs].result === "") {
+      const data = {
+        challengeId: id,
+        userId: challenge[otherPlayerIs]._id,
+        otherPlayer: otherPlayerIs,
       };
-      if (apiResult !== null) {
-        challengeObj.apiResult = apiResult;
-      }
-      let data = {
-        challengeId: req.params.id,
-        userId: challenge[otherPlayer]._id,
-        otherPlayer: otherPlayer,
-      };
+      await handleChallengeUpdate(data);
+    }
 
-      if (challenge.results[otherPlayer].result == "") {
-        handleChallengeUpdate(data);
-      }
-      if (challenge.results[otherPlayer].result == "lost") {
-        challengeObj.state = "hold";
-      }
-      if (challenge.results[otherPlayer].result == "win") {
-        challengeObj.state = "hold";
-      }
-      if (challenge.results[otherPlayer].result == "cancelled") {
-        await handleChallengeCancellation(
-          challengeObj,
-          challenge,
-          canceller,
-          otherPlayer,
-          cancellerWallet,
-          otherPlayerWallet,
-          session
-        );
-      }
+    if (
+      challenge.results[otherPlayerIs].result === "lost" ||
+      challenge.results[otherPlayerIs].result === "win"
+    ) {
+      challenge.state = "hold";
+    }
 
-      await userController.updateUserByUserId(
-        {
-          _id: user.id,
-          noOfChallenges: 0,
-        },
+    if (challenge.results[otherPlayerIs].result === "cancelled") {
+      await handleChallengeCancellation(
+        challenge,
+        currentUserIs,
+        otherPlayerIs,
+        cancellerWallet,
+        otherPlayerWallet,
         session
       );
-      challenge = await challengesController.updateChallengeById(
-        challengeObj,
-        session
-      );
-      await session.commitTransaction();
-
-      return responseHandler(res, 200, challenge, null);
     }
+
+    await userController.updateUserByUserId(
+      {
+        _id: user.id,
+        noOfChallenges: 0,
+      },
+      session
+    );
+
+    challenge = await challengesController.updateChallengeById(
+      challenge,
+      session
+    );
+
+    await session.commitTransaction();
+    return responseHandler(res, 200, challenge, null);
   } catch (error) {
     await session.abortTransaction();
-
-    console.log("error", error);
-    return responseHandler(res, 400, null, error.message);
+    throw error;
   } finally {
     session.endSession();
   }
 }
+
 module.exports = {
   handleWin,
   handleLost,
