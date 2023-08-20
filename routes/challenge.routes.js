@@ -4,7 +4,10 @@ const { responseHandler } = require("../helpers");
 const verifyToken = require("../middleware/verifyToken");
 const Router = express.Router();
 const {
-  handleWin, handleLost, handleCancel, handleUpdateResult,
+  handleWin,
+  handleLost,
+  handleCancel,
+  handleUpdateResult,
 } = require("../controllers/challengesControllers/challengesHandlers");
 
 Router.get(
@@ -41,6 +44,5 @@ Router.post("/win/:id", verifyToken, handleWin);
 Router.post("/loose/:id", verifyToken, handleLost);
 
 Router.post("/cancel/:id", verifyToken, handleCancel);
-Router.post("/updateResult/:id", verifyToken, handleUpdateResult);
 
 module.exports = Router;

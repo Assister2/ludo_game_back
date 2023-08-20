@@ -16,100 +16,6 @@ const {
 } = require("../../helperFunctions/helper");
 const { otherPlyerLost } = require("../challengeConditions");
 
-async function handleUpdateResult(req, res) {
-  if (!req.params.hasOwnProperty("id")) {
-    return responseHandler(res, 400, null, "Fields are missing");
-  }
-  let challenge = await challengesController.getPlayingChallengeById(
-    req.params.id
-  );
-  if (!challenge) {
-    return responseHandler(res, 400, null, "result already updated");
-  }
-  try {
-    const { Result } = req.body;
-    if (Result === "win") {
-    }
-    let user = req.user;
-    let userIs = user.id == challenge.creator._id ? "creator" : "player";
-    let otherUserIs = user.id != challenge.creator._id ? "creator" : "player";
-    if (challenge.results[winner].result !== "") {
-      return responseHandler(
-        res,
-        400,
-        null,
-        `${winner} result already updated`
-      );
-    }
-    let amount = Number(challenge.amount);
-    let userWallet = await accountController.getAccountByUserId(user.id);
-    const image = req.body.image;
-
-    let file = image;
-
-    if (challenge.results[winner !== ""]) {
-      return responseHandler(
-        res,
-        400,
-        null,
-        "You have already submitted the result"
-      );
-    }
-    const { roomCode } = challenge;
-    let apiResult = null;
-    if (!challenge.apiResult) {
-      apiResult = await getRoomResults(roomCode);
-    }
-    let challengeObj = {
-      ...challenge._doc,
-      results: {
-        [winner]: { result: "win", updatedAt: new Date() },
-      },
-      winnerScreenShot: {
-        [winner]: file,
-      },
-    };
-    if (apiResult !== null) {
-      challengeObj.apiResult = apiResult;
-    }
-
-    if (challenge.results[looser].result == "win") {
-      challengeObj.state = "hold";
-    }
-    let data = {
-      challengeId: req.params.id,
-      userId: challenge[looser]._id,
-      otherPlayer: looser,
-    };
-    if (challenge.results[looser].result == "") {
-      await handleChallengeUpdate(data);
-    }
-    if (challenge.results[looser].result == "lost") {
-      await otherPlyerLost(challenge, winner, looser, challengeObj, session);
-    }
-    if (challenge.results[looser].result == "cancelled") {
-      challengeObj.state = "hold";
-    }
-    await userController.updateUserByUserId(
-      {
-        _id: user.id,
-        noOfChallenges: 0,
-      },
-      session
-    );
-    challenge = await challengesController.updateChallengeById(
-      challengeObj,
-      session
-    );
-    await session.commitTransaction();
-    session.endSession();
-
-    return responseHandler(res, 200, challenge, null);
-  } catch (error) {
-    console.log("error", error);
-    return responseHandler(res, 400, null, error.message);
-  }
-}
 async function handleWin(req, res) {
   if (!req.params.hasOwnProperty("id")) {
     return responseHandler(res, 400, null, "Fields are missing");
@@ -552,5 +458,4 @@ module.exports = {
   handleWin,
   handleLost,
   handleCancel,
-  handleUpdateResult,
 };
