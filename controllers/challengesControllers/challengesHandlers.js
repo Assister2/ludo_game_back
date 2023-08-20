@@ -17,27 +17,31 @@ const {
 const { otherPlyerLost } = require("../challengeConditions");
 
 async function handleWin(req, res) {
-  if (!req.params.hasOwnProperty("id")) {
+  const userId = req.user.id;
+  const { id } = req.params;
+  const { image } = req.body;
+
+  if (!id || !image) {
     return responseHandler(res, 400, null, "Fields are missing");
   }
-  if (!req.body.hasOwnProperty("image")) {
-    return responseHandler(res, 400, null, "Fields are missing");
-  }
-  let challenge = await challengesController.getPlayingChallengeById(
-    req.params.id
-  );
-  if (!challenge) {
-    return responseHandler(res, 400, null, "result already updated");
-  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
+    const challenge = await challengesController.getPlayingChallengeById(id);
+
+    if (!challenge) {
+      return responseHandler(res, 400, null, "result already updated");
+    }
+
     const user = req.user;
     const currentUserIs =
       user.id == challenge.creator._id ? "creator" : "player";
     const otherPlayerIs =
       user.id != challenge.creator._id ? "creator" : "player";
-    if (challenge.results[currentUserIs !== ""]) {
+
+    if (challenge.results[currentUserIs]) {
       return responseHandler(
         res,
         400,
@@ -45,122 +49,136 @@ async function handleWin(req, res) {
         "You have already submitted the result"
       );
     }
-    const amount = commissionDeduction(challenge.amount);
 
-    const image = req.body.image;
-    const file = image;
+    const amount = commissionDeduction(challenge.amount);
     const { roomCode } = challenge;
+
     let apiResult = null;
     if (!challenge.apiResult) {
       apiResult = await getRoomResults(roomCode);
     }
-    let challengeObj = {
-      ...challenge._doc,
-      results: {
-        [currentUserIs]: { result: "win", updatedAt: new Date() },
-        [otherPlayerIs]: {
-          result: challenge.results[otherPlayerIs].result,
-          updatedAt: challenge.results[otherPlayerIs].updatedAt,
-        },
-      },
-      winnerScreenShot: {
-        [currentUserIs]: file,
-        [otherPlayerIs]: challenge.winnerScreenShot[otherPlayerIs],
+
+    const updatedResults = {
+      [currentUserIs]: { result: "win", updatedAt: new Date() },
+      [otherPlayerIs]: {
+        result: challenge.results[otherPlayerIs].result,
+        updatedAt: challenge.results[otherPlayerIs].updatedAt,
       },
     };
+
+    const updatedWinnerScreenShot = {
+      [currentUserIs]: image,
+      [otherPlayerIs]: challenge.winnerScreenShot[otherPlayerIs],
+    };
+
     if (apiResult !== null) {
-      challengeObj.apiResult = apiResult;
+      challenge.apiResult = apiResult;
     }
-    if (challenge.results[otherPlayerIs].result == "win") {
-      challengeObj.state = "hold";
+
+    if (
+      challenge.results[otherPlayerIs].result === "win" ||
+      challenge.results[otherPlayerIs].result === "cancelled"
+    ) {
+      challenge.state = "hold";
     }
-    if (challenge.results[otherPlayerIs].result == "cancelled") {
-      challengeObj.state = "hold";
-    }
-    if (challenge.results[otherPlayerIs].result == "") {
-      let data = {
-        challengeId: req.params.id,
+
+    if (challenge.results[otherPlayerIs].result === "") {
+      const data = {
+        challengeId: id,
         userId: challenge[otherPlayerIs]._id,
         otherPlayer: otherPlayerIs,
       };
       await handleChallengeUpdate(data);
     }
-    if (challenge.results[otherPlayerIs].result == "lost") {
-      challengeObj.state = "resolved";
-      let deduction = calculateDeduction(challenge.amount);
-      const winnerUpdatedAccount =
-        await accountController.winningGameAccountUpdate(
+
+    if (challenge.results[otherPlayerIs].result === "lost") {
+      challenge.state = "resolved";
+
+      const deduction = calculateDeduction(challenge.amount);
+
+      const [winnerUpdatedAccount, looserWallet] = await Promise.all([
+        accountController.winningGameAccountUpdate(
           {
-            userId: user.id,
+            userId: userId,
             wallet: amount,
             winningCash: amount,
             totalWin: deduction,
           },
           session
-        );
-      let looserWallet = await accountController.getAccountByUserId(
-        challenge[otherPlayerIs]._id
-      );
-      const historyObj = {
-        userId: challenge[otherPlayerIs]._id,
-        historyText: `Lost Against ${challenge[currentUserIs].username}`,
-        roomCode: challenge.roomCode,
-        closingBalance: looserWallet.wallet,
-        amount: Number(challenge.amount),
-        type: "lost",
-      };
-      await generateHistory(historyObj, session);
-      const winnerObj = {
-        userId: challenge[currentUserIs]._id,
-        historyText: `Won Against ${challenge[otherPlayerIs].username}`,
-        roomCode: challenge.roomCode,
-        closingBalance: winnerUpdatedAccount.wallet,
-        amount: Number(amount),
-        type: "won",
-      };
-      await generateHistory(winnerObj, session);
-      let referUser = await userController.existingUserById({
+        ),
+        accountController.getAccountByUserId(challenge[otherPlayerIs]._id),
+      ]);
+
+      const historyObjects = [
+        {
+          userId: challenge[otherPlayerIs]._id,
+          historyText: `Lost Against ${challenge[currentUserIs].username}`,
+          roomCode: challenge.roomCode,
+          closingBalance: looserWallet.wallet,
+          amount: Number(challenge.amount),
+          type: "lost",
+        },
+        {
+          userId: challenge[currentUserIs]._id,
+          historyText: `Won Against ${challenge[otherPlayerIs].username}`,
+          roomCode: challenge.roomCode,
+          closingBalance: winnerUpdatedAccount.wallet,
+          amount: Number(amount),
+          type: "won",
+        },
+      ];
+
+      const referUser = await userController.existingUserById({
         id: challenge[currentUserIs]._id,
       });
+
       if (referUser.referer) {
         const referralUser = await userController.existingUserByReferelId(
           referUser.referer
         );
-        const referralUserWallet =
-          await accountController.increaseRefererAccount(
-            {
-              userId: referralUser._id,
-              amount: challenge.amount,
-            },
-            session
-          );
-        const historyObj = {
-          userId: referralUserWallet.userId,
-          historyText: `referal from ${challenge[currentUserIs].username}`,
-          roomCode: challenge.roomCode,
-          closingBalance: referralUserWallet.wallet,
-          amount: Number(challenge.amount * 0.02),
-          type: "referal",
-        };
-        await generateHistory(historyObj, session);
+
+        if (referralUser) {
+          const referralUserWallet =
+            await accountController.increaseRefererAccount(
+              {
+                userId: referralUser._id,
+                amount: challenge.amount,
+              },
+              session
+            );
+
+          historyObjects.push({
+            userId: referralUserWallet.userId,
+            historyText: `Referral from ${challenge[currentUserIs].username}`,
+            roomCode: challenge.roomCode,
+            closingBalance: referralUserWallet.wallet,
+            amount: Number(challenge.amount * 0.02),
+            type: "referral",
+          });
+        }
       }
+
+      await Promise.all(
+        historyObjects.map((history) => generateHistory(history, session))
+      );
     }
 
     await userController.updateUserByUserId(
       {
-        _id: user.id,
+        _id: userId,
         noOfChallenges: 0,
       },
       session
     );
+
+    challenge.results = updatedResults;
+    challenge.winnerScreenShot = updatedWinnerScreenShot;
     challenge = await challengesController.updateChallengeById(
-      challengeObj,
+      challenge,
       session
     );
 
     await session.commitTransaction();
-    session.endSession();
-
     return responseHandler(res, 200, challenge, null);
   } catch (error) {
     await session.abortTransaction();
@@ -169,6 +187,7 @@ async function handleWin(req, res) {
     session.endSession();
   }
 }
+
 async function handleLost(req, res) {
   const session = await mongoose.startSession();
   session.startTransaction();
