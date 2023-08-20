@@ -21,7 +21,8 @@ async function removeUserSession(userId, sessionId) {
           previousSocket.disconnect(true);
         }
       }
-
+      client.del(userId.toString());
+    }
       await client.del("sess:" + prev_session);
       await client.del("aa:"+userId);
     }
