@@ -49,7 +49,7 @@ const accountController = {
   winningGameAccountUpdate: async (obj, session) => {
     try {
       let account = await Account.findOneAndUpdate(
-        { userId: accountObject.userId },
+        { userId: obj.userId },
         {
           $inc: {
             wallet: obj.wallet,

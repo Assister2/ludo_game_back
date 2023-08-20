@@ -49,7 +49,7 @@ async function startGame(data, socket) {
       return socket.send(JSON.stringify(response));
     }
   } catch (error) {
-    console.log("cehckerror", error);
+    throw error;
     response = {
       ...response,
       status: 500,

@@ -98,11 +98,16 @@ function commissionDeduction(amount) {
   var newAmount = numericAmount * 2 - (numericAmount * 3) / 100;
   return newAmount;
 }
+function calculateDeduction(amount) {
+  let deduction = amount - amount * 0.03;
+  return deduction;
+}
 module.exports = {
   generateHistory,
   getRoomResults,
   getRoomCode,
   calculateChips,
+  calculateDeduction,
   commissionDeduction,
   socketOnLogout,
 };
