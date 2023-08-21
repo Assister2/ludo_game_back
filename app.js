@@ -8,7 +8,7 @@ const cors = require("cors");
 const authRouter = require("./routes/auth.routes.js");
 const userRouter = require("./routes/user.routes.js");
 const testRouter = require("./routes/test.routes.js");
-const { client } = require("./allSocketConnection");
+
 const transactionRouter = require("./routes/transactions.routes.js");
 const payment = require("./routes/payment.routes.js");
 const bodyParser = require("body-parser");
