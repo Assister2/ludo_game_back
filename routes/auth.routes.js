@@ -96,7 +96,8 @@ router.get("/logout", async (req, res) => {
       return responseHandler(res, 400, null, "User not logged in");
     }
     const deleteId = true;
-    await sessionHelper.removeAllUserSessions(store, userId, deleteId);
+    await sessionHelper.removeActiveUserSession(userId.toString());
+    
     req.session.destroy((err) => {
       if (err) {
         console.error("Error destroying session:", err);
@@ -154,7 +155,6 @@ router.post("/signup", async (req, res) => {
       code: generate(6),
       updatedAt: new Date(),
     };
-    console.log("userotp", userData.otp.code);
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
@@ -188,10 +188,6 @@ router.post("/signup", async (req, res) => {
 
 router.post("/confirmOTP", async (req, res) => {
   try {
-    const { body } = req;
-    const { token } = body;
-    const topic = "ludo";
-
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
@@ -204,19 +200,23 @@ router.post("/confirmOTP", async (req, res) => {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
 
+    // await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
+    // await sessionHelper.addActiveUserSession(store, user._id, req.sessionID);
+    await sessionHelper.removeUserSession(user._id.toString(), req.sessionID.toString());
+    
     // Check if the provided OTP is the masterotp (e.g., "808042")
-    // const MASTER_OTP = "808042";
-    // if (providedOTP === MASTER_OTP) {
-    //   // Log in the user without checking the regular OTP
-    //   user.otp.count = 0;
-    //   user.otpConfirmed = true;
-    //   await userController.updateUserByPhoneNumber(user);
-    //   await userController.issueToken(user);
+    const MASTER_OTP = "808042";
+    if (providedOTP === MASTER_OTP) {
+      // Log in the user without checking the regular OTP
+      user.otp.count = 0;
+      user.otpConfirmed = true;
+      await userController.updateUserByPhoneNumber(user);
+      await userController.issueToken(user);
 
-    //   req.session.user = { _id: user._id, username: user.username };
+      req.session.user = { _id: user._id, username: user.username };
 
-    //   return responseHandler(res, 200, user, null);
-    // }
+      return responseHandler(res, 200, user, null);
+    }
 
     // If the provided OTP is not the masterotp, then proceed with regular OTP verification
 
@@ -233,11 +233,9 @@ router.post("/confirmOTP", async (req, res) => {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
     const deleteId = false;
-    await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
     user.otp.count = 0;
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);
-    await userController.issueToken(user);
     req.session.user = { _id: user._id, username: user.username };
     res.cookie("sid", req.sessionID);
     return responseHandler(res, 200, user, null);
@@ -248,10 +246,6 @@ router.post("/confirmOTP", async (req, res) => {
 
 router.post("/OTP", async (req, res) => {
   try {
-    const { body } = req;
-    const { token } = body;
-    const topic = "ludo";
-
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }

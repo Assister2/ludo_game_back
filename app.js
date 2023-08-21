@@ -24,6 +24,8 @@ const app = express();
 app.set("trust proxy", 1);
 const allowedOrigins = require("./origion/allowedOrigins.js");
 const challengesController = require("./controllers/challenges.js");
+const { client } = require("./allSocketConnection.js");
+
 app.use(
   cors({
     credentials: true,

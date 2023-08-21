@@ -2,58 +2,55 @@
 
 const { client } = require("../allSocketConnection");
 const socket = require("../socket");
-async function removeAllUserSessions(sessionStore, userId, deleteId) {
+
+async function removeUserSession(userId, sessionId) {
   try {
     const io = socket.get();
-    const sessions = await new Promise((resolve, reject) => {
-      sessionStore.all((err, sessions) => {
-        if (err) {
-          console.log("session", err);
-          reject(err);
-        } else {
-          resolve(sessions);
+
+    const prev_session = await client.get("userId:" + userId);
+
+    if (prev_session) {
+      const lastSocket = await client.get(userId);
+
+      if (lastSocket) {
+        const previousSocket = await io.sockets.sockets.get(lastSocket);
+
+        if (previousSocket) {
+          // Logout event
+          // previousSocket.emit("logout", {});
+          previousSocket.disconnect(true);
         }
-      });
-    });
-
-    const activeSessions = sessions.filter(
-      (session) =>
-        session.session.user &&
-        session.session.user._id &&
-        session.session.user._id.equals(userId)
-    );
-    const lastSocket = await client.get(userId.toString());
-
-    if (lastSocket) {
-      const previousSocket = await io.sockets.sockets.get(lastSocket);
-
-      if (previousSocket) {
-        previousSocket.emit("logout", {});
-        previousSocket.disconnect(true);
       }
-      // if (deleteId) {
       client.del(userId.toString());
-      // }
     }
+    await client.del("sess:" + prev_session);
+    await client.del("userId:" + userId);
 
-    const sessionDestroyPromises = activeSessions.map((session) => {
-      return new Promise((resolve, reject) => {
-        sessionStore.destroy(session._id, (err) => {
-          if (err) {
-            console.error("Error destroying session:", err);
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      });
-    });
-    await Promise.all(sessionDestroyPromises);
+    this.addActiveUserSession(userId, sessionId);
   } catch (error) {
     console.error("Error removing user sessions:", error);
   }
 }
 
+async function addActiveUserSession(userId, sessionId) {
+  try {
+    client.set("userId:" + userId, sessionId);
+  } catch (error) {
+    console.error("Error removing user sessions:", error);
+  }
+}
+
+async function removeActiveUserSession(userId) {
+  const prev_session = await client.get(userId);
+
+  if (prev_session) {
+    await client.del("sess:" + prev_session);
+    await client.del("userId:" + userId);
+  }
+}
+
 module.exports = {
-  removeAllUserSessions,
+  removeUserSession,
+  addActiveUserSession,
+  removeActiveUserSession,
 };
