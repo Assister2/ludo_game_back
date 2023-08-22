@@ -1,11 +1,13 @@
 let io;
 const authSocketMiddleware = require("./middleware/RSocket");
+const allowedOrigins = require("./origion/allowedOrigins.js");
+
 module.exports = {
   init: (server) => {
     io = require("socket.io")(server, {
       pingTimeout: 500,
       cors: {
-        origin: "*",
+        origin: allowedOrigins,
       },
     });
     io.use((socket, next) => {
