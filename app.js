@@ -53,7 +53,7 @@ connectDB().then(async () => {
       }
     }
     await client.set(userId, socket.id);
-    handleConnection(socket);
+    handleConnection(socket, io);
   });
 });
 

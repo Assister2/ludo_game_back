@@ -4,6 +4,7 @@ module.exports = {
   init: (server) => {
     io = require("socket.io")(server, {
       pingTimeout: 500,
+      perMessageDeflate: true,
       cors: {
         origin: "*",
       },

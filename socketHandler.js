@@ -16,7 +16,7 @@ dotenv.config();
 if (config.NODE_ENV === "production") {
   bot = new TelegramBotHandler(config.BOT_TOKEN);
 }
-function handleConnection(socket) {
+function handleConnection(socket, io) {
   const HEARTBEAT_INTERVAL = 30000;
 
   socket.on("getUserWallet", async (message) => {
@@ -28,7 +28,6 @@ function handleConnection(socket) {
         data: null,
         error: null,
       };
-
       const connections = {};
       const userId = data.payload.userId;
       connections[userId] = socket;
@@ -196,7 +195,7 @@ function handleConnection(socket) {
       data: null,
       error: null,
     };
-
+    let buttonEnabled = false;
     switch (data.type) {
       case "create":
         const isValidAmount = validateAmount(data.payload.amount);
@@ -267,13 +266,16 @@ function handleConnection(socket) {
           // roomCode: roomCodeResponse.data,
           createdAt: new Date(),
         };
+        console.time("create");
+
         challenge = await challengesController.createChallenge(challenge);
-        socket.send(JSON.stringify({ status: "enabled" }));
+        console.timeEnd("create");
+
+        buttonEnabled = true;
         if (config.NODE_ENV === "production") {
           const challengeMessage = `${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
           bot.sendMessageToGroup(config.TELEGRAM_GROUPID, challengeMessage);
         }
-
         if (!challenge) {
           response = {
             ...response,
@@ -356,8 +358,8 @@ function handleConnection(socket) {
           await session.commitTransaction();
           session.endSession();
 
-          let challenges = await challengesController.getAllChallenges();
-          socket.send(JSON.stringify(challenges));
+          // let challenges = await challengesController.getAllChallenges();
+          // socket.send(JSON.stringify(challenges));
 
           if (!currentChallenge) {
             response = {
@@ -369,7 +371,7 @@ function handleConnection(socket) {
             return socket.send(JSON.stringify(response));
           }
 
-          socket.send(JSON.stringify({ status: "enabled" }));
+          buttonEnabled = true;
         } catch (error) {
           await session.abortTransaction();
           session.endSession();
@@ -382,7 +384,7 @@ function handleConnection(socket) {
         await challengesController.updateChallengeById23(
           data.payload.challengeId
         );
-        socket.send(JSON.stringify({ status: "enabled" }));
+        buttonEnabled = true;
 
         break;
       case "delete":
@@ -390,8 +392,7 @@ function handleConnection(socket) {
           data.payload.challengeId
         );
 
-        socket.send(JSON.stringify({ status: "enabled" }));
-
+        buttonEnabled = true;
         break;
 
       case "deleteOpenChallengesOfCreator":
@@ -400,14 +401,16 @@ function handleConnection(socket) {
         break;
       case "startGame":
         await startGame(data, socket);
-        socket.send(JSON.stringify({ status: "enabled" }));
-
+        buttonEnabled = true;
         await bothResultNotUpdated(data.payload.challengeId);
         break;
     }
+    console.time("challenges");
     let challenges = await challengesController.getAllChallenges();
+    console.timeEnd("challenges");
 
-    socket.send(JSON.stringify(challenges));
+    if (buttonEnabled) socket.send(JSON.stringify({ status: "enabled" }));
+    io.emit("getChallenges", JSON.stringify(challenges));
   });
   socket.on("close", (code, reason) => {
     console.log("WebSocket connection Closed:", code, reason);
