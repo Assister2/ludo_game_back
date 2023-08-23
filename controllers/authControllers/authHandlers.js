@@ -194,8 +194,6 @@ const confirmOTP = async (req, res) => {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
 
-    // await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
-    // await sessionHelper.addActiveUserSession(store, user._id, req.sessionID);
     await sessionHelper.removeUserSession(
       user._id.toString(),
       req.sessionID.toString()

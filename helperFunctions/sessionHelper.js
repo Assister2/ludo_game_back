@@ -19,7 +19,7 @@ async function removeUserSession(userId, sessionId) {
 
         if (previousSocket) {
           // Logout event
-          // previousSocket.emit("logout", {});
+          previousSocket.emit("logout", {});
           previousSocket.disconnect(true);
         }
       }
