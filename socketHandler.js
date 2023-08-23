@@ -413,4 +413,5 @@ function handleConnection(socket, io) {
     clearInterval(heartbeatInterval);
   });
 }
+
 module.exports = handleConnection;

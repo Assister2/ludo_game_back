@@ -31,7 +31,7 @@ const updateUserProfile = async (req, res) => {
   try {
     let user = req.user;
     let name = req.body.username;
-    let existing = await userController.existingUserByName(name);
+    let existing = await userController.existingUserByName(name, user.id);
     let userData = await userController.existingUserById(user);
     if (!userData) {
       return responseHandler(res, 400, null, "User not found");
@@ -41,7 +41,6 @@ const updateUserProfile = async (req, res) => {
         userData = await userController.updateUserByPhoneNumber(userObj);
       }
     }
-
     let account = await accountController.getAccountByUserId(user.id);
     userData._doc.account = account;
     const count = await Challenge.countDocuments({
@@ -50,7 +49,7 @@ const updateUserProfile = async (req, res) => {
     });
     userData._doc.gamesPlayed = count;
     if (existing) {
-      return responseHandler(res, 200, userData, "username already exist");
+      return responseHandler(res, 400, userData, "username already exist");
     }
     return responseHandler(res, 200, userData, "Profile Updated");
   } catch (error) {

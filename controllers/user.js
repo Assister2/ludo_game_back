@@ -75,10 +75,11 @@ const userController = {
       throw error;
     }
   },
-  existingUserByName: async (name) => {
+  existingUserByName: async (name, userId) => {
     try {
       let user = await User.findOne({
         username: name,
+        _id: { $ne: userId },
         isBlocked: false,
         otpConfirmed: true,
       });
