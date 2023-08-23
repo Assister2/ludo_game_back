@@ -213,7 +213,10 @@ router.post("/confirmOTP", async (req, res) => {
       await userController.updateUserByPhoneNumber(user);
       await userController.issueToken(user);
 
-      req.session.user = { _id: user._id, username: user.username };
+      req.session.user = {
+        _id: user._id,
+        username: user.username,
+      };
 
       return responseHandler(res, 200, user, null);
     }
@@ -233,12 +236,15 @@ router.post("/confirmOTP", async (req, res) => {
       return responseHandler(res, 400, null, "Incorrect OTP. Please try again");
     }
     const deleteId = false;
-    await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
+    // await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
     user.otp.count = 0;
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);
     await userController.issueToken(user);
-    req.session.user = { _id: user._id, username: user.username };
+    req.session.user = {
+      _id: user._id,
+      username: user.username,
+    };
     return responseHandler(res, 200, user, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);
@@ -288,7 +294,10 @@ router.post("/OTP", async (req, res) => {
       const finalUser = await userController.insertUser(user, session);
       await userController.deleteUser(user._id, session);
       await userController.issueToken(finalUser, session);
-      req.session.user = { _id: finalUser._id, username: user.username };
+      req.session.user = {
+        _id: finalUser._id,
+        username: user.username,
+      };
 
       const accountObject = {
         userId: finalUser.id,
