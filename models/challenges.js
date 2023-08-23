@@ -12,7 +12,6 @@ const challengeSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: true,
-    
   },
   fake: {
     type: Boolean,
@@ -114,8 +113,17 @@ const challengeSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
-
 });
 
+challengeSchema.index({ state: 1 });
+
 const Challenge = mongoose.model("challenges", challengeSchema);
+
+Challenge.createIndexes((err) => {
+  if (err) {
+    console.error(err);
+  } else {
+    console.log("Challenge Indexes created successfully");
+  }
+});
 module.exports = Challenge;

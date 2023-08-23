@@ -48,5 +48,14 @@ let userAccount = new mongoose.Schema({
   },
 });
 
+userAccount.index({ userId: 1 });
+
 let UserAccount = mongoose.model("UserAccount", userAccount);
+UserAccount.createIndexes((err) => {
+  if (err) {
+    console.error(err);
+  } else {
+    console.log("Account Indexes created successfully");
+  }
+});
 module.exports = UserAccount;
