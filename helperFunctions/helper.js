@@ -1,7 +1,7 @@
 const History = require("../models/history");
 const Account = require("../models/accounts");
 const userSockets = require("../allSocketConnection");
-const challengesController = require("../controllers/challenges");
+const challengeHelper = require("../helpers/challengeHelper");
 const axios = require("axios");
 async function generateHistory(historyObj, session) {
   try {

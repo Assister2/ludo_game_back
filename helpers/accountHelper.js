@@ -1,7 +1,7 @@
 const Account = require("../models/accounts");
 const Challenge = require("../models/challenges");
-const challengesController = require("./challenges");
-const accountController = {
+const challengeHelper = require("./challengeHelper");
+const accountHelper = {
   getAccountById: async (accountId) => {
     try {
       let account = await Account.findById(accountId);
@@ -149,7 +149,7 @@ const accountController = {
         { new: true }
       );
       if (playerChips != null || creatorChips != null) {
-        await challengesController.updateChallengeById({
+        await challengeHelper.updateChallengeById({
           _id: challenge._id,
           creatorChips: creatorChips,
           playerChips: playerChips,
@@ -178,4 +178,4 @@ const accountController = {
   },
 };
 
-module.exports = accountController;
+module.exports = accountHelper;

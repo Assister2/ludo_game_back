@@ -1,9 +1,9 @@
 const User = require("../models/user");
 const ChallengeModel = require("../models/challenges");
 const tempUser = require("../models/tempUser");
-const config = require("../helpers/config");
+const config = require("./config");
 const jwtToken = require("jsonwebtoken");
-const userController = {
+const userHelper = {
   /**
    * existingUser - Check existing user by phone Number.
    * @param number - number that need to check
@@ -327,4 +327,4 @@ const userController = {
   },
 };
 
-module.exports = userController;
+module.exports = userHelper;

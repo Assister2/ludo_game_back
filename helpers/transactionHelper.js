@@ -1,6 +1,6 @@
 const TransactionsModel = require("../models/transactions");
 
-const transactionsController = {
+const transactionHelper = {
   /**
    * insertNewTransaction - transactionObj that need to be insert.
    * @param transactionObj - transactionObj that need to insert
@@ -69,4 +69,4 @@ const transactionsController = {
   },
 };
 
-module.exports = transactionsController;
+module.exports = transactionHelper;

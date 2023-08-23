@@ -1,6 +1,6 @@
 const axios = require("axios");
-const config = require('../../helpers/config');
- // You may have other configurations here
+const config = require("../helpers/config");
+// You may have other configurations here
 
 const getUPILink = async (transactionId, amount, User) => {
   try {

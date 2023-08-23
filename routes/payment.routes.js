@@ -1,8 +1,5 @@
-const { express } = require("../commonImports/commonImports");
-const {
-  ConfirmPayment,
-} = require("../controllers/transactionsControllers/routeHandlers");
-
+const { ConfirmPayment } = require("../controllers/transactionController");
+const express = require("express");
 const router = express.Router();
 
 router.post("/confirmpayment", ConfirmPayment);

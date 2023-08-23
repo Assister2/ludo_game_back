@@ -1,20 +1,19 @@
 const mongoose = require("mongoose");
-const accountController = require("../../controllers/accounts");
-const challengesController = require("../../controllers/challenges");
-const { responseHandler } = require("../../helpers");
+const accountHelper = require("../helpers/accountHelper");
+const challengeHelper = require("../helpers/challengeHelper");
+const { responseHandler } = require("../helpers");
 
 const {
   handleChallengeUpdate,
   handleChallengeCancellation,
-} = require("../../function");
-const userController = require("../../controllers/user");
+} = require("../function");
+const userHelper = require("../helpers/userHelper");
 const {
   generateHistory,
   getRoomResults,
   commissionDeduction,
   calculateDeduction,
-} = require("../../helperFunctions/helper");
-const { otherPlyerLost } = require("../challengeConditions");
+} = require("../helperFunctions/helper");
 
 async function handleWin(req, res) {
   const userId = req.user.id;
@@ -29,7 +28,7 @@ async function handleWin(req, res) {
   session.startTransaction();
 
   try {
-    var challenge = await challengesController.getPlayingChallengeById(id);
+    var challenge = await challengeHelper.getPlayingChallengeById(id);
 
     if (!challenge) {
       return responseHandler(res, 400, null, "result already updated");
@@ -97,7 +96,7 @@ async function handleWin(req, res) {
       const deduction = calculateDeduction(challenge.amount);
 
       const [winnerUpdatedAccount, looserWallet] = await Promise.all([
-        accountController.winningGameAccountUpdate(
+        accountHelper.winningGameAccountUpdate(
           {
             userId: userId,
             wallet: amount,
@@ -106,7 +105,7 @@ async function handleWin(req, res) {
           },
           session
         ),
-        accountController.getAccountByUserId(challenge[otherPlayerIs]._id),
+        accountHelper.getAccountByUserId(challenge[otherPlayerIs]._id),
       ]);
       const historyObjects = [
         {
@@ -127,24 +126,23 @@ async function handleWin(req, res) {
         },
       ];
 
-      const referUser = await userController.existingUserById({
+      const referUser = await userHelper.existingUserById({
         id: challenge[currentUserIs]._id,
       });
 
       if (referUser.referer) {
-        const referralUser = await userController.existingUserByReferelId(
+        const referralUser = await userHelper.existingUserByReferelId(
           referUser.referer
         );
 
         if (referralUser) {
-          const referralUserWallet =
-            await accountController.increaseRefererAccount(
-              {
-                userId: referralUser._id,
-                amount: challenge.amount,
-              },
-              session
-            );
+          const referralUserWallet = await accountHelper.increaseRefererAccount(
+            {
+              userId: referralUser._id,
+              amount: challenge.amount,
+            },
+            session
+          );
 
           historyObjects.push({
             userId: referralUserWallet.userId,
@@ -162,7 +160,7 @@ async function handleWin(req, res) {
       );
     }
 
-    await userController.updateUserByUserId(
+    await userHelper.updateUserByUserId(
       {
         _id: userId,
         noOfChallenges: 0,
@@ -172,10 +170,7 @@ async function handleWin(req, res) {
 
     challenge.results = updatedResults;
     challenge.winnerScreenShot = updatedWinnerScreenShot;
-    challenge = await challengesController.updateChallengeById(
-      challenge,
-      session
-    );
+    challenge = await challengeHelper.updateChallengeById(challenge, session);
     console.log("final challenge: ", challenge);
 
     await session.commitTransaction();
@@ -199,7 +194,7 @@ async function handleLost(req, res) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
 
-    var challenge = await challengesController.getPlayingChallengeById(id);
+    var challenge = await challengeHelper.getPlayingChallengeById(id);
     if (!challenge) {
       return responseHandler(res, 400, null, "result already updated");
     }
@@ -258,7 +253,7 @@ async function handleLost(req, res) {
       const deduction = calculateDeduction(challenge.amount);
 
       const [updatedUserWallet, looserWallet] = await Promise.all([
-        accountController.winningGameAccountUpdate(
+        accountHelper.winningGameAccountUpdate(
           {
             userId: challenge[otherPlayerIs]._id,
             wallet: amount,
@@ -267,7 +262,7 @@ async function handleLost(req, res) {
           },
           session
         ),
-        accountController.getAccountByUserId(challenge[currentUserIs]._id),
+        accountHelper.getAccountByUserId(challenge[currentUserIs]._id),
       ]);
 
       const historyObjects = [
@@ -293,18 +288,18 @@ async function handleLost(req, res) {
         historyObjects.map((history) => generateHistory(history, session))
       );
 
-      const referUser = await userController.existingUserById({
+      const referUser = await userHelper.existingUserById({
         id: challenge[otherPlayerIs]._id,
       });
 
       if (referUser.referer) {
-        const referalAccount = await userController.existingUserByReferelId(
+        const referalAccount = await userHelper.existingUserByReferelId(
           referUser.referer
         );
 
         if (referalAccount) {
           const updatedReferAccount =
-            await accountController.increaseRefererAccount(
+            await accountHelper.increaseRefererAccount(
               {
                 userId: referalAccount._id,
                 amount: challenge.amount,
@@ -325,7 +320,7 @@ async function handleLost(req, res) {
       }
     }
 
-    await userController.updateUserByUserId(
+    await userHelper.updateUserByUserId(
       {
         _id: user.id,
         noOfChallenges: 0,
@@ -334,10 +329,7 @@ async function handleLost(req, res) {
     );
 
     challenge.results = updatedResults;
-    challenge = await challengesController.updateChallengeById(
-      challenge,
-      session
-    );
+    challenge = await challengeHelper.updateChallengeById(challenge, session);
 
     await session.commitTransaction();
     return responseHandler(res, 200, challenge, null);
@@ -354,7 +346,7 @@ async function handleCancel(req, res) {
   try {
     session.startTransaction();
     const { id } = req.params;
-    var challenge = await challengesController.getPlayingChallengeById(id);
+    var challenge = await challengeHelper.getPlayingChallengeById(id);
     if (!challenge) {
       return responseHandler(res, 400, null, "result already updated");
     }
@@ -368,10 +360,10 @@ async function handleCancel(req, res) {
       return responseHandler(res, 400, null, "result already updatedd");
     }
 
-    const cancellerWallet = await accountController.getAccountByUserId(
+    const cancellerWallet = await accountHelper.getAccountByUserId(
       challenge[currentUserIs]._id
     );
-    const otherPlayerWallet = await accountController.getAccountByUserId(
+    const otherPlayerWallet = await accountHelper.getAccountByUserId(
       challenge[otherPlayerIs]._id
     );
 
@@ -424,7 +416,7 @@ async function handleCancel(req, res) {
       );
     }
 
-    await userController.updateUserByUserId(
+    await userHelper.updateUserByUserId(
       {
         _id: user.id,
         noOfChallenges: 0,
@@ -432,10 +424,7 @@ async function handleCancel(req, res) {
       session
     );
 
-    challenge = await challengesController.updateChallengeById(
-      challenge,
-      session
-    );
+    challenge = await challengeHelper.updateChallengeById(challenge, session);
 
     await session.commitTransaction();
     return responseHandler(res, 200, challenge, null);
@@ -453,7 +442,7 @@ async function getChallengeByChallengeId(req, res) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
     let user = req.user;
-    let challenge = await challengesController.getChallengeById(
+    let challenge = await challengeHelper.getChallengeById(
       req.params.challengeId
     );
     if (!challenge) {
@@ -471,10 +460,82 @@ async function getChallengeByChallengeId(req, res) {
     }
   } catch (error) {}
 }
+async function otherPlayerLost(
+  challenge,
+  userWallet,
+  winner,
+  looser,
+  challengeObj,
+  session
+) {
+  challengeObj.state = "resolved";
+  let deduction = challenge.amount * 0.03;
+  amount = amount * 2 - (amount * 3) / 100;
 
+  const winnWall = await accountHelper.updateAccountByUserId(
+    {
+      ...userWallet._doc,
+      wallet: userWallet.wallet + amount,
+      winningCash: userWallet.winningCash + amount,
+      totalWin: userWallet.totalWin + challenge.amount - deduction,
+    },
+    session
+  );
+  let looserWallet23 = await accountHelper.getAccountByUserId(
+    challenge[looser]._id
+  );
+  const historyObj = {
+    userId: challenge[looser]._id,
+    historyText: `Lost Against ${challenge[winner].username}`,
+    roomCode: challenge.roomCode,
+    closingBalance: looserWallet23.wallet,
+    amount: Number(challenge.amount),
+    type: "lost",
+  };
+  await generateHistory(historyObj, session);
+
+  const winnerObj = {
+    userId: challenge[winner]._id,
+    historyText: `Won Against ${challenge[looser].username}`,
+    roomCode: challenge.roomCode,
+    closingBalance: winnWall.wallet,
+    amount: Number(amount),
+    type: "won",
+  };
+  await generateHistory(winnerObj, session);
+
+  let referUser = await userHelper.existingUserById({
+    id: challenge[winner]._id,
+  });
+
+  if (referUser.referer) {
+    let referalAccount = await userHelper.existingUserByReferelId(
+      referUser.referer
+    );
+
+    const userWall = await accountHelper.increaseRefererAccount(
+      {
+        userId: referalAccount._id,
+        amount: challenge.amount,
+      },
+      session
+    );
+
+    const historyObj = {
+      userId: userWall.userId,
+      historyText: `referal from ${challenge[winner].username}`,
+      roomCode: challenge.roomCode,
+      closingBalance: userWall.wallet,
+      amount: Number(challenge.amount * 0.02),
+      type: "referal",
+    };
+    await generateHistory(historyObj, session);
+  }
+}
 module.exports = {
   handleWin,
   handleLost,
   handleCancel,
+  otherPlayerLost,
   getChallengeByChallengeId,
 };

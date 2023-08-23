@@ -1,10 +1,10 @@
-const accountController = require("./controllers/accounts");
+const accountHelper = require("./helpers/accountHelper");
 const ChallengeModel = require("./models/challenges");
 const History = require("./models/history");
 const { client } = require("./allSocketConnection");
 const socketConn = require("./socket");
-const challengesController = require("./controllers/challenges");
-const userController = require("./controllers/user");
+const challengeHelper = require("./helpers/challengeHelper");
+const userHelper = require("./helpers/userHelper");
 const { generateHistory } = require("./helperFunctions/helper");
 
 async function startGame(data, socket) {
@@ -14,7 +14,7 @@ async function startGame(data, socket) {
     error: null,
   };
   try {
-    const startGameChallenge = await challengesController.startGameChallenge(
+    const startGameChallenge = await challengeHelper.startGameChallenge(
       data.payload.challengeId,
       socket,
       data.payload.userId
@@ -78,7 +78,7 @@ const handleChallengeCancellation = async (
     session
   ) => {
     if (player === "creator") {
-      playerWallet = await accountController.updateAccountByUserId(
+      playerWallet = await accountHelper.updateAccountByUserId(
         {
           ...playerWallet._doc,
           wallet: playerWallet.wallet + challenge.amount,
@@ -102,7 +102,7 @@ const handleChallengeCancellation = async (
       return;
     }
     if (player === "player") {
-      playerWallet = await accountController.updateAccountByUserId(
+      playerWallet = await accountHelper.updateAccountByUserId(
         {
           ...playerWallet._doc,
           wallet: playerWallet.wallet + challenge.amount,
@@ -126,7 +126,7 @@ const handleChallengeCancellation = async (
       return;
     }
 
-    playerWallet = await accountController.updateAccountByUserId(
+    playerWallet = await accountHelper.updateAccountByUserId(
       {
         ...playerWallet._doc,
         wallet: playerWallet.wallet + challenge.amount,
@@ -146,11 +146,11 @@ const handleChallengeCancellation = async (
   );
 };
 const cancelChallenge = async (socket, challengeId, userId) => {
-  await challengesController.updateChallengeById23(challengeId);
+  await challengeHelper.updateChallengeById23(challengeId);
 };
 const handleChallengeUpdate = async (data) => {
   setTimeout(async () => {
-    const challenge = await challengesController.getChallengeById12(
+    const challenge = await challengeHelper.getChallengeById12(
       data.challengeId
     );
     if (challenge) {
@@ -169,9 +169,9 @@ const handleChallengeUpdate = async (data) => {
         };
 
         // await challenge.save();
-        await challengesController.updatePlayingChallenge(challengeObj);
+        await challengeHelper.updatePlayingChallenge(challengeObj);
 
-        await userController.updateUserNoSession({
+        await userHelper.updateUserNoSession({
           _id: data.userId,
           playing: false,
           noOfChallenges: 0,
@@ -184,9 +184,7 @@ const handleChallengeUpdate = async (data) => {
 const bothResultNotUpdated = async (challengeId) => {
   setTimeout(async () => {
     try {
-      let challenge = await challengesController.getChallengeById12(
-        challengeId
-      );
+      let challenge = await challengeHelper.getChallengeById12(challengeId);
       if (challenge) {
         let creatorId = challenge.creator._id;
         let playerId = challenge.player._id;
@@ -215,12 +213,12 @@ const bothResultNotUpdated = async (challengeId) => {
           );
 
           if (updated) {
-            await userController.updateUserNoSession({
+            await userHelper.updateUserNoSession({
               _id: creatorId,
               playing: false,
               noOfChallenges: 0,
             });
-            await userController.updateUserNoSession({
+            await userHelper.updateUserNoSession({
               _id: playerId,
               playing: false,
               noOfChallenges: 0,

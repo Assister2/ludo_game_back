@@ -2,7 +2,7 @@ const express = require("express");
 const {
   getUserProfileData,
   updateUserProfile,
-} = require("../controllers/userControllers/userHandlers");
+} = require("../controllers/userController");
 const verifyToken = require("../middleware/verifyToken");
 const router = express.Router();
 

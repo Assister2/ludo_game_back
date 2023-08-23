@@ -7,7 +7,7 @@ const {
   handleCancel,
   handleUpdateResult,
   getChallengeByChallengeId,
-} = require("../controllers/challengesControllers/challengesHandlers");
+} = require("../controllers/challengeController");
 
 Router.get(
   "/getChallengeByChallengeId/:challengeId",

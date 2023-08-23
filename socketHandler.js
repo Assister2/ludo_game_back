@@ -8,8 +8,8 @@ const {
   validateAmount,
 } = require("./function.js");
 const config = require("./helpers/config");
-const accountController = require("./controllers/accounts");
-const challengesController = require("./controllers/challenges");
+const accountHelper = require("./helpers/accountHelper");
+const challengeHelper = require("./helpers/challengeHelper");
 // const { sendFCM } = require("./routes/notification");
 let bot = null;
 dotenv.config();
@@ -35,7 +35,7 @@ function handleConnection(socket, io) {
       switch (data.type) {
         case "getUserWallet":
           try {
-            let wallet = await accountController.getAccountByUserId(
+            let wallet = await accountHelper.getAccountByUserId(
               data.payload.userId
             );
 
@@ -79,7 +79,7 @@ function handleConnection(socket, io) {
       switch (data.type) {
         case "getChallengeByChallengeId":
           try {
-            let challenge = await challengesController.getChallengeById(
+            let challenge = await challengeHelper.getChallengeById(
               data.payload.challengeId
             );
             if (challenge.player._id && challenge.creator._id) {
@@ -97,7 +97,7 @@ function handleConnection(socket, io) {
                 challenge.player._id == data.payload.userId
               ) {
                 if (challenge.player._id == data.payload.userId) {
-                  await challengesController.updateChallengeById({
+                  await challengeHelper.updateChallengeById({
                     _id: challenge._id,
                     firstTime: false,
                   });
@@ -207,7 +207,7 @@ function handleConnection(socket, io) {
         //   };
         //   return socket.send(JSON.stringify(response));
         // }
-        // let userWallet = await accountController.getAccountByUserId(
+        // let userWallet = await accountHelper.getAccountByUserId(
         //   data.payload.userId
         // );
         // if (userWallet.wallet - data.payload.amount < 0) {
@@ -219,7 +219,7 @@ function handleConnection(socket, io) {
         //   };
         //   return socket.send(JSON.stringify(response));
         // }
-        let challenges = await challengesController.getChallengesByUserId(
+        let challenges = await challengeHelper.getChallengesByUserId(
           data.payload.userId
         );
 
@@ -245,7 +245,7 @@ function handleConnection(socket, io) {
 
           return socket.send(JSON.stringify(response));
         }
-        let checkPlayingOrHold = await challengesController.checkPlayingOrHold(
+        let checkPlayingOrHold = await challengeHelper.checkPlayingOrHold(
           data.payload.userId
         );
 
@@ -266,7 +266,7 @@ function handleConnection(socket, io) {
           createdAt: new Date(),
         };
 
-        challenge = await challengesController.createChallenge(challenge);
+        challenge = await challengeHelper.createChallenge(challenge);
 
         buttonEnabled = true;
         if (config.NODE_ENV === "production") {
@@ -290,7 +290,7 @@ function handleConnection(socket, io) {
         console.time("play");
         try {
           let currentChallenge =
-            await challengesController.getOpenChallengeByChallengeId(
+            await challengeHelper.getOpenChallengeByChallengeId(
               data.payload.challengeId
             );
 
@@ -304,7 +304,7 @@ function handleConnection(socket, io) {
             return socket.send(JSON.stringify(response));
           }
 
-          // let playerWallet = await accountController.getAccountByUserId(
+          // let playerWallet = await accountHelper.getAccountByUserId(
           //   data.payload.userId
           // );
 
@@ -319,7 +319,7 @@ function handleConnection(socket, io) {
           // }
 
           let checkRequestedChallenges =
-            await challengesController.checkAlreadyRequestedGame(
+            await challengeHelper.checkAlreadyRequestedGame(
               data.payload.userId
             );
 
@@ -333,8 +333,9 @@ function handleConnection(socket, io) {
             return socket.send(JSON.stringify(response));
           }
 
-          let checkPlayingOrHoldGame =
-            await challengesController.checkPlayingOrHold(data.payload.userId);
+          let checkPlayingOrHoldGame = await challengeHelper.checkPlayingOrHold(
+            data.payload.userId
+          );
 
           if (!checkPlayingOrHoldGame) {
             response = {
@@ -346,7 +347,7 @@ function handleConnection(socket, io) {
             return socket.send(JSON.stringify(response));
           }
           console.timeEnd("play");
-          currentChallenge = await challengesController.updateChallengeById44(
+          currentChallenge = await challengeHelper.updateChallengeById44(
             currentChallenge._id,
             data.payload.userId,
             session
@@ -355,7 +356,7 @@ function handleConnection(socket, io) {
           await session.commitTransaction();
           session.endSession();
 
-          // let challenges = await challengesController.getAllChallenges();
+          // let challenges = await challengeHelper.getAllChallenges();
           // socket.send(JSON.stringify(challenges));
 
           if (!currentChallenge) {
@@ -378,14 +379,12 @@ function handleConnection(socket, io) {
         // Implement your read operation here
         break;
       case "cancel":
-        await challengesController.updateChallengeById23(
-          data.payload.challengeId
-        );
+        await challengeHelper.updateChallengeById23(data.payload.challengeId);
         buttonEnabled = true;
 
         break;
       case "delete":
-        await challengesController.updateDeleteChallengeById(
+        await challengeHelper.updateDeleteChallengeById(
           data.payload.challengeId
         );
 
@@ -393,7 +392,7 @@ function handleConnection(socket, io) {
         break;
 
       case "deleteOpenChallengesOfCreator":
-        await challengesController.deleteOpenChallenges(data.payload.userId);
+        await challengeHelper.deleteOpenChallenges(data.payload.userId);
 
         break;
       case "startGame":
@@ -402,7 +401,7 @@ function handleConnection(socket, io) {
         await bothResultNotUpdated(data.payload.challengeId);
         break;
     }
-    let challenges = await challengesController.getAllChallenges();
+    let challenges = await challengeHelper.getAllChallenges();
 
     if (buttonEnabled) socket.send(JSON.stringify({ status: "enabled" }));
     io.emit("getChallenges", JSON.stringify(challenges));

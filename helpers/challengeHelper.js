@@ -6,7 +6,7 @@ const indian_names = require("../commonImports/indian_names");
 const axios = require("axios");
 const History = require("../models/history");
 const TransactionsModel = require("../models/transactions");
-const config = require("../helpers/config");
+const config = require("./config");
 
 const moment = require("moment");
 const tempUser = require("../models/tempUser");
@@ -16,7 +16,7 @@ const {
   getRoomCode,
 } = require("../helperFunctions/helper");
 
-const challengesController = {
+const challengeHelper = {
   /**
    * createChallenge - challengeObject that need to be insert.
    * @param challengeObject - challengeObject that need to insert
@@ -205,7 +205,7 @@ const challengesController = {
 
         await generateHistory(historyObj, session);
         if (playerChips != null || creatorChips != null) {
-          await challengesController.updateChallengeById(
+          await challengeHelper.updateChallengeById(
             {
               _id: updatedChallenge._id,
               creatorChips: creatorChips,
@@ -780,4 +780,4 @@ const challengesController = {
   //     },
 };
 
-module.exports = challengesController;
+module.exports = challengeHelper;

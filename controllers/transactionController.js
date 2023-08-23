@@ -1,15 +1,13 @@
-const {
-  accountController,
-  challengesController,
-  transactionsController,
-  userController,
-  responseHandler,
-  History,
-} = require("../../commonImports/commonImports");
-const { generateHistory } = require("../../helperFunctions/helper");
-const getUPILink = require("./paymentUPI");
+const { generateHistory } = require("../helperFunctions/helper");
+const getUPILink = require("./paymentUPIController");
 const mongoose = require("mongoose");
-const config = require("../../helpers/config");
+const config = require("../helpers/config");
+const transactionHelper = require("../helpers/transactionHelper");
+const { responseHandler } = require("../helpers");
+const accountHelper = require("../helpers/accountHelper");
+const userHelper = require("../helpers/userHelper");
+const challengeHelper = require("../helpers/challengeHelper");
+
 async function handleBuyChips(req, res) {
   const session = await mongoose.startSession();
   if (config.NODE_ENV === "production") {
@@ -24,7 +22,7 @@ async function handleBuyChips(req, res) {
       if (amount <= 0 || amount > 20000) {
         return responseHandler(res, 400, {}, "Amount limit is 0 to 20000");
       }
-      const User = await userController.existingUserById({
+      const User = await userHelper.existingUserById({
         id: user.id,
       });
       if (!User) {
@@ -36,7 +34,7 @@ async function handleBuyChips(req, res) {
         status: 2, // 0 for failed 1 for success and 2 for pending
         userId: user.id,
       };
-      const Transaction = await transactionsController.insertNewTransaction(
+      const Transaction = await transactionHelper.insertNewTransaction(
         transactionObject,
         session
       );
@@ -67,7 +65,7 @@ async function handleBuyChips(req, res) {
 
       const { amount } = req.body.payload;
       const { user } = req;
-      const account = await accountController.getAccountByUserId(user.id);
+      const account = await accountHelper.getAccountByUserId(user.id);
 
       if (!account) {
         return responseHandler(res, 404, null, "Account not found");
@@ -94,12 +92,12 @@ async function handleBuyChips(req, res) {
           wallet: account.wallet + amount,
         };
 
-        transactionId = await transactionsController.insertNewTransaction(
+        transactionId = await transactionHelper.insertNewTransaction(
           transactionObject,
           session
         );
 
-        updatedAccount = await accountController.updateAccountByUserId(
+        updatedAccount = await accountHelper.updateAccountByUserId(
           accountObject,
           session
         );
@@ -136,8 +134,9 @@ async function handleSellChips(req, res) {
       return responseHandler(res, 400, null, "Fields are missing or invalid");
     }
 
-    const checkOpenOrRequested =
-      await challengesController.checkOpenOrRequested(user.id);
+    const checkOpenOrRequested = await challengeHelper.checkOpenOrRequested(
+      user.id
+    );
     if (checkOpenOrRequested.length > 0) {
       return responseHandler(
         res,
@@ -147,7 +146,7 @@ async function handleSellChips(req, res) {
       );
     }
 
-    const account = await accountController.getAccountByUserId(user.id);
+    const account = await accountHelper.getAccountByUserId(user.id);
     if (!account) {
       return responseHandler(res, 404, null, "Account not found");
     }
@@ -171,7 +170,7 @@ async function handleSellChips(req, res) {
         wallet: Math.max(0, account.wallet - amount),
       };
 
-      updatedAccount = await accountController.updateAccountByUserId(
+      updatedAccount = await accountHelper.updateAccountByUserId(
         accountObject,
         session
       );
@@ -186,7 +185,7 @@ async function handleSellChips(req, res) {
         withdraw: { lastWRequest: new Date() },
       };
 
-      transactionId = await transactionsController.insertNewTransaction(
+      transactionId = await transactionHelper.insertNewTransaction(
         transactionObject,
         session
       );
@@ -214,7 +213,7 @@ async function handleSellChips(req, res) {
 async function handleGetWallet(req, res) {
   try {
     let userId = req.user.id;
-    let account = await accountController.getAccountByUserId(userId);
+    let account = await accountHelper.getAccountByUserId(userId);
     if (account) {
       return responseHandler(res, 200, account, null);
     } else {
@@ -236,19 +235,20 @@ async function ConfirmPayment(req, res) {
     if (status === "failure") {
       return responseHandler(res, 400, {}, null);
     }
-    const userTransaction =
-      await transactionsController.existingTransactionsById(data.client_txn_id);
+    const userTransaction = await transactionHelper.existingTransactionsById(
+      data.client_txn_id
+    );
     if (!userTransaction) {
       return responseHandler(res, 400, {}, null);
     }
     const amountAsNumber = userTransaction.amount;
-    await transactionsController.updateTransactionById(
+    await transactionHelper.updateTransactionById(
       userTransaction._id,
       upi_txn_id,
       id,
       session
     );
-    const account = await accountController.getAccountByUserId(
+    const account = await accountHelper.getAccountByUserId(
       userTransaction.userId
     );
 
@@ -258,7 +258,7 @@ async function ConfirmPayment(req, res) {
       wallet: account.wallet + amountAsNumber,
     };
 
-    const updatedAccount = await accountController.updateAccountByUserId(
+    const updatedAccount = await accountHelper.updateAccountByUserId(
       accountObject,
       session
     );

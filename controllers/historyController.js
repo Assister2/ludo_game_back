@@ -1,10 +1,10 @@
-const historyController = require("../history");
-const { responseHandler } = require("../../helpers");
+const historyHelper = require("../helpers/historyHelper");
+const { responseHandler } = require("../helpers");
 
 const historyHandler = async (req, res) => {
   try {
     let userId = req.user.id;
-    let history = await historyController.getAllHistoryByUserId(userId);
+    let history = await historyHelper.getAllHistoryByUserId(userId);
     history.reverse();
     if (history) {
       return responseHandler(res, 200, history, null);
