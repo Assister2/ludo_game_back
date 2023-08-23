@@ -60,6 +60,7 @@ let userSchema = new mongoose.Schema({
   },
   // winning cash
 
+  
   noOfChallenges: {
     type: Number,
     default: 0,
@@ -83,6 +84,6 @@ let userSchema = new mongoose.Schema({
     },
   ],
 });
-let User = mongoose.model("User", userSchema);
 
+let User = mongoose.model("User", userSchema);
 module.exports = User;

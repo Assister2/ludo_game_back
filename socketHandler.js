@@ -198,32 +198,31 @@ function handleConnection(socket, io) {
     let buttonEnabled = false;
     switch (data.type) {
       case "create":
-        // const isValidAmount = validateAmount(data.payload.amount);
-        // if (!isValidAmount) {
-        //   const response = {
-        //     status: 400,
-        //     error: "Invalid amount",
-        //     data: null,
-        //   };
-        //   return socket.send(JSON.stringify(response));
-        // }
-        // let userWallet = await accountController.getAccountByUserId(
-        //   data.payload.userId
-        // );
-        // if (userWallet.wallet - data.payload.amount < 0) {
-        //   response = {
-        //     ...response,
-        //     status: 400,
-        //     error: "You dont have enough chips",
-        //     data: null,
-        //   };
-        //   return socket.send(JSON.stringify(response));
-        // }
-        let challenges = await challengesController.getChallengesByUserId(
+        const isValidAmount = validateAmount(data.payload.amount);
+        if (!isValidAmount) {
+          const response = {
+            status: 400,
+            error: "Invalid amount",
+            data: null,
+          };
+          return socket.send(JSON.stringify(response));
+        }
+        let userWallet = await accountController.getAccountByUserId(
           data.payload.userId
         );
-
-        if (challenges.length >= 3) {
+        if (userWallet.wallet - data.payload.amount < 0) {
+          response = {
+            ...response,
+            status: 400,
+            error: "You dont have enough chips",
+            data: null,
+          };
+          return socket.send(JSON.stringify(response));
+        }
+        let checkChallenge = await challengesController.checkChallengeLimit(
+          data.payload.userId
+        );
+        if (checkChallenge) {
           response = {
             ...response,
             status: 400,
@@ -232,10 +231,12 @@ function handleConnection(socket, io) {
           };
           return socket.send(JSON.stringify(response));
         }
-        const result = challenges.find(
-          (challenge) => challenge.amount == data.payload.amount
-        );
-        if (result) {
+        let sameAmountChallenge =
+          await challengesController.checkSameAmountChallenge({
+            userId: data.payload.userId,
+            amount: data.payload.amount,
+          });
+        if (sameAmountChallenge.length > 0) {
           response = {
             ...response,
             status: 400,
@@ -265,8 +266,10 @@ function handleConnection(socket, io) {
           // roomCode: roomCodeResponse.data,
           createdAt: new Date(),
         };
+        console.time("create");
 
         challenge = await challengesController.createChallenge(challenge);
+        console.timeEnd("create");
 
         buttonEnabled = true;
         if (config.NODE_ENV === "production") {
@@ -287,7 +290,7 @@ function handleConnection(socket, io) {
       case "play":
         const session = await mongoose.startSession();
         session.startTransaction();
-        console.time("play");
+
         try {
           let currentChallenge =
             await challengesController.getOpenChallengeByChallengeId(
@@ -304,19 +307,19 @@ function handleConnection(socket, io) {
             return socket.send(JSON.stringify(response));
           }
 
-          // let playerWallet = await accountController.getAccountByUserId(
-          //   data.payload.userId
-          // );
+          let playerWallet = await accountController.getAccountByUserId(
+            data.payload.userId
+          );
 
-          // if (playerWallet.wallet - currentChallenge.amount < 0) {
-          //   response = {
-          //     ...response,
-          //     status: 400,
-          //     error: "You don't have enough chips",
-          //     data: null,
-          //   };
-          //   return socket.send(JSON.stringify(response));
-          // }
+          if (playerWallet.wallet - currentChallenge.amount < 0) {
+            response = {
+              ...response,
+              status: 400,
+              error: "You don't have enough chips",
+              data: null,
+            };
+            return socket.send(JSON.stringify(response));
+          }
 
           let checkRequestedChallenges =
             await challengesController.checkAlreadyRequestedGame(
@@ -345,7 +348,7 @@ function handleConnection(socket, io) {
             };
             return socket.send(JSON.stringify(response));
           }
-          console.timeEnd("play");
+
           currentChallenge = await challengesController.updateChallengeById44(
             currentChallenge._id,
             data.payload.userId,
@@ -402,11 +405,12 @@ function handleConnection(socket, io) {
         await bothResultNotUpdated(data.payload.challengeId);
         break;
     }
+    console.time("challenges");
     let challenges = await challengesController.getAllChallenges();
+    console.timeEnd("challenges");
 
     if (buttonEnabled) socket.send(JSON.stringify({ status: "enabled" }));
     io.emit("getChallenges", JSON.stringify(challenges));
-    // socket.send(JSON.stringify(challenges));
   });
   socket.on("close", (code, reason) => {
     console.log("WebSocket connection Closed:", code, reason);

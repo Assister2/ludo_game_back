@@ -48,27 +48,15 @@ const challengesController = {
       throw error;
     }
   },
-  /**
-   * getChallengesByUserId - to get all challenges by user id
-   * @returns {Promise<void>}
-   */
-  getChallengesByUserId: async (userId) => {
-    try {
-      let challenges = await ChallengeModel.find({
-        creator: userId,
-        state: { $in: ["open", "requested"] },
-      }).select("amount");
-      return challenges;
-    } catch (error) {
-      console.log("error", error);
-      throw error;
-    }
-  },
 
   /**
-   * startGameChallenge - to start game
-   * @returns {Promise<void>}
-   */
+     * 
+     * 
+
+            /**
+
+ * @returns {Promise<void>}
+ */
   startGameChallenge: async (challengeId, socket, userID) => {
     const session = await mongoose.startSession();
 
@@ -281,10 +269,7 @@ const challengesController = {
     try {
       let challenge = await ChallengeModel.find({
         state: { $nin: ["resolved"] },
-      })
-        .lean()
-        .populate("creator player", "username profileImage")
-        .select("creator player results amount state");
+      }).populate("creator player", "username profileImage");
       return challenge;
     } catch (error) {
       console.log("error", error);
@@ -704,7 +689,7 @@ const challengesController = {
   checkPlayingOrHold: async (userId) => {
     try {
       const { noOfChallenges } = await User.findById(userId);
-
+      console.log("nooffchallenges", noOfChallenges);
       if (noOfChallenges > 0) {
         return false;
       } else {
