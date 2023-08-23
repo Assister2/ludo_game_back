@@ -4,56 +4,95 @@ const config = require("../helpers/config");
 const mongoose = require("mongoose");
 const TelegramBotHandler = require("../telegrambots/telegramBot");
 const {
-    startGame,
-    bothResultNotUpdated,
-    validateAmount,
-  } = require("../function.js");
+  startGame,
+  bothResultNotUpdated,
+  validateAmount,
+} = require("../helpers/function");
 
 let bot = null;
 
 if (config.NODE_ENV === "production") {
-    bot = new TelegramBotHandler(config.BOT_TOKEN);
+  bot = new TelegramBotHandler(config.BOT_TOKEN);
 }
 
-const Message = (socket) => {
-    return socket.on("message", async (message) => {
+const Message = (socket, io) => {
+  return socket.on("message", async (message) => {
     const data = JSON.parse(message);
     let buttonEnabled = false;
     switch (data.type) {
       case "create":
         const isValidAmount = validateAmount(data.payload.amount);
         if (!isValidAmount)
-          return socket.send(JSON.stringify({ status: 400, error: "Invalid amount", data: null, }));
+          return socket.send(
+            JSON.stringify({ status: 400, error: "Invalid amount", data: null })
+          );
 
-        
-        let userWallet = await accountController.getAccountByUserId(data.payload.userId);
+        let userWallet = await accountController.getAccountByUserId(
+          data.payload.userId
+        );
         if (userWallet.wallet - data.payload.amount < 0)
-          return socket.send(JSON.stringify({ status: 400, error: "You dont have enough chips", data: null, }));
+          return socket.send(
+            JSON.stringify({
+              status: 400,
+              error: "You dont have enough chips",
+              data: null,
+            })
+          );
 
-        
-        let challenges = await challengesController.getChallengesByUserId(data.payload.userId);
+        let challenges = await challengesController.getChallengesByUserId(
+          data.payload.userId
+        );
         if (challenges.length >= 3)
-          return socket.send(JSON.stringify({ status: 400, error: "You can Set Maximum 3 Challenges at Once", data: null, }));
+          return socket.send(
+            JSON.stringify({
+              status: 400,
+              error: "You can Set Maximum 3 Challenges at Once",
+              data: null,
+            })
+          );
 
-
-        const result = challenges.find((challenge) => challenge.amount == data.payload.amount);
+        const result = challenges.find(
+          (challenge) => challenge.amount == data.payload.amount
+        );
         if (result)
-          return socket.send(JSON.stringify({ status: 400, error: "Same Amount Challenge already exist", data: null, }));
+          return socket.send(
+            JSON.stringify({
+              status: 400,
+              error: "Same Amount Challenge already exist",
+              data: null,
+            })
+          );
 
-        
-        let checkPlayingOrHold = await challengesController.checkPlayingOrHold(data.payload.userId);
+        let checkPlayingOrHold = await challengesController.checkPlayingOrHold(
+          data.payload.userId
+        );
         if (!checkPlayingOrHold)
-          return socket.send(JSON.stringify({ status: 400, error: "Update Your Result In Previous Match First", data: null, }));
+          return socket.send(
+            JSON.stringify({
+              status: 400,
+              error: "Update Your Result In Previous Match First",
+              data: null,
+            })
+          );
 
-        
-        challenge = await challengesController.createChallenge({ creator: data.payload.userId,amount: data.payload.amount,createdAt: new Date(), });
+        challenge = await challengesController.createChallenge({
+          creator: data.payload.userId,
+          amount: data.payload.amount,
+          createdAt: new Date(),
+        });
         buttonEnabled = true;
         if (config.NODE_ENV === "production") {
           const challengeMessage = `${data.payload.username} Set a Challenge\n[Amount] - Rs. ${data.payload.amount}\n\n👇👇👇[Login Now] 👇👇👇\n👉 https://Gotiking.com/ 👈`;
           bot.sendMessageToGroup(config.TELEGRAM_GROUPID, challengeMessage);
         }
         if (!challenge) {
-          return socket.send(JSON.stringify({ status: 400, error: "challenge not created2", data: null, }));
+          return socket.send(
+            JSON.stringify({
+              status: 400,
+              error: "challenge not created2",
+              data: null,
+            })
+          );
         }
         break;
 
@@ -62,23 +101,45 @@ const Message = (socket) => {
         session.startTransaction();
         try {
           let currentChallenge =
-            await challengesController.getOpenChallengeByChallengeId(data.payload.challengeId);
+            await challengesController.getOpenChallengeByChallengeId(
+              data.payload.challengeId
+            );
 
           if (!currentChallenge)
-            return socket.send(JSON.stringify({ status: 400, error: "Request Cancelled", data: null, }));
+            return socket.send(
+              JSON.stringify({
+                status: 400,
+                error: "Request Cancelled",
+                data: null,
+              })
+            );
 
-          let checkRequestedChallenges = await challengesController.checkAlreadyRequestedGame(data.payload.userId);
+          let checkRequestedChallenges =
+            await challengesController.checkAlreadyRequestedGame(
+              data.payload.userId
+            );
 
           if (checkRequestedChallenges.length > 0)
-            return socket.send(JSON.stringify({ status: 400, error: "You have already requested a game", data: null, }));
+            return socket.send(
+              JSON.stringify({
+                status: 400,
+                error: "You have already requested a game",
+                data: null,
+              })
+            );
 
-
-          let checkPlayingOrHoldGame = await challengesController.checkPlayingOrHold(data.payload.userId);
+          let checkPlayingOrHoldGame =
+            await challengesController.checkPlayingOrHold(data.payload.userId);
 
           if (!checkPlayingOrHoldGame)
-            return socket.send(JSON.stringify({ status: 400, error: "Update Your Result In Previous Match First", data: null, }));
+            return socket.send(
+              JSON.stringify({
+                status: 400,
+                error: "Update Your Result In Previous Match First",
+                data: null,
+              })
+            );
 
-        
           currentChallenge = await challengesController.updateChallengeById44(
             currentChallenge._id,
             data.payload.userId,
@@ -89,10 +150,15 @@ const Message = (socket) => {
           session.endSession();
 
           if (!currentChallenge)
-            return socket.send(JSON.stringify({ status: 400, error: "Challenge not created", data: null, }));
-        
-            buttonEnabled = true;
+            return socket.send(
+              JSON.stringify({
+                status: 400,
+                error: "Challenge not created",
+                data: null,
+              })
+            );
 
+          buttonEnabled = true;
         } catch (error) {
           await session.abortTransaction();
           session.endSession();
@@ -101,12 +167,16 @@ const Message = (socket) => {
         break;
 
       case "cancel":
-        await challengesController.updateChallengeById23(data.payload.challengeId);
+        await challengesController.updateChallengeById23(
+          data.payload.challengeId
+        );
         buttonEnabled = true;
 
         break;
       case "delete":
-        await challengesController.updateDeleteChallengeById(data.payload.challengeId);
+        await challengesController.updateDeleteChallengeById(
+          data.payload.challengeId
+        );
 
         buttonEnabled = true;
         break;
@@ -126,6 +196,6 @@ const Message = (socket) => {
     if (buttonEnabled) socket.send(JSON.stringify({ status: "enabled" }));
     io.emit("getChallenges", JSON.stringify(challenges));
   });
-}
+};
 
 module.exports = Message;

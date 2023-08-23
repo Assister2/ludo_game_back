@@ -1,17 +1,16 @@
 const dotenv = require("dotenv");
-
-const { getUserWallet, ludoGame, playGame, message } = require('./sockets');
-const Message = require("./sockets/message");
+const config = require("../helpers/config");
+const { getUserWallet, ludoGame, playGame, message } = require("./index");
 dotenv.config();
 if (config.NODE_ENV === "production") {
   bot = new TelegramBotHandler(config.BOT_TOKEN);
 }
 function handleConnection(socket, io) {
   const HEARTBEAT_INTERVAL = 30000;
-  
-  getUserWallet(socket);
-  ludoGame(socket);
-  playGame(socket);
+
+  getUserWallet(socket, io);
+  ludoGame(socket, io);
+  playGame(socket, io);
 
   console.log("socket connected");
   socket.send(JSON.stringify({ type: "heartbeat" }));
@@ -24,7 +23,7 @@ function handleConnection(socket, io) {
     }
   }, HEARTBEAT_INTERVAL);
 
-  message(socket);
+  message(socket, io);
 
   socket.on("close", (code, reason) => {
     console.log("WebSocket connection Closed:", code, reason);

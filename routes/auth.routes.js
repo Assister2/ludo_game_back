@@ -9,7 +9,7 @@ const {
   OTP,
   resendOTP,
 } = require("../controllers/authControllers/authHandlers");
-// const { _app } = require("../firebaseInit");
+
 
 router.post("/login", login);
 

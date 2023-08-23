@@ -1,7 +1,9 @@
 // sessionHelper.js
 
-const { client } = require("../allSocketConnection");
-const socket = require("../socket");
+
+const { client } = require("../redis/allSocketConnection");
+const socket = require("../sockets/socketConnection/socket");
+
 
 async function removeUserSession(userId, sessionId) {
   try {

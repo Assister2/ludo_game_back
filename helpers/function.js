@@ -1,11 +1,12 @@
-const accountController = require("./controllers/accounts");
-const ChallengeModel = require("./models/challenges");
-const History = require("./models/history");
-const { client } = require("./allSocketConnection");
-const socketConn = require("./socket");
-const challengesController = require("./controllers/challenges");
-const userController = require("./controllers/user");
-const { generateHistory } = require("./helperFunctions/helper");
+const accountController = require("../controllers/accounts");
+const ChallengeModel = require("../models/challenges");
+const History = require("../models/history");
+
+const socketConn = require("../sockets/socketConnection/socket.js");
+const challengesController = require("../controllers/challenges");
+const userController = require("../controllers/user");
+const { generateHistory } = require("../helperFunctions/helper");
+const { client } = require("../redis/allSocketConnection");
 
 async function startGame(data, socket) {
   let response = {

@@ -178,7 +178,7 @@ const userController = {
         },
         config.TOKEN_SECRET
       );
-
+        console.log("check")
       let tokenObject = {
         jwtToken: tokenGenerated,
         createdAt: new Date(),

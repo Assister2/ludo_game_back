@@ -6,7 +6,7 @@ const { responseHandler } = require("../../helpers");
 const {
   handleChallengeUpdate,
   handleChallengeCancellation,
-} = require("../../function");
+} = require("../../helpers/function");
 const userController = require("../../controllers/user");
 const {
   generateHistory,

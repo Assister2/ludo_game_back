@@ -1,5 +1,5 @@
 const accountController = require("../accounts");
-const socket = require("../../socket");
+
 const config = require("../../helpers/config");
 const { store } = require("../../services/session");
 const mongoose = require("mongoose");
@@ -235,6 +235,7 @@ const confirmOTP = async (req, res) => {
     await userController.updateUserByPhoneNumber(user);
     req.session.user = { _id: user._id, username: user.username };
     res.cookie("sid", req.sessionID);
+    console.log("usereee", user);
     return responseHandler(res, 200, user, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);

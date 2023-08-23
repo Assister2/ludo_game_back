@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require("fs");
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
@@ -17,13 +17,15 @@ const challengesRouter = require("./routes/challenge.routes.js");
 const historyRouter = require("./routes/history.routes.js");
 const { options } = require("./services/session.js");
 const connectDB = require("./database/db");
-const socket = require("./socket");
-const handleConnection = require("./socketHandler.js");
+
 require("./database/cronjobs/cronjobs.js");
 const app = express();
 app.set("trust proxy", 1);
 const allowedOrigins = require("./origion/allowedOrigins.js");
-const { client } = require("./allSocketConnection.js");
+
+const socket = require("./sockets/socketConnection/socket.js");
+const { client } = require("./redis/allSocketConnection.js");
+const handleConnection = require("./sockets/socketHandler.js");
 
 app.use(
   cors({
@@ -73,14 +75,18 @@ app.use(
 );
 
 app.get("/", (req, res, next) => {
-  fs.readFile('./client/build/index.html', { encoding: 'utf-8' }, (err, data) => {
-    console.log(err);
-    if(err) {
-      res.send('Error occurred while reading the index.html file.');
-      return;
+  fs.readFile(
+    "./client/build/index.html",
+    { encoding: "utf-8" },
+    (err, data) => {
+      console.log(err);
+      if (err) {
+        res.send("Error occurred while reading the index.html file.");
+        return;
+      }
+      res.send(data);
     }
-    res.send(data);
-  })
+  );
 });
 
 app.use(session(options));
