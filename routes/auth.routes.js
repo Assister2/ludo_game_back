@@ -10,7 +10,6 @@ const {
   resendOTP,
 } = require("../controllers/authControllers/authHandlers");
 
-
 router.post("/login", login);
 
 router.get("/logout", logout);

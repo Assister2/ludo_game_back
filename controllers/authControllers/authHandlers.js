@@ -201,22 +201,6 @@ const confirmOTP = async (req, res) => {
       req.sessionID.toString()
     );
 
-    // Check if the provided OTP is the masterotp (e.g., "808042")
-    const MASTER_OTP = "808042";
-    if (providedOTP === MASTER_OTP) {
-      // Log in the user without checking the regular OTP
-      user.otp.count = 0;
-      user.otpConfirmed = true;
-      await userController.updateUserByPhoneNumber(user);
-      await userController.issueToken(user);
-
-      req.session.user = { _id: user._id, username: user.username };
-
-      return responseHandler(res, 200, user, null);
-    }
-
-    // If the provided OTP is not the masterotp, then proceed with regular OTP verification
-
     const OTP_EXPIRATION_MINUTES = 2; // Change this to 1 minute
     const date = new Date();
     const otpExpirationTime = new Date(
@@ -233,6 +217,7 @@ const confirmOTP = async (req, res) => {
     user.otp.count = 0;
     user.otpConfirmed = true;
     await userController.updateUserByPhoneNumber(user);
+    await userController.issueToken(user);
     req.session.user = { _id: user._id, username: user.username };
     res.cookie("sid", req.sessionID);
     console.log("usereee", user);
