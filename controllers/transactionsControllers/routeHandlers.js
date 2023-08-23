@@ -59,7 +59,7 @@ async function handleBuyChips(req, res) {
       throw error;
     }
   }
-  if (config.NODE_ENV === "staging" || config.NODE_ENV === "localhost") {
+  if (config.NODE_ENV === "staging" || config.NODE_ENV === "development") {
     try {
       if (!req.body.payload) {
         return responseHandler(res, 400, null, "Fields are missing232");
