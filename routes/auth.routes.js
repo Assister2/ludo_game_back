@@ -21,9 +21,6 @@ const {
   socketOnLogout,
   generateHistory,
 } = require("../helperFunctions/helper");
-
-const jwt = require("jsonwebtoken");
-
 // const { _app } = require("../firebaseInit");
 
 // Assuming you have imported all the required modules and functions
@@ -71,15 +68,10 @@ router.post("/login", async (req, res) => {
     }
 
     const OTP_CODE_LENGTH = 6;
-    const token = jwt.sign({ userId: user._id }, config.TOKEN_SECRET, {
-      expiresIn: "30s",
-    });
-
     user.otp = {
       code: generate(OTP_CODE_LENGTH),
       updatedAt: new Date(),
       count: user.otp.count + 1,
-      token,
     };
 
     const otpSentSuccessfully = await sendText(user.otp.code, user.phone);
@@ -104,7 +96,8 @@ router.get("/logout", async (req, res) => {
       return responseHandler(res, 400, null, "User not logged in");
     }
     const deleteId = true;
-    await sessionHelper.removeAllUserSessions(store, userId, deleteId);
+    await sessionHelper.removeActiveUserSession(userId.toString());
+    
     req.session.destroy((err) => {
       if (err) {
         console.error("Error destroying session:", err);
@@ -162,7 +155,6 @@ router.post("/signup", async (req, res) => {
       code: generate(6),
       updatedAt: new Date(),
     };
-    console.log("userotp", userData.otp.code);
     const otpSentSuccessfully = await sendText(
       userData.otp.code,
       userData.phone
@@ -196,10 +188,6 @@ router.post("/signup", async (req, res) => {
 
 router.post("/confirmOTP", async (req, res) => {
   try {
-    const { body } = req;
-    const { token } = body;
-    const topic = "ludo";
-
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
@@ -212,6 +200,10 @@ router.post("/confirmOTP", async (req, res) => {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
 
+    // await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
+    // await sessionHelper.addActiveUserSession(store, user._id, req.sessionID);
+    await sessionHelper.removeUserSession(user._id.toString(), req.sessionID.toString());
+    
     // Check if the provided OTP is the masterotp (e.g., "808042")
     const MASTER_OTP = "808042";
     if (providedOTP === MASTER_OTP) {
@@ -261,10 +253,6 @@ router.post("/confirmOTP", async (req, res) => {
 
 router.post("/OTP", async (req, res) => {
   try {
-    const { body } = req;
-    const { token } = body;
-    const topic = "ludo";
-
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
@@ -334,7 +322,7 @@ router.post("/OTP", async (req, res) => {
       }
       await session.commitTransaction();
       session.endSession();
-
+      res.cookie("sid", req.sessionID);
       return responseHandler(res, 200, finalUser, null);
     } catch (error) {
       await session.abortTransaction();
