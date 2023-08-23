@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 const config = require("../helpers/config");
-const { getUserWallet, ludoGame, playGame, message } = require("./index");
+const { getUserWallet, ludoGame, message } = require("./index");
 dotenv.config();
 if (config.NODE_ENV === "production") {
   bot = new TelegramBotHandler(config.BOT_TOKEN);
@@ -10,7 +10,6 @@ function handleConnection(socket, io) {
 
   getUserWallet(socket, io);
   ludoGame(socket, io);
-  playGame(socket, io);
 
   console.log("socket connected");
   socket.send(JSON.stringify({ type: "heartbeat" }));
