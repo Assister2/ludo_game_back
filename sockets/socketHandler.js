@@ -1,6 +1,7 @@
 const dotenv = require("dotenv");
 const config = require("../helpers/config");
 const { getUserWallet, ludoGame, message } = require("./index");
+const TelegramBotHandler = require("../telegrambots/telegramBot");
 dotenv.config();
 if (config.NODE_ENV === "production") {
   bot = new TelegramBotHandler(config.BOT_TOKEN);

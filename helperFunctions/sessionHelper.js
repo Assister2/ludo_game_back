@@ -1,9 +1,7 @@
 // sessionHelper.js
 
-
 const { client } = require("../redis/allSocketConnection");
 const socket = require("../sockets/socketConnection/socket");
-
 
 async function removeUserSession(userId, sessionId) {
   try {
@@ -44,9 +42,10 @@ async function addActiveUserSession(userId, sessionId) {
 
 async function removeActiveUserSession(userId) {
   const prev_session = await client.get(userId);
-
   if (prev_session) {
     await client.del("sess:" + prev_session);
+    await client.del(userId);
+    await client.del(userId.toString());
     await client.del("userId:" + userId);
   }
 }

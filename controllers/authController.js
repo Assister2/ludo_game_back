@@ -77,11 +77,10 @@ async function login(req, res) {
 async function logout(req, res) {
   try {
     const userId = req.query.userId;
-    // await socketOnLogout(userId);
     if (!req.session.user) {
       return responseHandler(res, 400, null, "User not logged in");
     }
-    const deleteId = true;
+
     await sessionHelper.removeActiveUserSession(userId.toString());
 
     req.session.destroy((err) => {
