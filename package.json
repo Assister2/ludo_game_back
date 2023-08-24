@@ -30,6 +30,7 @@
     "node-cron": "^3.0.2",
     "node-fetch": "^2.3.0",
     "node-telegram-bot-api": "^0.61.0",
+    "nodemon": "^3.0.1",
     "redis": "^4.6.7",
     "socket.io": "^4.5.4",
     "urlencode": "^1.1.0"
@@ -39,8 +40,7 @@
     "@babel/preset-env": "^7.15.0",
     "babel-loader": "^8.2.2",
     "dotenv-webpack": "^7.0.3",
-    "nodemon": "^2.0.13",
-    "webpack": "^5.50.0",
+    "webpack": "^5.88.2",
     "webpack-cli": "^4.8.0",
     "webpack-filter-warnings-plugin": "^1.2.1"
   },

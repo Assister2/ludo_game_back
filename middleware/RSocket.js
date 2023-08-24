@@ -1,6 +1,5 @@
 const jwt = require("jsonwebtoken");
 const config = require("../helpers/config");
-const { client } = require("../allSocketConnection");
 
 const authSocketMiddleware = async (socket, next) => {
   // since you are sending the token with the query

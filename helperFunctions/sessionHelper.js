@@ -1,7 +1,9 @@
 // sessionHelper.js
 
-const { client } = require("../allSocketConnection");
-const socket = require("../socket");
+
+const { client } = require("../redis/allSocketConnection");
+const socket = require("../sockets/socketConnection/socket");
+
 
 async function removeUserSession(userId, sessionId) {
   try {
@@ -17,7 +19,7 @@ async function removeUserSession(userId, sessionId) {
 
         if (previousSocket) {
           // Logout event
-          // previousSocket.emit("logout", {});
+          previousSocket.emit("logout", {});
           previousSocket.disconnect(true);
         }
       }

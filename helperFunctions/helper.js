@@ -1,8 +1,6 @@
 const History = require("../models/history");
-const Account = require("../models/accounts");
-const userSockets = require("../allSocketConnection");
-const challengeHelper = require("../helpers/challengeHelper");
 const axios = require("axios");
+const { client } = require("../redis/allSocketConnection");
 async function generateHistory(historyObj, session) {
   try {
     const history = new History();
@@ -33,10 +31,10 @@ async function generateHistory(historyObj, session) {
 function socketOnLogout(userId) {
   try {
     const userIdString = userId.toString();
-    if (userSockets.has(userIdString)) {
-      const previousSocket = userSockets.get(userIdString);
+    if (client.has(userIdString)) {
+      const previousSocket = client.get(userIdString);
       previousSocket.disconnect();
-      userSockets.delete(userIdString);
+      client.delete(userIdString);
       console.log(`Socket connection closed for user ID: ${userId}`);
     }
   } catch (error) {

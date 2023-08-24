@@ -1,3 +1,4 @@
+const fs = require("fs");
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
@@ -7,7 +8,6 @@ const logger = require("morgan");
 const cors = require("cors");
 const authRouter = require("./routes/auth.routes.js");
 const userRouter = require("./routes/user.routes.js");
-const testRouter = require("./routes/test.routes.js");
 
 const transactionRouter = require("./routes/transactions.routes.js");
 const payment = require("./routes/payment.routes.js");
@@ -17,14 +17,15 @@ const challengesRouter = require("./routes/challenge.routes.js");
 const historyRouter = require("./routes/history.routes.js");
 const { options } = require("./services/session.js");
 const connectDB = require("./database/db");
-const socket = require("./socket");
-const handleConnection = require("./socketHandler.js");
+
 require("./database/cronjobs/cronjobs.js");
 const app = express();
 app.set("trust proxy", 1);
 const allowedOrigins = require("./origion/allowedOrigins.js");
-const challengeHelper = require("./helpers/challengeHelper.js");
-const { client } = require("./allSocketConnection.js");
+
+const socket = require("./sockets/socketConnection/socket.js");
+const { client } = require("./redis/allSocketConnection.js");
+const handleConnection = require("./sockets/socketHandler.js");
 
 app.use(
   cors({
@@ -62,6 +63,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "./client/build")));
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(
@@ -71,6 +73,21 @@ app.use(
     parameterLimit: 50000,
   })
 );
+
+app.get("/", (req, res, next) => {
+  fs.readFile(
+    "./client/build/index.html",
+    { encoding: "utf-8" },
+    (err, data) => {
+      console.log(err);
+      if (err) {
+        res.send("Error occurred while reading the index.html file.");
+        return;
+      }
+      res.send(data);
+    }
+  );
+});
 
 app.use(session(options));
 

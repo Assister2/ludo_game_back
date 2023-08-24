@@ -1,11 +1,12 @@
 const accountHelper = require("./helpers/accountHelper");
 const ChallengeModel = require("./models/challenges");
-const History = require("./models/history");
-const { client } = require("./allSocketConnection");
-const socketConn = require("./socket");
 const challengeHelper = require("./helpers/challengeHelper");
 const userHelper = require("./helpers/userHelper");
-const { generateHistory } = require("./helperFunctions/helper");
+const ChallengeModel = require("../models/challenges");
+
+const socketConn = require("../sockets/socketConnection/socket.js");
+const { generateHistory } = require("../helperFunctions/helper");
+const { client } = require("../redis/allSocketConnection");
 
 async function startGame(data, socket) {
   let response = {

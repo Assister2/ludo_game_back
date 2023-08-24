@@ -1,6 +1,7 @@
 let io;
-const authSocketMiddleware = require("./middleware/RSocket");
-const allowedOrigins = require("./origion/allowedOrigins.js");
+
+const authSocketMiddleware = require("../../middleware/RSocket.js");
+const allowedOrigins = require("../../origion/allowedOrigins.js");
 
 module.exports = {
   init: (server) => {

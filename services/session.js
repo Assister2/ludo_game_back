@@ -1,6 +1,6 @@
 const session = require("express-session");
-const RedisStore = require('connect-redis').default;
-const redis = require('redis');
+const RedisStore = require("connect-redis").default;
+const redis = require("redis");
 const config = require("../helpers/config");
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -15,7 +15,7 @@ redisClient.on("error", (error) => {
 });
 redisClient.on("connect", (error) => {
   console.error("redis session connected:");
-})
+});
 
 const store = new RedisStore({
   client: redisClient,
