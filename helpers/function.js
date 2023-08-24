@@ -1,8 +1,7 @@
-const accountHelper = require("./helpers/accountHelper");
-const ChallengeModel = require("./models/challenges");
-const challengeHelper = require("./helpers/challengeHelper");
-const userHelper = require("./helpers/userHelper");
+const accountHelper = require("./accountHelper");
 const ChallengeModel = require("../models/challenges");
+const challengeHelper = require("./challengeHelper");
+const userHelper = require("./userHelper");
 
 const socketConn = require("../sockets/socketConnection/socket.js");
 const { generateHistory } = require("../helperFunctions/helper");

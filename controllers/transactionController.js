@@ -7,6 +7,7 @@ const { responseHandler } = require("../helpers");
 const accountHelper = require("../helpers/accountHelper");
 const userHelper = require("../helpers/userHelper");
 const challengeHelper = require("../helpers/challengeHelper");
+const History = require("../models/history");
 
 async function handleBuyChips(req, res) {
   const session = await mongoose.startSession();

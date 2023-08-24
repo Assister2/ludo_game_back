@@ -3,10 +3,6 @@ const accountHelper = require("../helpers/accountHelper");
 const challengeHelper = require("../helpers/challengeHelper");
 const { responseHandler } = require("../helpers");
 
-const {
-  handleChallengeUpdate,
-  handleChallengeCancellation,
-} = require("../function");
 const userHelper = require("../helpers/userHelper");
 const {
   generateHistory,
@@ -14,6 +10,10 @@ const {
   commissionDeduction,
   calculateDeduction,
 } = require("../helperFunctions/helper");
+const {
+  handleChallengeUpdate,
+  handleChallengeCancellation,
+} = require("../helpers/function");
 
 async function handleWin(req, res) {
   const userId = req.user.id;

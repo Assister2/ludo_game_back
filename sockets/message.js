@@ -1,5 +1,3 @@
-const accountController = require("../controllers/accounts");
-const challengesController = require("../controllers/challenges");
 const config = require("../helpers/config");
 const mongoose = require("mongoose");
 const TelegramBotHandler = require("../telegrambots/telegramBot");
@@ -8,6 +6,8 @@ const {
   bothResultNotUpdated,
   validateAmount,
 } = require("../helpers/function");
+const challengeHelper = require("../helpers/challengeHelper");
+const accountHelper = require("../helpers/accountHelper");
 
 let bot = null;
 
@@ -27,7 +27,7 @@ const Message = (socket, io) => {
             JSON.stringify({ status: 400, error: "Invalid amount", data: null })
           );
 
-        let userWallet = await accountController.getAccountByUserId(
+        let userWallet = await accountHelper.getAccountByUserId(
           data.payload.userId
         );
         if (userWallet.wallet - data.payload.amount < 0)
@@ -39,7 +39,7 @@ const Message = (socket, io) => {
             })
           );
 
-        let challenges = await challengesController.getChallengesByUserId(
+        let challenges = await challengeHelper.getChallengesByUserId(
           data.payload.userId
         );
         if (challenges.length >= 3)
@@ -63,7 +63,7 @@ const Message = (socket, io) => {
             })
           );
 
-        let checkPlayingOrHold = await challengesController.checkPlayingOrHold(
+        let checkPlayingOrHold = await challengeHelper.checkPlayingOrHold(
           data.payload.userId
         );
         if (!checkPlayingOrHold)
@@ -75,7 +75,7 @@ const Message = (socket, io) => {
             })
           );
 
-        challenge = await challengesController.createChallenge({
+        challenge = await challengeHelper.createChallenge({
           creator: data.payload.userId,
           amount: data.payload.amount,
           createdAt: new Date(),
@@ -101,7 +101,7 @@ const Message = (socket, io) => {
         session.startTransaction();
         try {
           let currentChallenge =
-            await challengesController.getOpenChallengeByChallengeId(
+            await challengeHelper.getOpenChallengeByChallengeId(
               data.payload.challengeId
             );
 
@@ -115,7 +115,7 @@ const Message = (socket, io) => {
             );
 
           let checkRequestedChallenges =
-            await challengesController.checkAlreadyRequestedGame(
+            await challengeHelper.checkAlreadyRequestedGame(
               data.payload.userId
             );
 
@@ -128,8 +128,9 @@ const Message = (socket, io) => {
               })
             );
 
-          let checkPlayingOrHoldGame =
-            await challengesController.checkPlayingOrHold(data.payload.userId);
+          let checkPlayingOrHoldGame = await challengeHelper.checkPlayingOrHold(
+            data.payload.userId
+          );
 
           if (!checkPlayingOrHoldGame)
             return socket.send(
@@ -140,7 +141,7 @@ const Message = (socket, io) => {
               })
             );
 
-          currentChallenge = await challengesController.updateChallengeById44(
+          currentChallenge = await challengeHelper.updateChallengeById44(
             currentChallenge._id,
             data.payload.userId,
             session
@@ -167,14 +168,12 @@ const Message = (socket, io) => {
         break;
 
       case "cancel":
-        await challengesController.updateChallengeById23(
-          data.payload.challengeId
-        );
+        await challengeHelper.updateChallengeById23(data.payload.challengeId);
         buttonEnabled = true;
 
         break;
       case "delete":
-        await challengesController.updateDeleteChallengeById(
+        await challengeHelper.updateDeleteChallengeById(
           data.payload.challengeId
         );
 
@@ -182,7 +181,7 @@ const Message = (socket, io) => {
         break;
 
       case "deleteOpenChallengesOfCreator":
-        await challengesController.deleteOpenChallenges(data.payload.userId);
+        await challengeHelper.deleteOpenChallenges(data.payload.userId);
 
         break;
       case "startGame":
@@ -191,7 +190,7 @@ const Message = (socket, io) => {
         await bothResultNotUpdated(data.payload.challengeId);
         break;
     }
-    let challenges = await challengesController.getAllChallenges();
+    let challenges = await challengeHelper.getAllChallenges();
 
     if (buttonEnabled) socket.send(JSON.stringify({ status: "enabled" }));
     io.emit("getChallenges", JSON.stringify(challenges));
