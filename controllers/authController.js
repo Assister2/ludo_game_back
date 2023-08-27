@@ -3,6 +3,7 @@ const config = require("../helpers/config");
 const mongoose = require("mongoose");
 const userHelper = require("../helpers/userHelper");
 const sessionHelper = require("../helperFunctions/sessionHelper");
+const jwt = require("jsonwebtoken");
 const {
   responseHandler,
   generate,
@@ -178,7 +179,7 @@ async function confirmOTP(req, res) {
     const phoneNumber = req.body.phone;
     const providedOTP = req.body.otp;
     const user = await userHelper.existingUser(phoneNumber);
-
+    // console.log('dungi!!!!!!!!!!!!!!', user);
     if (!user) {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
@@ -198,7 +199,6 @@ async function confirmOTP(req, res) {
       user.otpConfirmed = true;
       await userHelper.updateUserByPhoneNumber(user);
       await userHelper.issueToken(user);
-
       req.session.user = {
         _id: user._id,
         username: user.username,
@@ -231,6 +231,7 @@ async function confirmOTP(req, res) {
       _id: user._id,
       username: user.username,
     };
+    console.log("USER",user);
     return responseHandler(res, 200, user, null);
   } catch (error) {
     responseHandler(res, 400, null, error.message);

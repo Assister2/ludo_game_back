@@ -13,9 +13,9 @@ module.exports = function (req, res, next) {
     const currentTime = Math.floor(Date.now() / 1000);
 
     if (verified.exp < currentTime) {
-      const newToken = generateToken(verified.userId);
+      // const newToken = generateToken(verified.userId);
 
-      return res.status(401).json({ error: "Token expired", token: newToken });
+      return res.status(401).json({ error: "Token expired"});
     }
     next();
   } catch (error) {

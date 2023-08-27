@@ -1,8 +1,10 @@
 const User = require("../models/user");
+const UserToken = require("../models/userToken");
 const ChallengeModel = require("../models/challenges");
 const tempUser = require("../models/tempUser");
 const config = require("./config");
 const jwtToken = require("jsonwebtoken");
+const generateTokens = require("../utils/generateTokens.js");
 const userHelper = {
   /**
    * existingUser - Check existing user by phone Number.
@@ -177,22 +179,45 @@ const userHelper = {
           id: userData._id,
           phone: userData.phone,
         },
-        config.TOKEN_SECRET
+        config.TOKEN_SECRET, {expiresIn: "30s"}
       );
-        console.log("check")
+      
       let tokenObject = {
         jwtToken: tokenGenerated,
         createdAt: new Date(),
       };
+      
+      let refreshTokenGenerated = jwtToken.sign(
+        {
+          id:userData._id,
+        },
+        config.REFRESH_TOKEN, {expiresIn: "2d"}
+      );
+      
+      let refreshTokenObject = {
+        refreshToken: refreshTokenGenerated,
+        createdAt: new Date(),
+      };
+      const userToken = await UserToken.findOne({ userId: userData._id });
+      if (userToken) await userToken.remove();
+
+      await new UserToken({ userId: userData._id, token: refreshTokenObject }).save();
+      console.log("check")
+      // const {accessToken, refreshToken} = await generateTokens(userData);
       let user = await User.findOneAndUpdate(
         { phone: userData.phone },
-        { $set: { jwtToken: tokenObject } },
+        { $set: { jwtToken: tokenObject, refreshToken: refreshTokenObject } },    
+        // { $set : { jwtToken: accessToken, refreshToken: refreshToken}}, 
         { new: true }
       );
       if (!userData.hasOwnProperty("jwtToken")) {
-        userData.jwtToken = {};
+        userData.jwtToken = {}; 
+        userData.refreshToken = {};
       }
       userData.jwtToken = tokenObject;
+      // userData.refreshToken = refreshToken;
+      userData.refreshToken = refreshTokenObject;
+      // console.log("TokenOBJECT",tokenObject,"refreshtokenobject",refreshTokenObject);
       return userData;
     } catch (error) {
       throw error;

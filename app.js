@@ -9,6 +9,8 @@ const cors = require("cors");
 const authRouter = require("./routes/auth.routes.js");
 const userRouter = require("./routes/user.routes.js");
 
+const refreshRouter = require("./routes/refreshToken.routes.js");
+
 const transactionRouter = require("./routes/transactions.routes.js");
 const payment = require("./routes/payment.routes.js");
 const bodyParser = require("body-parser");
@@ -26,6 +28,7 @@ const allowedOrigins = require("./origion/allowedOrigins.js");
 const socket = require("./sockets/socketConnection/socket.js");
 const { client } = require("./redis/allSocketConnection.js");
 const handleConnection = require("./sockets/socketHandler.js");
+
 
 app.use(
   cors({
@@ -95,6 +98,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/buychips", payment);
 app.use(sessionAuthMiddleware);
 app.use("/api/user", userRouter);
+app.use("/api/refreshToken",refreshRouter);
 app.use("/api/transaction", transactionRouter);
 app.use("/api/challenges", challengesRouter);
 app.use("/api/history", historyRouter);

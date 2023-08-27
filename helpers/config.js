@@ -10,6 +10,7 @@ const config = {
   DB_URI: process.env.DB_URI,
   PAY_ON_UPI_SECRET: process.env.PAY_ON_UPI_SECRET,
   TOKEN_SECRET: process.env.TOKEN_SECRET,
+  REFRESH_TOKEN: process.env.REFRESH_TOKEN,
   SESSION_SECRET: process.env.SESSION_SECRET,
   PORT: process.env.PORT,
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,

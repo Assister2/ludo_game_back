@@ -73,6 +73,10 @@ let userSchema = new mongoose.Schema({
     jwtToken: { type: String, default: "" },
     createdAt: { type: Date, default: new Date() },
   },
+  refreshToken:{
+    refreshToken: { type: String, default: "" },
+    createdAt: { type: Date, default: new Date()},
+  },
   loggedDevices: [
     {
       notificationToken: { type: String, default: "" },
