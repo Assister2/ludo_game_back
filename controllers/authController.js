@@ -175,17 +175,12 @@ async function confirmOTP(req, res) {
     if (!req.body.hasOwnProperty("phone") || !req.body.hasOwnProperty("otp")) {
       return responseHandler(res, 400, null, "Fields are missing");
     }
-
     const phoneNumber = req.body.phone;
     const providedOTP = req.body.otp;
     const user = await userHelper.existingUser(phoneNumber);
-    // console.log('dungi!!!!!!!!!!!!!!', user);
     if (!user) {
       return responseHandler(res, 400, null, "This Number is Not Registered");
     }
-
-    // await sessionHelper.removeAllUserSessions(store, user._id, deleteId);
-    // await sessionHelper.addActiveUserSession(store, user._id, req.sessionID);
     await sessionHelper.removeUserSession(
       user._id.toString(),
       req.sessionID.toString()
@@ -287,8 +282,8 @@ async function OTP(req, res) {
 
       const accountObject = {
         userId: finalUser.id,
-        depositCash: 10,
-        wallet: 10,
+        depositCash: 2000,
+        wallet: 2000,
       };
       const userAccount = await accountHelper.insertAccount(
         accountObject,

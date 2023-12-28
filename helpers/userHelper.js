@@ -174,12 +174,13 @@ const userHelper = {
 
   issueToken: async (userData) => {
     try {
+      console.log("FIRST", userData._id, "_____________", userData.phone);
       let tokenGenerated = jwtToken.sign(
         {
           id: userData._id,
           phone: userData.phone,
         },
-        config.TOKEN_SECRET, {expiresIn: "30s"}
+        config.TOKEN_SECRET, {expiresIn: "2d"}
       );
       
       let tokenObject = {
@@ -189,7 +190,7 @@ const userHelper = {
       
       let refreshTokenGenerated = jwtToken.sign(
         {
-          id:userData._id,
+          id: userData._id,
         },
         config.REFRESH_TOKEN, {expiresIn: "2d"}
       );
@@ -198,25 +199,24 @@ const userHelper = {
         refreshToken: refreshTokenGenerated,
         createdAt: new Date(),
       };
-      const userToken = await UserToken.findOne({ userId: userData._id });
-      if (userToken) await userToken.remove();
-
-      await new UserToken({ userId: userData._id, token: refreshTokenObject }).save();
-      console.log("check")
-      // const {accessToken, refreshToken} = await generateTokens(userData);
+       console.log("check");
       let user = await User.findOneAndUpdate(
         { phone: userData.phone },
         { $set: { jwtToken: tokenObject, refreshToken: refreshTokenObject } },    
-        // { $set : { jwtToken: accessToken, refreshToken: refreshToken}}, 
         { new: true }
       );
+
+      // await new UserToken({ userId: userData._id, token: refreshTokenObject }).save();
+     
       if (!userData.hasOwnProperty("jwtToken")) {
         userData.jwtToken = {}; 
+      }
+      if(!userData.hasOwnProperty("refreshToken")){
         userData.refreshToken = {};
       }
       userData.jwtToken = tokenObject;
       // userData.refreshToken = refreshToken;
-      userData.refreshToken = refreshTokenObject;
+      // userData.refreshToken = refreshTokenObject;
       // console.log("TokenOBJECT",tokenObject,"refreshtokenobject",refreshTokenObject);
       return userData;
     } catch (error) {

@@ -7,19 +7,24 @@ module.exports = function (req, res, next) {
 
   const key = config.TOKEN_SECRET;
   try {
-    const verified = jwt.verify(Token, key);
-    req.user = verified;
+      const verified = jwt.verify(Token, key);
+      console.log("VERIFY FUNCTION", verified);
+      req.user = verified;
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      if (verified == undefined || verified == null || verified.exp < currentTime) {
+        const newToken = jwt.generateToken(verified.userId);
+        console.log("ERROR FULL", newToken);
+        return res.status(401).json({ error: "Token expired", token: newToken });
+      }
+      next();
 
-    const currentTime = Math.floor(Date.now() / 1000);
-
-    if (verified.exp < currentTime) {
-      // const newToken = generateToken(verified.userId);
-
-      return res.status(401).json({ error: "Token expired"});
-    }
-    next();
   } catch (error) {
-    console.log("error", error);
-    res.status(400).send("Invalid Token");
+    console.log(error.constructor.name);
+    if (error.constructor.name == "TokenExpiredError"){
+      return res.status(401).json({ error: "Token expired", error_status: "expired" });
+    }else{
+      res.status(400).send("Invalid Token");
+    }
   }
 };
